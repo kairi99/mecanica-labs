@@ -73,3 +73,34 @@ Type B convention: u = resolution/sqrt(12) (rectangular, half-width = resolution
 
 Rolling without slipping; rail perfectly straight and rigid; no sag of the 1.2 m rail; no sensor or cable on the
 cart; no Bouguer correction; no air humidity. The mean velocity over the whole path equals v(end)/2 only for ideal MRUV.
+
+## Apparatus (`src/apparatus/constants.ts`)
+
+All rows ASSUMED unless a source is given; none is a PHYWE specification. Date of all rows: 2026-10-22.
+
+| Parameter | Value | Unit | Source |
+|---|---|---|---|
+| Rail length / printed scale | 1.2 / 0..1200 | m / mm | EPN guide (1.2 m rail); mm scale from the photos (ASSUMED 1 mm division). |
+| Support points from nearest rail end | 0.05 | m | ASSUMED. |
+| Support separation d (clamp to two-leg stand) | 1.10 | m | ASSUMED = 1.2 - 2 x 0.05. Needed rise for 1.30 deg: d sin(1.30 deg) = 24.95 mm. |
+| Rack clamp height at rack reading 0 | 0.060 | m | ASSUMED. |
+| Rack range / resolution | 0..250 / 1 | mm | ASSUMED. 1 mm = 0.052 deg at d = 1.10 m, so the foot is needed to trim to +-0.05 deg. |
+| Two-leg stand height with foot at 0 | 0.060 | m | ASSUMED (equal to the rack base, so the rail is flat at rack 0 and foot 0). |
+| Screw foot range / step | +-5 / 0.05 | mm | ASSUMED (fine screw). Covers a table tilt of 0.15 deg (2.9 mm). |
+| Hidden table tilt along the rail | uniform +-0.15 | deg | ASSUMED. Seeded; revealed only by the level. |
+| Receiver end stop from low rail end | 0.040 | m | ASSUMED. Cart front stops there (no bounce). |
+| Level sensitivity | 20 (2 per 0.1 deg) | mm/deg | ASSUMED. Saturates at +-6 mm (0.3 deg); centred when |offset| <= 0.5 mm (|tilt| <= 0.025 deg). |
+| Cart length | 0.0984 | m | ASSUMED. |
+| Cart front reference offset | 0.0035 | m | ASSUMED (measurable item only). |
+| Caliper range | 0..150 | mm | ASSUMED typical. |
+| Vernier | main 1 mm, 20 divisions | - | ASSUMED; least count 0.05 mm (physics/instruments.ts). |
+| Digital caliper zero error | uniform +-0.05 | mm | ASSUMED, seeded; removed by the zero button with the jaws closed. Display quantised 0.01 mm. |
+| Mark snap / max marks | 0.5 / 30 | mm / - | ASSUMED. |
+| Mark check tolerance (spacing, position vs A + 100 i) | 2 | mm | ASSUMED (tape placement). AB >= 900 mm - 2 mm. |
+| Target angle / tolerance | 1.30 / 0.05 | deg | Guide angle; tolerance ASSUMED (pedagogical). |
+| Cart "at 0 cm" tolerance | 1.5 | mm | ASSUMED. |
+| DigiCart encoder | 50 Hz, 1 mm | - | ASSUMED. x(t) is displacement from the release instant. |
+| Stored trajectory step | 1 | ms | Same step as physics crossing time (RK4). |
+| Table 1.1 | 10 positions x 10 repetitions; max 30 s; 2 decimals | - | Guide layout; limits ASSUMED (stopwatch resolution 0.01 s). |
+
+Simplifications: no sag of the rail; the table tilt is not drawn (world frame = table frame) but is added to the incline; a flat or uphill rail does not move the cart (static friction / no uphill model); the cart stops at the receiver (no bounce); the release offset is applied at release (cart jumps by about 1 mm).
