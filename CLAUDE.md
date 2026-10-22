@@ -16,7 +16,7 @@ npm install
 npm run dev      # Vite dev server
 npm test         # Vitest (tests/**/*.test.ts)
 npm run build    # tsc && vite build -> dist/
-npm run teacher-key  # will regenerate docs/teacher-key.md from the model (placeholder for now)
+npm run teacher-key  # regenerates docs/teacher-key.md from the model
 ```
 
 ## Non-negotiable invariants

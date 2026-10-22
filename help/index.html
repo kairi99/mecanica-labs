@@ -1,0 +1,127 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Guía de ayuda: MRUV con el DigiCart</title>
+<link rel="stylesheet" href="./help.css">
+<script type="module" src="./help.ts"></script>
+</head>
+<body>
+<div class="bar"><a class="pill accent" href="../index.html">Volver al laboratorio</a><nav class="pills" aria-label="Idioma"><a class="pill" href="en.html" hreflang="en">English</a></nav></div>
+<main>
+<h1>Guía de ayuda: MRUV con el DigiCart</h1>
+<p class="lede">Un complemento del laboratorio virtual: la teoría del movimiento rectilíneo uniformemente variado, cómo usar cada instrumento, cómo se calculan las incertidumbres y qué hace que un plano inclinado real no sea un MRUV perfecto. No reemplaza la guía de la práctica: la acompaña.</p>
+<nav class="toc" aria-label="Contenido">
+<a href="#teoria">Teoría</a><a href="#uso">Uso del laboratorio</a><a href="#calibrador">Calibrador</a><a href="#cronometro">Cronómetro</a><a href="#incertidumbre">Incertidumbre</a><a href="#errores">Fuentes de error</a><a href="#teclas">Teclas</a><a href="#creditos">Créditos</a>
+</nav>
+
+<section id="teoria"><h2>1. Teoría del MRUV</h2>
+<p>Un movimiento rectilíneo es uniformemente variado cuando la aceleración es constante. Si el cuerpo parte del origen con velocidad inicial <em>v</em><sub>0</sub> en <em>t</em> = 0, las ecuaciones son:</p>
+<div class="eq">v(t) = v₀ + a·t<br>x(t) = x₀ + v₀·t + ½·a·t²<br>v² = v₀² + 2·a·(x − x₀)</div>
+<p>Las tres gráficas características son una parábola para la posición, una recta inclinada para la velocidad y una recta horizontal para la aceleración:</p>
+<figure><svg viewBox="0 0 660 160" role="img" aria-labelledby="gr-t gr-d" class="fig"><title id="gr-t">Gráficas del MRUV</title><desc id="gr-d">Tres paneles: x en función de t es una parábola, v en función de t una recta que sube y a en función de t una recta horizontal.</desc><g transform="translate(0,10)"><line class="g-ax" x1="30" y1="130" x2="200" y2="130"/><line class="g-ax" x1="30" y1="130" x2="30" y2="10"/><polyline class="g-curve g-x" points="30.0,130.0 34.1,129.9 38.3,129.7 42.4,129.4 46.5,128.9 50.6,128.3 54.8,127.5 58.9,126.6 63.0,125.6 67.1,124.4 71.3,123.1 75.4,121.7 79.5,120.1 83.6,118.4 87.8,116.5 91.9,114.5 96.0,112.4 100.1,110.1 104.3,107.7 108.4,105.2 112.5,102.5 116.6,99.7 120.8,96.7 124.9,93.6 129.0,90.4 133.1,87.0 137.3,83.5 141.4,79.9 145.5,76.1 149.6,72.2 153.8,68.1 157.9,63.9 162.0,59.6 166.1,55.1 170.3,50.5 174.4,45.8 178.5,40.9 182.6,35.9 186.8,30.7 190.9,25.4 195.0,20.0"/><text class="g-lab" x="36" y="20">x</text><text class="g-lab" x="196" y="146" text-anchor="end">t</text></g><g transform="translate(220,10)"><line class="g-ax" x1="30" y1="130" x2="200" y2="130"/><line class="g-ax" x1="30" y1="130" x2="30" y2="10"/><polyline class="g-curve g-v" points="30.0,130.0 34.1,127.3 38.3,124.5 42.4,121.8 46.5,119.0 50.6,116.3 54.8,113.5 58.9,110.8 63.0,108.0 67.1,105.3 71.3,102.5 75.4,99.8 79.5,97.0 83.6,94.3 87.8,91.5 91.9,88.8 96.0,86.0 100.1,83.3 104.3,80.5 108.4,77.8 112.5,75.0 116.6,72.3 120.8,69.5 124.9,66.8 129.0,64.0 133.1,61.3 137.3,58.5 141.4,55.8 145.5,53.0 149.6,50.3 153.8,47.5 157.9,44.8 162.0,42.0 166.1,39.3 170.3,36.5 174.4,33.8 178.5,31.0 182.6,28.3 186.8,25.5 190.9,22.8 195.0,20.0"/><text class="g-lab" x="36" y="20">v</text><text class="g-lab" x="196" y="146" text-anchor="end">t</text></g><g transform="translate(440,10)"><line class="g-ax" x1="30" y1="130" x2="200" y2="130"/><line class="g-ax" x1="30" y1="130" x2="30" y2="10"/><polyline class="g-curve g-a" points="30.0,75.0 34.1,75.0 38.3,75.0 42.4,75.0 46.5,75.0 50.6,75.0 54.8,75.0 58.9,75.0 63.0,75.0 67.1,75.0 71.3,75.0 75.4,75.0 79.5,75.0 83.6,75.0 87.8,75.0 91.9,75.0 96.0,75.0 100.1,75.0 104.3,75.0 108.4,75.0 112.5,75.0 116.6,75.0 120.8,75.0 124.9,75.0 129.0,75.0 133.1,75.0 137.3,75.0 141.4,75.0 145.5,75.0 149.6,75.0 153.8,75.0 157.9,75.0 162.0,75.0 166.1,75.0 170.3,75.0 174.4,75.0 178.5,75.0 182.6,75.0 186.8,75.0 190.9,75.0 195.0,75.0"/><text class="g-lab" x="36" y="20">a</text><text class="g-lab" x="196" y="146" text-anchor="end">t</text></g></svg><figcaption>De izquierda a derecha: x(t) (parábola), v(t) (recta cuya pendiente es a) y a(t) (constante). Dibujo propio, sin escala.</figcaption></figure>
+<h3>Velocidad media e instantánea</h3>
+<p>La velocidad media en un intervalo es el desplazamiento entre el tiempo empleado, <em>v̄</em> = Δx/Δt. Es la pendiente de la cuerda que une dos puntos de la gráfica x(t). La velocidad instantánea es el límite de esa cuerda cuando el intervalo se encoge: la pendiente de la tangente a x(t) en un instante. Cuanto más corto el intervalo, más se parece la velocidad media a la instantánea en su punto medio.</p>
+<h3>Partiendo del reposo</h3>
+<p>Si <em>v</em><sub>0</sub> = 0 y <em>x</em><sub>0</sub> = 0, entonces <em>x</em> = ½·<em>a</em>·<em>t</em>² y <em>v</em> = <em>a</em>·<em>t</em>. Eliminando <em>a</em> entre las dos ecuaciones queda una relación que no la contiene:</p>
+<div class="eq">v_final = 2·x / t = 2·v̄</div>
+<p>Es decir, la velocidad al final del recorrido es el doble de la velocidad media desde el reposo. Es la pregunta 3 del trabajo preparatorio, y la tarea 9 la comprueba con tus datos.</p>
+<h3>La aceleración en un plano inclinado</h3>
+<p>Para un carro sin fricción que se desliza, <em>a</em> = <em>g</em> sen θ. Si rueda sobre ruedas, parte de la energía se convierte en giro y la aceleración baja a <em>g</em> sen θ / (1 + <em>k</em>), con <em>k</em> la razón entre la inercia de rotación de las ruedas y la masa por el radio al cuadrado. La fricción la reduce un poco más. Por eso no esperes que tu <em>a</em> sea exactamente <em>g</em> sen θ.</p>
+</section>
+
+<section id="uso"><h2>2. Cómo usar el laboratorio</h2>
+<ol>
+<li><b>Materiales.</b> En el inventario pon sobre la mesa todas las piezas: riel, DigiCart, soporte con cremallera y su base, soporte de dos patas, receptor, tornillos, nivelador, cronómetro, calibrador y marcas.</li>
+<li><b>Montaje.</b> Pon el soporte con cremallera sobre su base. Sujeta un extremo de la riel en su pinza: ese será el extremo alto y el 0 de la escala impresa debe quedar ahí. En el extremo opuesto van el soporte de dos patas y el receptor. Usa los seis tornillos (dos por unión).</li>
+<li><b>Nivelación.</b> Pon el nivelador sobre la riel, deja la cremallera en cero y gira el pie del soporte de dos patas hasta centrar la burbuja. Así quitas la inclinación propia de la mesa antes de crear la tuya. Si subes el soporte antes de nivelar, la inclinación final no será la que calculas.</li>
+<li><b>Inclinación de 1,30°.</b> Sube el extremo alto con la cremallera. Mide la altura de la riel en cada soporte con el calibrador (más abajo). La diferencia de alturas debe cumplir Δh = d·sen θ, con <em>d</em> la distancia entre los dos soportes medida a lo largo de la riel. Calcúlalo tú: la lista de verificación te recuerda la fórmula, no la respuesta. Afina con el pie del soporte de dos patas.</li>
+<li><b>Marcas.</b> Pega una marca cada 10 cm desde el punto más alto (A, 0 cm) hasta al menos 90 cm.</li>
+<li><b>Medición.</b> Coloca el frente del DigiCart en la marca de 0 cm, elige la marca hasta la que vas a medir, suelta el carro y cronometra. Repite 10 veces por marca y copia cada lectura a la Tabla 1.1.</li>
+<li><b>Análisis.</b> El panel de análisis calcula las tareas de la sección 1.4 con tu tabla y se actualiza solo. Las preguntas las respondes tú.</li>
+</ol>
+<p class="note">El DigiCart nunca debe quedar fuera de la riel: rueda con facilidad sobre cualquier superficie y puede caer de la mesa.</p>
+<p>La lista de verificación del laboratorio sigue estos pasos y, con el botón «Muéstramelo», resalta la pieza en el escenario y abre el panel que necesitas. Desde esa lista también puedes repetir el recorrido inicial.</p>
+</section>
+
+<section id="calibrador"><h2>3. El calibrador (pie de rey)</h2>
+<h3>Para qué sirve aquí</h3>
+<p>Para medir la altura de la riel sobre la mesa en cada soporte y comprobar la inclinación. Si la diferencia de alturas es Δh y los soportes están separados una distancia <em>d</em> a lo largo de la riel, entonces sen θ = Δh/<em>d</em>. Para 1,30° se necesita Δh ≈ 0,0227·<em>d</em>: pocos milímetros por cada decímetro.</p>
+<h3>La varilla de profundidad</h3>
+<p>Detrás del cuerpo del calibrador sale una varilla que se desplaza con la corredera. Apoya el extremo del cuerpo sobre la mesa y baja la varilla hasta tocar la parte inferior de la riel: la lectura es la altura. Es más cómodo que abrir las mordazas alrededor de un soporte alto.</p>
+<h3>Leer un nonio (vernier) de 0,05 mm</h3>
+<p>La escala principal está en milímetros. El nonio tiene 20 divisiones que ocupan 19 mm, así que cada una mide 0,95 mm, es decir 0,05 mm menos que una división principal. Se lee en dos pasos:</p>
+<ol>
+<li>Lee en la escala principal los milímetros enteros que hay a la izquierda del cero del nonio.</li>
+<li>Busca la división del nonio que coincide con una marca de la escala principal. Su número, multiplicado por 0,05 mm, son las décimas y centésimas.</li>
+</ol>
+<figure><svg viewBox="0 0 640 210" role="img" aria-labelledby="vn-t vn-d" class="fig"><title id="vn-t">Ejemplo de lectura de un nonio de 0,05 mm</title><desc id="vn-d">Escala principal en milímetros con el nonio debajo. El cero del nonio está en 12,35 mm y la división 7 coincide con una marca de la escala principal.</desc><rect class="f-body" x="8" y="26" width="624" height="52" rx="4"/><rect class="f-body2" x="112.69999999999999" y="78" width="497.09999999999997" height="60" rx="4"/><line class="f-tick" x1="20" y1="78" x2="20" y2="48"/><text class="f-num" x="20" y="42" text-anchor="middle">10</text><line class="f-tick" x1="62" y1="78" x2="62" y2="64"/><line class="f-tick" x1="104" y1="78" x2="104" y2="64"/><line class="f-tick" x1="146" y1="78" x2="146" y2="64"/><line class="f-tick" x1="188" y1="78" x2="188" y2="64"/><line class="f-tick" x1="230" y1="78" x2="230" y2="56"/><text class="f-num" x="230" y="50" text-anchor="middle">15</text><line class="f-tick" x1="272" y1="78" x2="272" y2="64"/><line class="f-tick" x1="314" y1="78" x2="314" y2="64"/><line class="f-tick" x1="356" y1="78" x2="356" y2="64"/><line class="f-tick" x1="398" y1="78" x2="398" y2="64"/><line class="f-tick" x1="440" y1="78" x2="440" y2="48"/><text class="f-num" x="440" y="42" text-anchor="middle">20</text><line class="f-tick" x1="482" y1="78" x2="482" y2="64"/><line class="f-tick" x1="524" y1="78" x2="524" y2="64"/><line class="f-tick" x1="566" y1="78" x2="566" y2="64"/><line class="f-tick" x1="608" y1="78" x2="608" y2="64"/><line class="f-tick" x1="118.69999999999999" y1="78" x2="118.69999999999999" y2="100"/><text class="f-num" x="118.69999999999999" y="116" text-anchor="middle">0</text><line class="f-tick" x1="158.59999999999997" y1="78" x2="158.59999999999997" y2="92"/><line class="f-tick" x1="198.5" y1="78" x2="198.5" y2="92"/><line class="f-tick" x1="238.39999999999998" y1="78" x2="238.39999999999998" y2="92"/><line class="f-tick" x1="278.29999999999995" y1="78" x2="278.29999999999995" y2="92"/><line class="f-tick" x1="318.20000000000005" y1="78" x2="318.20000000000005" y2="100"/><text class="f-num" x="318.20000000000005" y="116" text-anchor="middle">25</text><line class="f-tick" x1="358.0999999999999" y1="78" x2="358.0999999999999" y2="92"/><line class="f-tick f-hit" x1="398" y1="78" x2="398" y2="100"/><line class="f-tick" x1="437.9" y1="78" x2="437.9" y2="92"/><line class="f-tick" x1="477.79999999999995" y1="78" x2="477.79999999999995" y2="92"/><line class="f-tick" x1="517.7" y1="78" x2="517.7" y2="100"/><text class="f-num" x="517.7" y="116" text-anchor="middle">50</text><line class="f-tick" x1="557.5999999999999" y1="78" x2="557.5999999999999" y2="92"/><line class="f-tick" x1="597.5" y1="78" x2="597.5" y2="92"/><line class="f-guide" x1="398" y1="30" x2="398" y2="130"/><line class="f-zero" x1="118.69999999999999" y1="78" x2="118.69999999999999" y2="150"/><text class="f-note" x="118.69999999999999" y="168" text-anchor="middle">0</text><text class="f-note" x="398" y="196" text-anchor="middle">división 7 coincide</text><text class="f-note" x="104" y="44" text-anchor="middle">12 mm</text></svg><figcaption>Ejemplo resuelto (dibujo propio). El cero del nonio queda poco después de la marca de 12 mm: 12 mm. La división 7 del nonio es la que coincide con una marca principal: 7 × 0,05 mm = 0,35 mm. Lectura: 12 + 0,35 = <b>12,35 mm</b>.</figcaption></figure>
+<h3>El calibrador digital</h3>
+<p>Muestra directamente la medida, con resolución de 0,01 mm. Antes de medir, cierra las mordazas y pulsa el botón de cero: un calibrador digital puede tener un pequeño error de cero. Si no lo pones a cero, ese error se suma a cada lectura.</p>
+</section>
+
+<section id="cronometro"><h2>4. El cronómetro y el tiempo de reacción</h2>
+<p>El cronómetro lo manejas tú: el instante exacto de tu pulsación (la tecla o el toque) es el que cuenta. Entre que el carro pasa por la marca y tu dedo reacciona pasa una fracción de segundo, y lo mismo al iniciar. Lo que aparece en pantalla es el tiempo verdadero más la diferencia entre ambos retrasos.</p>
+<h3>Error aleatorio y error sistemático</h3>
+<ul>
+<li><b>Aleatorio:</b> a veces reaccionas antes y otras después. Las lecturas se reparten alrededor de un valor. Repetir y promediar lo reduce: la incertidumbre de la media baja como 1/√<em>n</em>.</li>
+<li><b>Sistemático:</b> si en promedio paras más tarde de lo que inicias, todas las lecturas salen desplazadas en el mismo sentido. Promediar no lo corrige, porque es común a todas.</li>
+</ul>
+<h3>Por qué 10 repeticiones</h3>
+<p>Con una sola lectura no sabes cuánto varía lo que mides. Con diez ya puedes estimar la desviación estándar <em>s</em> y la incertidumbre de la media <em>s</em>/√10. Más repeticiones ayudan poco: reducen el error aleatorio lentamente y no tocan el sistemático.</p>
+<p>El panel de análisis incluye un contraste con el registro del DigiCart. Allí ves el desfase medio de tus lecturas respecto a los tiempos verdaderos: un desfase parecido en todas las marcas es tu sesgo de reacción.</p>
+</section>
+
+<section id="incertidumbre"><h2>5. Incertidumbre</h2>
+<h3>Tipo A y tipo B</h3>
+<p>La incertidumbre tipo A sale de la dispersión de lecturas repetidas: para <em>n</em> lecturas con desviación estándar <em>s</em>, u<sub>A</sub> = <em>s</em>/√<em>n</em>. La tipo B no sale de repetir, sino de lo que sabes del instrumento: su resolución, su calibración o un límite razonable del error.</p>
+<h3>Convenciones usadas en el laboratorio</h3>
+<ul>
+<li><b>Instrumento digital</b> (cronómetro, calibrador digital): la lectura se conoce solo hasta el último dígito <em>r</em>. Se toma una distribución rectangular de media anchura <em>r</em>/2 y u = (<em>r</em>/2)/√3 = <em>r</em>/√12 ≈ 0,29·<em>r</em>.</li>
+<li><b>Escala analógica</b> (regla, riel en milímetros, nonio): se lee a la división más cercana <em>d</em>, de modo que la media anchura es <em>d</em>/2 y u = <em>d</em>/√12. Para un nonio, <em>d</em> es su apreciación (0,05 mm). Numéricamente coincide con el caso digital; lo que cambia es el razonamiento.</li>
+<li>Ojo: el «error máximo» <em>d</em>/2 que se enseña a veces es la media anchura, no la incertidumbre estándar.</li>
+<li><b>Reacción:</b> el sesgo medio entre iniciar y detener es desconocido. Se modela como una distribución rectangular de ±0,1 s (supuesto del laboratorio virtual), con u = 0,1 s/√3 ≈ 0,058 s. No disminuye al promediar.</li>
+</ul>
+<h3>Combinar</h3>
+<p>Las contribuciones independientes se combinan en cuadratura: u = √(u<sub>A</sub>² + u<sub>res</sub>² + u<sub>reac</sub>²). Para una magnitud calculada, como la velocidad media <em>v̄</em> = Δx/Δt, la incertidumbre se propaga: σ<sub>v</sub> = √(σ<sub>x1</sub>² + σ<sub>x2</sub>² + v²(σ<sub>t1</sub>² + σ<sub>t2</sub>²))/Δt. Los intervalos consecutivos comparten una marca y por eso sus velocidades están correlacionadas.</p>
+<h3>Cifras significativas</h3>
+<p>Redondea la incertidumbre a una o dos cifras significativas (dos si la primera es 1 o 2) y el valor al mismo lugar decimal. Se escribe 1,02 ± 0,06 s, no 1,0213 ± 0,058 s. Conserva los ceros finales: 0,030 y 0,03 no dicen lo mismo.</p>
+<h3>Ajuste de x(t)</h3>
+<p>Como los tiempos son la magnitud con ruido, el ajuste cuadrático x = c₀ + c₁t + c₂t² pondera cada punto con una incertidumbre efectiva σ<sub>ef</sub>² = σ<sub>x</sub>² + (dx/dt)²·σ<sub>t</sub>² (método de la varianza efectiva). La aceleración es <em>a</em> = 2c₂. Una χ² reducida cercana a 1 indica que las barras de error describen bien la dispersión.</p>
+</section>
+
+<section id="errores"><h2>6. Fuentes de error en un plano inclinado</h2>
+<p>Esta sección responde, con el modelo del laboratorio, a la pregunta 4 del trabajo preparatorio: por qué el movimiento en un plano inclinado no es un MRUV perfecto.</p>
+<ul>
+<li><b>Fricción y resistencias:</b> la resistencia a la rodadura y el rozamiento de los cojinetes frenan al carro. Reducen un poco la aceleración. El aire también frena, más a mayor velocidad.</li>
+<li><b>Inercia de rotación de las ruedas:</b> parte de la energía potencial se gasta en hacer girar las ruedas. La aceleración es <em>g</em> sen θ/(1 + <em>k</em>), menor que <em>g</em> sen θ.</li>
+<li><b>La suelta:</b> si empujas el carro al soltarlo o lo colocas con el frente un poco adelantado, parte con una velocidad o una posición iniciales no nulas. Los tiempos salen más cortos.</li>
+<li><b>El nivel de la mesa y la riel:</b> si la mesa no está nivelada, su inclinación se suma a la tuya. Una riel doblada o mal apoyada cambia la pendiente a lo largo del recorrido.</li>
+<li><b>El ángulo:</b> a 1,30° un error de 0,1° en el ángulo son casi un 8 % de error en <em>a</em>, porque <em>a</em> es proporcional a sen θ.</li>
+<li><b>La medición de tiempos:</b> reacción, resolución del cronómetro y elegir mal la marca.</li>
+</ul>
+</section>
+
+<section id="teclas"><h2>7. Atajos de teclado</h2>
+<table>
+<thead><tr><th>Tecla</th><th>Acción</th></tr></thead>
+<tbody>
+<tr><td><kbd>Espacio</kbd></td><td>Iniciar o detener el cronómetro (cuenta el instante de la pulsación)</td></tr>
+<tr><td><kbd>R</kbd></td><td>Reiniciar el cronómetro</td></tr>
+<tr><td><kbd>S</kbd></td><td>Soltar el DigiCart</td></tr>
+<tr><td><kbd>Flechas</kbd> / <kbd>+</kbd> <kbd>−</kbd></td><td>Con el escenario 3D enfocado: girar la vista y acercar o alejar</td></tr>
+<tr><td><kbd>Flechas</kbd>, <kbd>Enter</kbd></td><td>En la Tabla 1.1: moverse entre casillas</td></tr>
+<tr><td><kbd>Tab</kbd></td><td>Recorrer los controles. Todo se puede operar con el teclado</td></tr>
+<tr><td><kbd>Esc</kbd></td><td>Cerrar el recorrido inicial o una ficha del escenario</td></tr>
+</tbody></table>
+</section>
+
+<section id="creditos"><h2>8. Créditos</h2>
+<p>Este laboratorio virtual está basado en la guía «Práctica 1: Movimiento Rectilíneo Uniformemente Variado (MRUV)» del Laboratorio de Física de la Escuela Politécnica Nacional (Quito). Es un proyecto independiente y de código abierto, <b>sin afiliación con la EPN ni con PHYWE</b>. DigiCart y PHYWE son marcas de sus propietarios y se usan solo de forma descriptiva. Los parámetros del carro (masa, ruedas, fricción) son supuestos del modelo, no datos del fabricante.</p>
+<p>Métodos: GUM (JCGM 100) y J. R. Taylor, <em>An Introduction to Error Analysis</em>. Código bajo licencia MIT y contenido educativo bajo CC BY 4.0.</p>
+</section>
+<p class="credits"><a href="../index.html">Volver al laboratorio</a></p>
+</main>
+</body>
+</html>

@@ -12,7 +12,10 @@ import { strings as stopwatchStrings } from '../src/views/strings/stopwatch.ts'
 import { strings as caliperStrings } from '../src/views/strings/caliper.ts'
 import { strings as tableStrings } from '../src/views/strings/table.ts'
 import { strings as tabletStrings } from '../src/views/strings/tablet.ts'
-import { strings as procedureStrings } from '../src/views/strings/procedure.ts'
+import { strings as checklistStrings } from '../src/pedagogy/strings/checklist.ts'
+import { strings as coachStrings } from '../src/pedagogy/strings/coach.ts'
+import { strings as tourStrings } from '../src/pedagogy/strings/tour.ts'
+import { strings as analysisStrings } from '../src/views/strings/analysis.ts'
 import { strings as side2dStrings } from '../src/views/strings/side2d.ts'
 import { strings as shellStrings } from '../src/views/strings/shell.ts'
 
@@ -94,7 +97,7 @@ describe('strings key parity ES/EN', () => {
   }
   const files = {
     reasons: reasonStrings, inventory: invStrings, adjust: adjustStrings, stopwatch: stopwatchStrings, caliper: caliperStrings,
-    table: tableStrings, tablet: tabletStrings, procedure: procedureStrings, side2d: side2dStrings, shell: shellStrings,
+    table: tableStrings, tablet: tabletStrings, checklist: checklistStrings, coach: coachStrings, tour: tourStrings, analysis: analysisStrings, side2d: side2dStrings, shell: shellStrings,
   }
   for (const [name, s] of Object.entries(files)) {
     it(`${name} has identical keys and no empty text`, () => {

@@ -7,5 +7,8 @@ export default defineConfig({
   build: {
     // three.js is lazy-loaded by the future 3D bench; raise the warning threshold instead of splitting it.
     chunkSizeWarningLimit: 850,
+    rollupOptions: {
+      input: { main: 'index.html', help: 'help/index.html', helpEn: 'help/en.html' },
+    },
   },
 })

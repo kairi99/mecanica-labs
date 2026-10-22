@@ -4,6 +4,8 @@ import './styles/app.css'
 import './styles/panels.css'
 import './styles/instruments.css'
 import './styles/side2d.css'
+import './styles/analysis.css'
+import './styles/pedagogy.css'
 import { Apparatus } from './apparatus/index.ts'
 import { loadLang, saveLang, type Lang } from './i18n.ts'
 import type { MountView, View, ViewContext } from './views/view.ts'
@@ -16,7 +18,11 @@ import { mountStopwatch } from './views/stopwatch.ts'
 import { mountCaliper } from './views/caliper.ts'
 import { mountTable } from './views/table.ts'
 import { mountTablet } from './views/tablet.ts'
-import { mountProcedure, mountAnalysisPlaceholder } from './views/procedure.ts'
+import { mountAnalysis } from './views/analysis.ts'
+import { mountChecklist, type ChecklistHooks } from './pedagogy/checklistView.ts'
+import { mountCoach } from './pedagogy/coachView.ts'
+import { mountTour, type TourFlag } from './pedagogy/tour.ts'
+import { fillTableSimulated } from './pedagogy/simulatedReadings.ts'
 import { mountSide2d } from './views/side2d.ts'
 import type { PresetName, Scene3DView } from './views/scene3d/index.ts'
 import {
@@ -29,6 +35,12 @@ const PRESETS = ['overview', 'highEnd', 'lowEnd', 'alongRail', 'caliper'] as con
 const camParam = params.get('cam')
 const cam: PresetName | undefined = (PRESETS as readonly string[]).includes(camParam ?? '') ? (camParam as PresetName) : undefined
 const showAnalysis = params.get('analysis') !== '0'
+/** ?teacher shows target values (checklist angle, the model's expected a in the analysis comparison). */
+const teacher = params.has('teacher') && params.get('teacher') !== '0'
+const tourParam = params.get('tour')
+const tourFlag: TourFlag = tourParam === '0' || tourParam === '1' ? tourParam : null
+/** Dev builds only: ?demo=table fills Table 1.1 with simulated human readings (screenshots, manual checks). Never persisted. */
+const demoTable = import.meta.env.DEV && params.get('demo') === 'table'
 
 // ---- language and theme --------------------------------------------------------------------------------------------
 let lang: Lang = loadLang()
@@ -58,6 +70,12 @@ function randomSeed(): number {
 const seedParam = params.get('seed') !== null ? Number(params.get('seed')) : NaN
 const presetParam = params.get('preset')
 function createApp(): Apparatus {
+  if (demoTable) {
+    const a = new Apparatus({ seed: Number.isFinite(seedParam) ? seedParam : 7 })
+    a.preset('assembled')
+    fillTableSimulated(a, { seed: 11 })
+    return a
+  }
   const wantSeed = Number.isFinite(seedParam) ? seedParam : null
   if (presetParam === 'assembled' || presetParam === 'empty') {
     const a = new Apparatus({ seed: wantSeed ?? randomSeed() })
@@ -84,7 +102,7 @@ const app = createApp()
 // ---- persistence -----------------------------------------------------------------------------------------------------
 let saveTimer = 0
 function schedulePersist(): void {
-  if (saveTimer) return
+  if (saveTimer || demoTable) return
   saveTimer = window.setTimeout(() => { saveTimer = 0; saveSnapshot(app.snapshot()) }, 400)
 }
 
@@ -108,7 +126,7 @@ titleWrap.append(h1, sub)
 const tools = el('div', 'tools')
 const langBtn = button('', 'tool tool-lang')
 const themeBtn = button('', 'tool')
-const helpBtn = button('?', 'tool tool-help')
+const helpBtn = el('a', 'tool tool-help', '?', { target: '_blank', rel: 'noopener' })
 tools.append(langBtn, themeBtn, helpBtn)
 header.append(titleWrap, tools)
 
@@ -151,8 +169,13 @@ slot('tablet', colMain, mountTablet)
 slot('inventory', colSide, mountInventory)
 slot('adjust', colSide, mountAdjust)
 slot('caliper', colSide, mountCaliper)
-slot('procedure', colSide, mountProcedure)
-if (showAnalysis) slot('analysis', colSide, mountAnalysisPlaceholder)
+const checklistHooks: ChecklistHooks = {
+  teacher,
+  onShow: (step) => showStep(step.panel, step.focus),
+  onTour: () => tour.start(),
+}
+slot('procedure', colSide, mountChecklist(checklistHooks))
+if (showAnalysis) slot('analysis', colSide, mountAnalysis({ teacher }))
 else {
   // Teachers: the analysis region stays in the DOM (phase 4 fills it) but hidden.
   const hidden = el('div', undefined, undefined, { 'data-region': 'analysis' })
@@ -161,8 +184,7 @@ else {
 }
 
 const footer = el('footer', 'credits')
-const dialog = el('dialog', 'help-dialog')
-rootEl.append(header, main, footer, dialog)
+rootEl.append(header, main, footer)
 
 // ---- views -------------------------------------------------------------------------------------------------------------
 const panelViews: View[] = []
@@ -209,14 +231,31 @@ let loading3d = false
 let mode: StageMode = loadStageMode() ?? '3d'
 let notice = ''
 
-function openPanel(id: string): void {
+function openPanel(id: string, scroll = true): void {
   const c = document.querySelector<HTMLElement>(`[data-panel="${CSS.escape(id)}"]`)
   if (!c) return
   const fold = c.querySelector<HTMLButtonElement>('.fold')
   if (fold && c.classList.contains('collapsed')) fold.click()
+  if (!scroll) return
   c.scrollIntoView({ behavior: reducedQuery.matches ? 'auto' : 'smooth', block: 'start' })
   const h = c.querySelector<HTMLElement>('.card-title')
   if (h) { h.tabIndex = -1; h.focus({ preventScroll: true }) }
+}
+
+/** Checklist "show me": open the panel, highlight the 3D parts for a few seconds. On narrow screens the stage is the thing to see. */
+let focusTimer = 0
+const narrowQuery = window.matchMedia('(max-width: 1079px)')
+function showStep(panel: string, focus: string[]): void {
+  const withStage = focus.length > 0 && effectiveMode() === '3d'
+  if (withStage) {
+    scene3d?.focus?.(focus)
+    window.clearTimeout(focusTimer)
+    focusTimer = window.setTimeout(() => scene3d?.focus?.(null), 8000)
+  }
+  if (withStage && narrowQuery.matches) {
+    openPanel(panel, false)
+    stage.scrollIntoView({ behavior: reducedQuery.matches ? 'auto' : 'smooth', block: 'start' })
+  } else openPanel(panel)
 }
 
 function ensure2d(): void {
@@ -316,12 +355,8 @@ function labelShell(): void {
   newYes.textContent = t.newYes
   newNo.textContent = t.newNo
   footer.textContent = t.credits
-  dialog.replaceChildren(
-    el('h2', undefined, t.helpTitle), el('p', undefined, t.helpIntro),
-    (() => { const ol = el('ol'); for (const s of t.helpSteps) ol.append(el('li', undefined, s)); return ol })(),
-    el('p', undefined, t.helpKeys),
-    button(t.helpClose, 'btn btn-primary', () => dialog.close()),
-  )
+  helpBtn.setAttribute('href', lang === 'es' ? 'help/index.html' : 'help/en.html')
+  helpBtn.setAttribute('hreflang', lang)
   if (failed3d) notice = S().notice3d
   stageNotice.textContent = failed3d ? notice : ''
 }
@@ -330,19 +365,22 @@ function relabelAll(): void {
   for (const v of panelViews) v.relabel()
   view2d?.relabel()
   scene3d?.relabel()
+  coach.relabel()
+  tour.relabel()
 }
 langBtn.addEventListener('click', () => { lang = lang === 'es' ? 'en' : 'es'; saveLang(lang); relabelAll() })
 themeBtn.addEventListener('click', () => {
   theme = THEMES[(THEMES.indexOf(theme) + 1) % THEMES.length]!
   saveTheme(theme); applyTheme(); labelShell()
 })
-helpBtn.addEventListener('click', () => { if (typeof dialog.showModal === 'function') dialog.showModal(); else dialog.setAttribute('open', '') })
-dialog.addEventListener('click', (e) => { if (e.target === dialog) dialog.close() })
 
 // ---- go -------------------------------------------------------------------------------------------------------------------
+const coach = mountCoach(ctx)
+const tour = mountTour(ctx)
 applyTheme()
 labelShell()
 setMode(mode, false)
+if (tour.shouldAutoStart(tourFlag)) window.setTimeout(() => tour.start(), 900)
 schedulePersist()
 
 function frame(): void {

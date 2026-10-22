@@ -1,0 +1,46 @@
+/* Pedagogy layer: checklist, coach toast, tour. Tokens only. */
+.step-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; }
+.step { display: grid; grid-template-columns: 1.5rem minmax(0, 1fr) auto; gap: var(--space-2); align-items: start; padding: var(--space-3) 0; border-top: var(--stroke-hair) solid var(--separator); }
+.step:first-child { border-top: 0; }
+.step.current { background: var(--surface-2); border-radius: var(--radius-s); padding-inline: var(--space-2); margin-inline: calc(-1 * var(--space-2)); }
+.step-text { display: flex; flex-direction: column; gap: var(--space-1); min-width: 0; }
+.step-label { font: var(--text-callout); }
+.step.ok .step-label { color: var(--label-2); }
+.step-mark { font-weight: 700; text-align: center; }
+.step.ok .step-mark, .step.ok .check-status { color: var(--success); }
+.step-chips { display: flex; flex-wrap: wrap; gap: var(--space-1); }
+.step-why summary { cursor: pointer; min-height: var(--touch); display: flex; align-items: center; font: var(--text-footnote); color: var(--label-2); }
+.step-show { align-self: flex-start; }
+
+.coach {
+  position: fixed; z-index: var(--z-dock); left: var(--space-4); right: var(--space-4); bottom: var(--space-3); margin-inline: auto; max-width: 30rem;
+  display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: var(--space-1) var(--space-2); align-items: center;
+  padding: var(--space-2) var(--space-2) var(--space-2) var(--space-3); background: var(--surface); color: var(--label);
+  border-radius: var(--radius-m); box-shadow: var(--shadow-sheet); border: var(--stroke-hair) solid var(--separator); border-left: 4px solid var(--accent);
+}
+.coach-tag { grid-column: 1; font: var(--text-caption); color: var(--accent); text-transform: uppercase; letter-spacing: 0.04em; }
+.coach-text { grid-column: 1; margin: 0; font: var(--text-footnote); }
+.coach-close { grid-column: 2; grid-row: 1 / span 2; min-width: var(--touch); min-height: var(--touch); border: 0; border-radius: var(--radius-full); background: var(--fill); cursor: pointer; font: var(--text-headline); }
+
+.tour { position: fixed; inset: 0; z-index: var(--z-tour); }
+.tour-spot {
+  position: fixed; border-radius: var(--radius-m); box-shadow: 0 0 0 100vmax var(--scrim-tour); outline: 2px solid var(--accent); pointer-events: none;
+  transition: left var(--dur-base) var(--ease-out), top var(--dur-base) var(--ease-out), width var(--dur-base) var(--ease-out), height var(--dur-base) var(--ease-out);
+}
+.tour-card {
+  position: fixed; left: var(--space-4); right: var(--space-4); margin-inline: auto; max-width: 24rem; background: var(--surface); color: var(--label);
+  border-radius: var(--radius-l); box-shadow: var(--shadow-sheet); padding: var(--space-4); display: grid; gap: var(--space-2);
+}
+.tour-card[data-pos='bottom'] { bottom: max(var(--space-4), env(safe-area-inset-bottom)); }
+.tour-card[data-pos='top'] { top: var(--space-4); }
+.tour-count { margin: 0; font: var(--text-caption); color: var(--label-2); }
+.tour-title { margin: 0; font: var(--text-headline); }
+.tour-body { margin: 0; font: var(--text-callout); }
+.tour-actions { display: flex; align-items: center; gap: var(--space-2); justify-content: flex-end; margin-top: var(--space-2); }
+.tour-actions button { min-height: var(--touch); padding: 0 var(--space-3); border: 0; border-radius: var(--radius-full); background: var(--fill); cursor: pointer; font: var(--text-callout); touch-action: manipulation; }
+.tour-actions .tour-next { background: var(--accent-fill); color: var(--on-accent); font-weight: 600; }
+.tour-actions .tour-skip { margin-right: auto; background: none; color: var(--label-2); }
+@media (prefers-reduced-motion: reduce) { .tour-spot { transition: none; } }
+/* Done steps collapse to one line; the current and pending ones keep their "why" and "show me". */
+.step.ok .step-why, .step.ok .step-show { display: none; }
+.step.ok { padding-block: var(--space-2); }
