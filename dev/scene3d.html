@@ -1,0 +1,22 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Scene3D dev harness</title>
+    <style>
+      body { margin: 0; font: 14px system-ui, sans-serif; }
+      #bar { display: flex; flex-wrap: wrap; gap: 4px; padding: 6px; background: var(--surface-2); }
+      #bar button { min-height: 32px; }
+      #root { padding: 6px; }
+      #log { font: 11px ui-monospace, monospace; padding: 0 6px 6px; white-space: pre-wrap; max-height: 120px; overflow: hidden; }
+    </style>
+  </head>
+  <body>
+    <div id="bar"></div>
+    <div id="root"></div>
+    <div id="st" style="font:12px ui-monospace,monospace;padding:2px 6px"></div>
+    <div id="log"></div>
+    <script type="module" src="./scene3d.ts"></script>
+  </body>
+</html>
