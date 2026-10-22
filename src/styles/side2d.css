@@ -1,0 +1,29 @@
+/* 2D side view. Stage colours (dark plate in both themes). */
+.side2d { display: flex; flex-direction: column; gap: var(--space-2); padding-bottom: var(--space-3); }
+.s2d-scroll { overflow-x: auto; }
+.s2d { display: block; width: 100%; min-width: 720px; height: auto; }
+.s2d-table { fill: var(--stage-metal); opacity: 0.5; }
+.s2d-ground { stroke: var(--stage-metal-hi); stroke-width: 2; }
+.s2d-metal { fill: var(--stage-metal-hi); }
+.s2d-metal-hi { fill: var(--stage-ink-2); }
+.s2d-blue { fill: var(--stage-blue); }
+.s2d-pulley { fill: var(--stage-black); stroke: var(--stage-ink-2); stroke-width: 2; }
+.s2d-leg { stroke: var(--stage-metal-hi); stroke-width: 7; stroke-linecap: round; fill: none; }
+.s2d-leg.thin { stroke-width: 4; }
+.s2d-rail { stroke: var(--stage-ink-2); stroke-width: 12; stroke-linecap: butt; }
+.s2d-tick { stroke: var(--stage-ink-2); stroke-width: 1.5; }
+.s2d-scale, .s2d-label { fill: var(--stage-ink-2); font: 500 12px var(--font); }
+.s2d-mark { stroke: var(--stage-yellow); stroke-width: 3; }
+.s2d-mark-label { fill: var(--stage-yellow); font: 600 12px var(--font); }
+.s2d-level { fill: var(--stage-green); stroke: var(--stage-black); stroke-width: 1; }
+.s2d-bubble { fill: var(--stage-white); }
+.s2d-dash { stroke: var(--stage-ink-2); stroke-width: 1.5; stroke-dasharray: 6 5; }
+.s2d-arc { stroke: var(--stage-violet); stroke-width: 2.5; fill: none; }
+.s2d-theta { fill: var(--stage-violet); font: 600 20px var(--font); }
+.s2d-cart-body { fill: var(--stage-white); stroke: var(--stage-black); stroke-width: 1; }
+.s2d-wheel { fill: var(--stage-black); }
+.s2d-front { stroke: var(--stage-blue); stroke-width: 3; }
+.s2d-cart-label { fill: var(--stage-black); font: 600 11px var(--font); }
+.s2d-bar { display: flex; flex-wrap: wrap; gap: var(--space-2); align-items: center; padding: 0 var(--space-3); }
+.s2d-sw { display: flex; gap: var(--space-2); align-items: center; margin-left: auto; }
+.s2d-bar .btn-quiet { background: var(--stage-metal); color: var(--stage-ink); }

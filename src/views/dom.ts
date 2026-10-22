@@ -1,0 +1,79 @@
+// Tiny DOM helpers shared by the views. No physics, no state.
+import type { Apparatus } from '../apparatus/index.ts'
+
+const SVG_NS = 'http://www.w3.org/2000/svg'
+
+export function el<K extends keyof HTMLElementTagNameMap>(
+  tag: K, cls?: string, text?: string, attrs?: Record<string, string>,
+): HTMLElementTagNameMap[K] {
+  const e = document.createElement(tag)
+  if (cls) e.className = cls
+  if (text !== undefined) e.textContent = text
+  if (attrs) for (const [k, v] of Object.entries(attrs)) e.setAttribute(k, v)
+  return e
+}
+
+export function svg<K extends keyof SVGElementTagNameMap>(
+  tag: K, attrs: Record<string, string | number> = {}, ...kids: (SVGElement | string)[]
+): SVGElementTagNameMap[K] {
+  const e = document.createElementNS(SVG_NS, tag)
+  for (const [k, v] of Object.entries(attrs)) e.setAttribute(k, String(v))
+  for (const k of kids) e.append(typeof k === 'string' ? document.createTextNode(k) : k)
+  return e
+}
+
+/** A <button type=button>. */
+export function button(text: string, cls: string, onClick?: (e: MouseEvent) => void): HTMLButtonElement {
+  const b = el('button', cls, text, { type: 'button' })
+  if (onClick) b.addEventListener('click', onClick)
+  return b
+}
+
+/** Disable a button the accessible way: stays focusable, announces the state, and ignores activation. */
+export function setBlocked(b: HTMLElement, blocked: boolean): void {
+  if (blocked) b.setAttribute('aria-disabled', 'true')
+  else b.removeAttribute('aria-disabled')
+}
+export const isBlocked = (b: HTMLElement): boolean => b.getAttribute('aria-disabled') === 'true'
+
+/** Dirty flag that flips on any apparatus event (also refusals). */
+export function watch(app: Apparatus): { dirty: () => boolean; clear: () => void; touch: () => void; off: () => void } {
+  let d = true
+  const off = app.on(() => { d = true })
+  return { dirty: () => d, clear: () => { d = false }, touch: () => { d = true }, off }
+}
+
+/** Rebuild a container's children but keep keyboard focus on the element with the same `data-k`. */
+export function rebuild(container: HTMLElement, build: () => void): void {
+  const active = document.activeElement
+  const key = active instanceof HTMLElement && container.contains(active) ? active.dataset.k : undefined
+  container.replaceChildren()
+  build()
+  if (key) container.querySelector<HTMLElement>(`[data-k="${CSS.escape(key)}"]`)?.focus({ preventScroll: true })
+}
+
+/** True when the keyboard focus sits in something that takes typed text (the stopwatch keys must not fire there). */
+export function isTextTarget(t: EventTarget | null): boolean {
+  const n = t as { tagName?: string; type?: string; isContentEditable?: boolean } | null
+  if (!n || typeof n.tagName !== 'string') return false
+  if (n.isContentEditable) return true
+  if (n.tagName === 'TEXTAREA' || n.tagName === 'SELECT') return true
+  if (n.tagName === 'INPUT') return !['button', 'checkbox', 'radio', 'range', 'submit', 'reset'].includes(n.type ?? 'text')
+  return false
+}
+
+let uid = 0
+export const nextId = (p: string): string => `${p}-${++uid}`
+
+/** A card: <section> with a heading and a body. `panel` is the key a 3D part card can open. */
+export function card(panel: string, title: string, cls = ''): { root: HTMLElement; head: HTMLElement; title: HTMLElement; body: HTMLElement } {
+  const root = el('section', `card ${cls}`.trim(), undefined, { 'data-panel': panel })
+  const id = nextId('h')
+  const head = el('header', 'card-head')
+  const h = el('h2', 'card-title', title, { id })
+  head.append(h)
+  const body = el('div', 'card-body')
+  root.setAttribute('aria-labelledby', id)
+  root.append(head, body)
+  return { root, head, title: h, body }
+}
