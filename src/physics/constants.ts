@@ -1,6 +1,6 @@
 // Physical constants and site parameters for the lab in Quito. Pure, DOM-free. Unit in the name.
 
-/** Equatorial WGS84 gravity, m/s^2 (Somigliana/international gravity formula coefficient, NIMA TR8350.2). */
+/** Equatorial gravity, m/s^2: coefficient of the 1980 International Gravity Formula series (Moritz 1980, GRS80). */
 export const G_EQUATOR_mps2 = 9.780327
 /** Free-air gradient of gravity, m/s^2 per metre of altitude (standard value, -3.086e-6 s^-2). */
 export const FREE_AIR_GRADIENT_s2 = 3.086e-6
@@ -11,8 +11,9 @@ export const QUITO_LATITUDE_deg = -0.21
 export const QUITO_ALTITUDE_m = 2800
 
 /**
- * Normal gravity at sea level for a geodetic latitude, m/s^2, from the international gravity formula (WGS84 form):
- * g0 = 9.780327 (1 + 0.0053024 sin^2 phi - 0.0000058 sin^2 2phi).
+ * Normal gravity at sea level for a geodetic latitude, m/s^2, from the 1980 International Gravity Formula series
+ * g0 = 9.780327 (1 + 0.0053024 sin^2 phi - 0.0000058 sin^2 2phi). This is the series form, not the WGS84 Somigliana
+ * closed form; the two agree to ~1e-6 m/s^2 at Quito's latitude.
  */
 export function gravitySeaLevel_mps2(latitude_deg: number): number {
   const phi_rad = (latitude_deg * Math.PI) / 180

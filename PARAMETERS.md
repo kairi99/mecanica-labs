@@ -2,8 +2,9 @@
 
 Every empirical parameter of `src/physics`, with value, unit, source and date. **ASSUMED** means: chosen by us from
 typical values and physical reasoning, not measured and not a PHYWE specification (no reliable PHYWE datasheet was
-found or consulted). None was tuned to hit a target; the resulting a ~ 0.206 m/s^2 is a consequence, and it is
-consistent with the ~0.21 m/s^2 expected for the guide's 1.30 deg. Date of all rows: 2026-10-22.
+found or consulted). None was tuned to hit a target; the resulting a ~ 0.206 m/s^2 is only a consequence of these
+assumed values (it lies between the frictionless 0.2115 and zero, so it is not independent evidence for them).
+Date of all rows: 2026-10-22.
 
 ## Site
 
@@ -11,8 +12,8 @@ consistent with the ~0.21 m/s^2 expected for the guide's 1.30 deg. Date of all r
 |---|---|---|---|
 | Latitude (`QUITO_LATITUDE_deg`) | -0.21 | deg | Approximate public coordinates of Quito/EPN. ASSUMED to ~0.01 deg (irrelevant for g at this precision). |
 | Altitude (`QUITO_ALTITUDE_m`) | 2800 | m | Approximate. ASSUMED (+-50 m changes g by 1.5e-4 m/s^2). |
-| g at sea level, equator | 9.780327 | m/s^2 | International gravity formula, WGS84 form (NIMA TR8350.2). |
-| g(latitude) | 9.780327 (1 + 0.0053024 sin^2 phi - 0.0000058 sin^2 2phi) | m/s^2 | Same. |
+| g at sea level, equator | 9.780327 | m/s^2 | 1980 International Gravity Formula series (Moritz 1980); the WGS84 Somigliana closed form gives the same value at Quito to ~1e-6. |
+| g(latitude) | 9.780327 (1 + 0.0053024 sin^2 phi - 0.0000058 sin^2 2phi) | m/s^2 | Same (series form). |
 | Free-air gradient | 3.086e-6 | 1/s^2 | Standard value. |
 | **g in Quito** (`G_QUITO_mps2`) | **9.7717** | m/s^2 | Computed: 9.78033 - 3.086e-6 x 2800. No Bouguer or local anomaly term (local value may differ by a few 1e-3). |
 | Lab temperature (`LAB_TEMPERATURE_K`) | 288.15 | K | ASSUMED (15 C). |
@@ -28,12 +29,13 @@ consistent with the ~0.21 m/s^2 expected for the guide's 1.30 deg. Date of all r
 | Wheel mass `wheelMass_kg` | 0.006 | kg | ASSUMED. Small plastic/metal wheel. |
 | Wheel radius `wheelRadius_m` | 0.011 | m | ASSUMED. Cancels from m_eff when I = f m_w r^2. |
 | Wheel inertia factor | 0.5 | - | ASSUMED solid disc. Gives k = sum(I)/(m r^2) = 0.048, so m_eff = 1.048 m. |
-| Rolling-resistance coefficient `c_rr` | 5e-4 | - | ASSUMED. Hard wheel on aluminium rail with ball bearings; literature range 1e-3 (steel on steel) and lower for good bearings. |
-| Bearing drag `F_bearing_N` | 3e-4 | N | ASSUMED. ~0.5 % of the driving force m g sin(theta) = 0.0556 N. |
+| Rolling-resistance coefficient `c_rr` | 5e-4 | - | ASSUMED, optimistic; plausible range 5e-4 to 5e-3 (hard wheel on aluminium rail; steel on steel is ~1e-3). Rolling resistance only. |
+| Bearing drag `F_bearing_N` | 3e-4 | N | ASSUMED, separate from rolling resistance: friction of the wheel bearings/axles, taken independent of load and speed. An ABSOLUTE force, so a depends on the cart mass through it (heavier cart, smaller relative effect). ~0.5 % of m g sin(theta) = 0.0556 N. |
+| Breakaway (static) force `F_breakaway_N` | 5e-3 | N | ASSUMED. Used only at v = 0: the cart starts only if m g sin(theta) > c_rr m g cos(theta) + F_bearing + F_breakaway. Gives a breakaway angle of 0.153 deg (so 0.1 deg stays put, 1.30 deg rolls). Once moving it does not act. |
 | Drag coefficient `Cd` | 1.0 | - | ASSUMED blunt box. |
 | Frontal area `A_m2` | 1.2e-3 | m^2 | ASSUMED (about 4 cm x 3 cm). |
 
-Derived: ideal a = g sin(theta)/(1+k) = 0.2115 m/s^2; with friction and bearing a = 0.2057 m/s^2 (constant-force
+Derived: breakaway angle 0.153 deg (`breakawayAngle_rad`); ideal a = g sin(theta)/(1+k) = 0.2115 m/s^2; with friction and bearing a = 0.2057 m/s^2 (constant-force
 part). Air drag at v = 0.6 m/s is ~0.3 % of the driving force and lengthens t(0.9 m) by ~1 ms.
 
 ## Run variability (`DEFAULT_VARIABILITY`, separate from the expectation)
@@ -41,7 +43,7 @@ part). Air drag at v = 0.6 m/s is ~0.3 % of the driving force and lengthens t(0.
 | Parameter | Value | Unit | Source |
 |---|---|---|---|
 | Release offset sigma | 1.0 | mm | ASSUMED. Placing the cart front on a mm mark by eye. |
-| Initial velocity sigma | 4 | mm/s | ASSUMED. Finger lift or release jolt. Dominates the time scatter: sigma_t ~ 0.019 s (0.1 m: 0.0195, 0.5 m: 0.0189, 0.9 m: 0.0193 s, 2000 simulated runs each). |
+| Initial velocity sigma | 1 | mm/s | ASSUMED. Finger lift or release jolt, drawn HALF-normal: v0 = sigma |N(0,1)| >= 0 (a lift cannot push the cart uphill), so mean v0 = 0.8 mm/s and times run EARLY on average by E[v0]/a = 3.9 ms (all marks); zeroed when static friction holds the cart. Time scatter per mark (sd of the true crossing time, 4000 runs each, with the 1 mm release offset and 5 % c_rr): 0.1 m 5.8, 0.2 m 4.7, 0.3 m 4.0, 0.4 m 4.0, 0.5 m 3.7, 0.9 m 3.7 ms (earlier draft with 4 mm/s symmetric: ~19 ms). |
 | c_rr run-to-run sigma | 5 | % of c_rr | ASSUMED. Dust or film on the track; its effect on t is below 1 ms. |
 
 ## Instruments (`instruments.ts`)
@@ -53,7 +55,9 @@ part). Air drag at v = 0.6 m/s is ~0.3 % of the driving force and lengthens t(0.
 | Vernier least count | 0.05 mm | ASSUMED typical analog caliper. |
 | Digital caliper resolution | 0.01 mm | ASSUMED typical. |
 
-Type B convention: u = resolution/sqrt(12) (rectangular, half-width = resolution/2), identical to half-division/sqrt(3).
+Type B convention: digital display, u = resolution/sqrt(12). Analog scale: read to the nearest division d, half-width a = d/2, u = a/sqrt(3) = d/sqrt(12) (same number). The commonly taught "maximum error" d/2 is the half-width a, not the standard uncertainty u.
+
+**Stopwatch timing uncertainty.** uA = s/sqrt(n) of the n presses at a mark captures only the scatter of the reaction delays. A mean reaction bias (stop delay minus start delay) is common to all presses and does not average out. `reactionBiasTypeB_s(halfWidth_s = 0.1)` = halfWidth/sqrt(3) = 0.058 s with ASSUMED half-width 0.1 s (a typical range of human visual reaction-time asymmetry between start and stop; not measured). The combined time uncertainty of the mean at a mark is uA (+) resolution/sqrt(12) (+) reaction bias, in quadrature; this is the sigma_t of the effective-variance fit (`fit.ts`). The (t = 0, x = 0) origin has sigma_t = 0 and sigma_x = release-offset sigma (1 mm), or is excluded (`exclude: [0]`).
 
 ## Model times at 1.30 deg (DEFAULT_CART, no run variability)
 

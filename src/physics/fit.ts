@@ -133,24 +133,53 @@ export interface EffectiveVarianceFit {
   iterations: number
 }
 
+export interface EffectiveVarianceOptions {
+  /** Stop when the change of a = 2 c2 between iterations is below this, m/s^2. Default 1e-9. */
+  tol_mps2?: number
+  /** Maximum iterations. Default 10. */
+  maxIterations?: number
+  /** Indices of points to leave out of the fit (e.g. [0] for the (t=0, x=0) origin). */
+  exclude?: readonly number[]
+}
+
 /**
  * Quadratic fit of x vs t when the times are the noisy quantity (the stopwatch). Effective-variance method
  * (Orear 1982; Taylor ch. 8): sigma_eff^2 = sigma_x^2 + (dx/dt)^2 sigma_t^2, with dx/dt = c1 + 2 c2 t from the
- * previous fit; start from the plain sigma_x weights and iterate (default 3 times). Approximate for large sigma_t.
+ * previous fit; start from the plain sigma_x weights and iterate until the change of a is < 1e-9 m/s^2 or after 10
+ * iterations. Approximate for large sigma_t.
+ *
+ * sigma_t[k] is the COMBINED standard uncertainty of the MEAN time at mark k: uA = s/sqrt(n) (scatter) in quadrature
+ * with the Type B terms (resolution, and the reaction bias, see reactionBiasTypeB_s). It is not the single-press s.
+ *
+ * ORIGIN POINT (t = 0, x = 0): the release defines it, it is not a stopwatch reading. Two supported treatments:
+ * (a) keep it, passing sigma_t[0] = 0 and sigma_x[0] = the release-offset sigma (a per-point sigma_x array), so it is
+ * weighted by how well the cart front really sits at 0 cm; (b) drop it with `exclude: [0]`. Do not give it the same
+ * sigma_x as the marks (that over-weights it) nor sigma_x = 0 (singular weight).
  */
 export function quadraticFitEffectiveVariance(
   t: readonly number[], x: readonly number[],
-  sigma_x: number | readonly number[], sigma_t: number | readonly number[], iterations = 3,
+  sigma_x: number | readonly number[], sigma_t: number | readonly number[], opts: EffectiveVarianceOptions = {},
 ): EffectiveVarianceFit {
   const n = t.length
-  const sx: number[] = typeof sigma_x === 'number' ? Array(n).fill(sigma_x) : [...sigma_x]
-  const st: number[] = typeof sigma_t === 'number' ? Array(n).fill(sigma_t) : [...sigma_t]
-  if (sx.length !== n || st.length !== n) throw new Error('quadraticFitEffectiveVariance needs per-point or scalar sigmas')
+  const sxAll: number[] = typeof sigma_x === 'number' ? Array(n).fill(sigma_x) : [...sigma_x]
+  const stAll: number[] = typeof sigma_t === 'number' ? Array(n).fill(sigma_t) : [...sigma_t]
+  if (x.length !== n || sxAll.length !== n || stAll.length !== n) throw new Error('quadraticFitEffectiveVariance needs per-point or scalar sigmas')
+  const drop = new Set(opts.exclude ?? [])
+  const keep = t.map((_, k) => k).filter((k) => !drop.has(k))
+  const tt = keep.map((k) => t[k]!), xx = keep.map((k) => x[k]!)
+  const sx = keep.map((k) => sxAll[k]!), st = keep.map((k) => stAll[k]!)
+  const tol = opts.tol_mps2 ?? 1e-9
+  const maxIt = opts.maxIterations ?? 10
   let sigEff = sx
-  let fit = weightedQuadraticFit(t, x, sigEff)
-  for (let it = 0; it < iterations; it++) {
-    sigEff = t.map((tk, k) => Math.hypot(sx[k]!, (fit.c1 + 2 * fit.c2 * tk) * st[k]!))
-    fit = weightedQuadraticFit(t, x, sigEff)
+  let fit = weightedQuadraticFit(tt, xx, sigEff)
+  let iterations = 0
+  while (iterations < maxIt) {
+    sigEff = tt.map((tk, k) => Math.hypot(sx[k]!, (fit.c1 + 2 * fit.c2 * tk) * st[k]!))
+    const next = weightedQuadraticFit(tt, xx, sigEff)
+    iterations++
+    const da = Math.abs(next.a_mps2 - fit.a_mps2)
+    fit = next
+    if (da < tol) break
   }
   return { fit, sigmaEff_m: sigEff, iterations }
 }

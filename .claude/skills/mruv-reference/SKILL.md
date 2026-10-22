@@ -63,6 +63,8 @@ Columns: t1 ... t10 in seconds. (The 0 cm row is the start, so t = 0.)
 ## Expected physics (our model, not in the guide)
 - Ideal rolling cart: a = g sin(theta)/(1+k), k = sum(I)/(m r^2). At 1.30 degrees g sin(theta) = 0.2217 m/s^2 (g = 9.7717).
 - Model with ASSUMED parameters: a ~ 0.206 m/s^2, t(0.1 m) = 0.99 s, t(0.9 m) = 2.96 s (see PARAMETERS.md).
+- Resistances are ASSUMED: c_rr = 5e-4 (optimistic; plausible 5e-4 to 5e-3, rolling resistance only), bearing drag 3e-4 N (separate, absolute force) and a static breakaway force 5e-3 N (breakaway angle ~0.15 deg). The value of a follows from them; it is not independent evidence for them.
+- Stopwatch: uA = s/sqrt(n) captures only scatter; a mean reaction bias (stop minus start delay, ASSUMED half-width 0.1 s) does not average out.
 - Mean velocity over 0..t is half the final velocity in ideal MRUV from rest.
 
 ## Equipment look (from the reference photos, described in our own words)

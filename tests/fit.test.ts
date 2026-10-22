@@ -91,6 +91,35 @@ describe('effective-variance fit (noisy times)', () => {
     expect(hit / N).toBeLessThan(0.82)
     expect(hit / N).toBeGreaterThan(naiveHit / N) // ignoring sigma_t under-covers
   })
+  it('converges: stops before 10 iterations at tol 1e-9 and honours maxIterations', () => {
+    const ev = quadraticFitEffectiveVariance(ts, ts.map(xTrue), sx, st)
+    expect(ev.iterations).toBeLessThanOrEqual(10)
+    const tNoisy = ts.map((t, k) => t + (k % 2 ? 0.15 : -0.15)) // mismatch so the slope-weighted iteration moves a
+    expect(quadraticFitEffectiveVariance(tNoisy, ts.map(xTrue), sx, st, { maxIterations: 2 }).iterations).toBeLessThanOrEqual(2)
+    expect(quadraticFitEffectiveVariance(tNoisy, ts.map(xTrue), sx, st, { maxIterations: 0 }).iterations).toBe(0)
+  })
+  it('origin point: weighted by the release-offset sigma_x (sigma_t = 0), or dropped with exclude', () => {
+    const rng = mulberry32(8)
+    const sRel = 0.001, sxm = 0.001
+    const sxArr = ts.map((_, k) => (k === 0 ? sRel : sxm))
+    const stArr = ts.map((_, k) => (k === 0 ? 0 : st))
+    let hit = 0, hitEx = 0
+    const N = 400
+    for (let r = 0; r < N; r++) {
+      const tMeas = ts.map((t, k) => (k === 0 ? 0 : t + st * gaussian(rng)))
+      const x = ts.map((t, k) => (k === 0 ? 0 : xTrue(t) - x0_true)) // release at x=0 exactly, no x0 offset
+      const withO = quadraticFitEffectiveVariance(tMeas, x, sxArr, stArr)
+      const without = quadraticFitEffectiveVariance(tMeas, x, sxArr, stArr, { exclude: [0] })
+      expect(withO.sigmaEff_m[0]).toBeCloseTo(sRel, 12) // sigma_t = 0 at the origin: only the release sigma
+      expect(without.sigmaEff_m.length).toBe(ts.length - 1)
+      if (Math.abs(withO.fit.a_mps2 - a_true) < withO.fit.sigma_a_mps2) hit++
+      if (Math.abs(without.fit.a_mps2 - a_true) < without.fit.sigma_a_mps2) hitEx++
+    }
+    expect(hit / N).toBeGreaterThan(0.55)
+    expect(hit / N).toBeLessThan(0.85)
+    expect(hitEx / N).toBeGreaterThan(0.55)
+    expect(hitEx / N).toBeLessThan(0.85)
+  })
   it('sigma_eff grows with the velocity', () => {
     const ev = quadraticFitEffectiveVariance(ts, ts.map(xTrue), sx, st)
     expect(ev.sigmaEff_m[9]!).toBeGreaterThan(ev.sigmaEff_m[1]!)

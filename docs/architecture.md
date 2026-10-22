@@ -92,7 +92,7 @@ draw `vernier` (`mainScaleReading_mm`, `coincidentDivision` of 20, `leastCount_m
 
 ### Runs and records
 
-`releaseCart(t_ms)` draws the run's conditions (release offset, initial velocity, c_rr) with `physics/variability.ts`, stores a
+`releaseCart(t_ms)` draws the run's conditions (release offset, half-normal initial velocity, c_rr; breakaway `F_breakaway_N` holds a cart that static friction would keep at rest) with `physics/variability.ts`, stores a
 `RunRecord` (`conditions`, `theta_rad`, `marks[]` with the **true** crossing time of every mark in seconds from release, `tStop_s`)
 and builds a 1 ms trajectory. Marks behind the start, beyond the stop or never reached have `trueTime_s: null`. The cart stops at
 the receiver end stop (printed position `stopRailPos_mm`). A flat or uphill rail does not move the cart. After a run call

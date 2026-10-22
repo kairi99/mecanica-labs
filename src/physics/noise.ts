@@ -16,11 +16,3 @@ export function gaussian(rng: () => number): number {
   const u2 = rng()
   return Math.sqrt(-2 * Math.log(u1)) * Math.cos(2 * Math.PI * u2)
 }
-
-/**
- * Final step: expected voltage + electrometer offset + Gaussian reading jitter (V). offset_V defaults to 0
- * (Explore mode); sigma_V = 0 returns the expectation plus offset.
- */
-export function withReadingNoise(U_V: number, rng: () => number, sigma_V: number, offset_V = 0): number {
-  return U_V + offset_V + (sigma_V > 0 ? sigma_V * gaussian(rng) : 0)
-}

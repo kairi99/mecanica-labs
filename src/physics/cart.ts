@@ -6,7 +6,7 @@
 //   m_eff = m + sum(I_w) / r^2,  I_w = wheelInertiaFactor * m_w * r^2  (solid disc: 1/2)
 // Standard rigid-body result (e.g. Halliday-Resnick, rolling down an incline). Every empirical parameter is in
 // DEFAULT_CART and PARAMETERS.md. Rolling friction and bearing drag are opposite to v; at rest the cart stays put
-// when the driving force does not exceed them (static friction).
+// unless the driving force exceeds them plus the ASSUMED breakaway force F_breakaway_N (static friction).
 import { G_QUITO_mps2, RHO_AIR_QUITO_kgpm3 } from './constants.ts'
 import { THETA_GUIDE_rad } from './incline.ts'
 import { brent } from './roots.ts'
@@ -25,10 +25,18 @@ export interface CartParams {
   wheelRadius_m: number
   /** Moment of inertia of a wheel as a fraction of m_w r^2 (0.5 = solid disc). */
   wheelInertiaFactor: number
-  /** Rolling-resistance coefficient c_rr (dimensionless), multiplies the normal force. */
+  /** Rolling-resistance coefficient c_rr (dimensionless), multiplies the normal force. ASSUMED, optimistic. */
   c_rr: number
-  /** Velocity-independent bearing drag, N. */
+  /**
+   * Velocity-independent bearing drag, N. An ABSOLUTE force (not a fraction of the weight), so the resulting
+   * acceleration depends on the cart mass through it: a = (m g sin(theta) - c_rr m g cos(theta) - F_bearing)/m_eff.
+   */
   F_bearing_N: number
+  /**
+   * Extra static (breakaway) force, N, that must be exceeded by m g sin(theta) - (kinetic resistances) for a cart AT REST
+   * to start. Used only when v = 0; once moving the kinetic resistances apply alone. ASSUMED (PARAMETERS.md).
+   */
+  F_breakaway_N: number
   /** Air density, kg/m^3. */
   rho_air_kgpm3: number
   /** Drag coefficient of the cart front (dimensionless). */
@@ -51,6 +59,7 @@ export const DEFAULT_CART: CartParams = {
   wheelInertiaFactor: 0.5,
   c_rr: 0.0005,
   F_bearing_N: 0.0003,
+  F_breakaway_N: 0.005,
   rho_air_kgpm3: RHO_AIR_QUITO_kgpm3,
   Cd: 1.0,
   A_m2: 0.0012,
@@ -87,11 +96,21 @@ function resistiveForce_N(p: CartParams): number {
 
 /**
  * Constant acceleration of the force part (no air drag), m/s^2, for a cart moving down-slope:
- * (m g sin(theta) - c_rr m g cos(theta) - F_bearing) / m_eff, or 0 when static friction holds it.
+ * (m g sin(theta) - c_rr m g cos(theta) - F_bearing) / m_eff for a cart released from rest, or 0 when static
+ * friction holds it (m g sin(theta) <= kinetic resistances + F_breakaway). Breakaway is not subtracted once moving.
  */
 export function constantAcceleration_mps2(p: CartParams): number {
   const net = drivingForce_N(p) - resistiveForce_N(p)
-  return net > 0 ? net / effectiveMass_kg(p) : 0
+  return net > p.F_breakaway_N ? net / effectiveMass_kg(p) : 0
+}
+
+/** Smallest incline angle, rad, at which a cart at rest starts: sin(theta) = (c_rr m g cos + F_bearing + F_breakaway)/(m g), solved by fixed point. */
+export function breakawayAngle_rad(p: CartParams): number {
+  let th = 0
+  for (let i = 0; i < 50; i++) {
+    th = Math.asin((p.c_rr * p.m_kg * p.g_mps2 * Math.cos(th) + p.F_bearing_N + p.F_breakaway_N) / (p.m_kg * p.g_mps2))
+  }
+  return th
 }
 
 /** Closed form x(t) = s0 + v0 t + a t^2/2 and v(t) = v0 + a t for constant a (v0 >= 0 down-slope). */
@@ -116,7 +135,7 @@ export function acceleration_mps2(v_mps: number, p: CartParams): number {
   const R = resistiveForce_N(p)
   const meff = effectiveMass_kg(p)
   if (v_mps === 0) {
-    if (Math.abs(drive) <= R) return 0
+    if (Math.abs(drive) <= R + p.F_breakaway_N) return 0 // static: kinetic resistances + breakaway
     return (drive - Math.sign(drive) * R) / meff
   }
   const drag = 0.5 * p.rho_air_kgpm3 * p.Cd * p.A_m2 * v_mps * Math.abs(v_mps)
@@ -172,7 +191,10 @@ export function crossingTime_s(
   const dt = opts.dt_s ?? 0.001
   const tMax = opts.tMax_s ?? 60
   if (p.rho_air_kgpm3 * p.Cd * p.A_m2 === 0 && init.v_mps >= 0) {
-    return closedFormCrossing_s(s_m, constantAcceleration_mps2(p), init)
+    const net = drivingForce_N(p) - resistiveForce_N(p)
+    if (init.v_mps === 0) return closedFormCrossing_s(s_m, constantAcceleration_mps2(p), init) // null if held by static friction
+    if (net >= 0) return closedFormCrossing_s(s_m, net / effectiveMass_kg(p), init)
+    // a moving cart that decelerates (net < 0): fall through to the RK4 loop, which also handles the stop
   }
   let st = init
   let t = 0

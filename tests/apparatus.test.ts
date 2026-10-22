@@ -405,6 +405,13 @@ describe('cart runs', () => {
     expect(a.cartState(10000).phase).toBe('stuck')
     expect(a.cartState(10000).s_m).toBeCloseTo(a.getRun(1)!.conditions.releaseOffset_m, 12) // only the release offset
   })
+  it('breakaway: a 0.1 deg rail (table tilt only) leaves the cart stuck, as static friction holds it', () => {
+    const a = mounted('E1', 0.1)
+    a.placeMarker(300); a.placeCart(200)
+    a.releaseCart(0)
+    expect(a.getRun(1)!.marks[0]!.trueTime_s).toBeNull()
+    expect(a.cartState(20000).phase).toBe('stuck')
+  })
   it('cart pose lies on the rail top surface and moves down-slope', () => {
     const a = createApparatus('assembled')
     const p0 = a.cartPose(0)!
