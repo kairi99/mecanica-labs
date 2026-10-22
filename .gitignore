@@ -1,0 +1,11 @@
+# Copyrighted EPN guide and PHYWE photos: never commit
+refs/
+*.pdf
+
+node_modules/
+dist/
+coverage/
+.claude/settings.local.json
+.DS_Store
+.vscode/
+.idea/
