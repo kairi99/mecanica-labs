@@ -21,7 +21,7 @@ export interface ChecklistStrings {
 
 export const strings: Strings<ChecklistStrings> = {
   es: {
-    title: 'Lista de verificación',
+    title: 'Procedimiento',
     intro: 'Sigue el montaje y el procedimiento de la guía (1.3.2 y 1.3.3). Es una ayuda: no bloquea nada.',
     progress: '{n} de {total} pasos listos',
     allDone: 'Todos los pasos están listos. Ahora ve al análisis (sección 1.4).',
@@ -53,7 +53,7 @@ export const strings: Strings<ChecklistStrings> = {
     },
   },
   en: {
-    title: 'Checklist',
+    title: 'Procedure',
     intro: "Follow the guide's assembly and procedure (1.3.2 and 1.3.3). It is an aid: it blocks nothing.",
     progress: '{n} of {total} steps done',
     allDone: 'Every step is done. Now go to the analysis (section 1.4).',

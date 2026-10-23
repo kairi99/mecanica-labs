@@ -4,7 +4,8 @@ import type { ApparatusSnapshot } from './apparatus/index.ts'
 const STATE_KEY = 'digicart-mruv-state'
 const THEME_KEY = 'digicart-mruv-theme'
 const VIEW_KEY = 'digicart-mruv-view'
-const FOLD_KEY = 'digicart-mruv-fold'
+const STEP_KEY = 'digicart-mruv-step'
+const AUTOMARK_KEY = 'digicart-mruv-automark'
 
 export type Theme = 'auto' | 'light' | 'dark'
 export type StageMode = '3d' | '2d'
@@ -41,7 +42,13 @@ export function loadStageMode(): StageMode | null {
 }
 export function saveStageMode(m: StageMode): void { set(VIEW_KEY, m) }
 
-export function loadFolds(): Record<string, boolean> {
-  try { return JSON.parse(get(FOLD_KEY) ?? '{}') as Record<string, boolean> } catch { return {} }
+/** Active lab step 1..5 (null: never chosen). */
+export function loadStep(): number | null {
+  const n = Number(get(STEP_KEY))
+  return Number.isInteger(n) && n >= 1 && n <= 5 ? n : null
 }
-export function saveFolds(f: Record<string, boolean>): void { set(FOLD_KEY, JSON.stringify(f)) }
+export function saveStep(n: number): void { set(STEP_KEY, String(n)) }
+
+/** "Switch to the Mark view when the cart is released" (default on). */
+export function loadAutoMark(): boolean { return get(AUTOMARK_KEY) !== '0' }
+export function saveAutoMark(on: boolean): void { set(AUTOMARK_KEY, on ? null : '0') }

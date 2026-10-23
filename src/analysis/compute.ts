@@ -2,13 +2,14 @@
 // fits and propagation come from src/physics; this module only arranges them per task. Views read the result.
 //
 // Conventions (documented in the panel and in help):
-//  * Time of a mark: t_bar = mean of the readings; u(t_bar) = sqrt(uA^2 + uRes^2 + uReact^2) with uA = s/sqrt(n) (GUM Type A),
-//    uRes = 0.01 s / sqrt(12) (digital display, Type B) and uReact = reactionBiasTypeB_s() (the unknown mean bias between the
-//    start and stop presses; common to all readings, so it does not average down). Taylor ch. 4; GUM 4.2, 4.3.7.
+//  * Time of a mark: t_bar = mean of the readings; u(t_bar) = sqrt(uA^2 + uRes^2) with uA = s/sqrt(n) (GUM Type A) and
+//    uRes = 0.01 s / sqrt(12) (digital display, Type B). This u is the weight of the fit and of the velocities.
+//    The reaction-time bias uReact = reactionBiasTypeB_s() (unknown mean bias between the start and stop presses) is common
+//    to every reading of every mark: a fully correlated systematic that does not average down. It is NOT a per-point weight.
+//    It is reported as its own column, in the combined uTotal = sqrt(u^2 + uReact^2) shown for t_bar, and as a separate
+//    effect on c1, a and the mean velocity (`reactionEffect`). Taylor ch. 4; GUM 4.2, 4.3.7, F.1.2.4 (correlated inputs).
 //  * Position of a mark: nominal 10 cm steps with sigma_x = sqrt(2) * rail division / sqrt(12) (two scale readings, A and the mark).
 //    The origin (t = 0, x = 0) is kept in the fit (physics/fit.ts option (a)) with sigma_x = release-position sigma, sigma_t = 0.
-//  * The Type B bias is treated as independent per mark for the fit and for the velocities, which is a simplification
-//    (it is common to all marks); the comparison block shows the real effect.
 import {
   DEFAULT_CART, DEFAULT_VARIABILITY, RAIL_DIVISION_m, STOPWATCH_RESOLUTION_s, combinedUncertainty, constantAcceleration_mps2,
   meanVelocity, quadraticFitEffectiveVariance, quadraticPosition_m, quadraticVelocity, reactionBiasTypeB_s, repeatedStats,
@@ -39,8 +40,21 @@ export interface MarkStat {
   uRes_s: number
   /** Type B of the reaction bias. */
   uReact_s: number
-  /** Combined standard uncertainty of the mean. null when there is no reading. */
+  /** Statistical standard uncertainty of the mean, sqrt(uA^2 + uRes^2): the weight in the fit and the velocities. null with no reading. */
   u_s: number | null
+  /** Combined with the (common, systematic) reaction bias: sqrt(u^2 + uReact^2). Shown for t_bar, never used as a fit weight. */
+  uTotal_s: number | null
+}
+
+/** Effect of a constant reaction lag on the results (all mark times shifted by shift_s, origin kept). */
+export interface ReactionEffect {
+  shift_s: number
+  /** Relative change of the fitted a, %. */
+  da_pct: number
+  /** Absolute change of the fitted c1, m/s. */
+  dc1_mps: number
+  /** Relative change of the mean velocity 0..90 cm, % (null when the whole path has no data). */
+  dvWhole_pct: number | null
 }
 
 export interface Velocity {
@@ -79,6 +93,8 @@ export interface AnalysisResult {
   d30: Array<Velocity | null>
   d10: Array<Velocity | null>
   fit: FitData | null
+  /** Systematic of a constant +0.1 s reaction lag (null without a fit). Separate from the fit's uncertainty on purpose. */
+  reaction: ReactionEffect | null
   /** Task 9: v(t_90) from the fit and twice the mean velocity 0..90 cm. */
   vEnd: { fitted_mps: number; sigma_fitted_mps: number; twiceMean_mps: number; sigma_twiceMean_mps: number; t_s: number } | null
 }
@@ -93,10 +109,10 @@ export function markStats(values_s: readonly (readonly (number | null)[])[], rea
   return TABLE_POSITIONS_CM.map((x_cm, row): MarkStat => {
     const xs = (values_s[row] ?? []).filter((v): v is number => v !== null)
     if (row === 0 || xs.length === 0) {
-      return { row, x_cm, x_m: x_cm / 100, readings_s: xs, n: xs.length, mean_s: row === 0 ? 0 : null, sd_s: 0, uA_s: 0, uRes_s: 0, uReact_s: 0, u_s: row === 0 ? 0 : null }
+      return { row, x_cm, x_m: x_cm / 100, readings_s: xs, n: xs.length, mean_s: row === 0 ? 0 : null, sd_s: 0, uA_s: 0, uRes_s: 0, uReact_s: 0, u_s: row === 0 ? 0 : null, uTotal_s: row === 0 ? 0 : null }
     }
-    const s = repeatedStats(xs, combinedUncertainty(b.res, b.react))
-    return { row, x_cm, x_m: x_cm / 100, readings_s: xs, n: s.n, mean_s: s.mean, sd_s: s.sd, uA_s: s.uA, uRes_s: b.res, uReact_s: b.react, u_s: s.u }
+    const s = repeatedStats(xs, b.res)
+    return { row, x_cm, x_m: x_cm / 100, readings_s: xs, n: s.n, mean_s: s.mean, sd_s: s.sd, uA_s: s.uA, uRes_s: b.res, uReact_s: b.react, u_s: s.u, uTotal_s: combinedUncertainty(s.u, b.react) }
   })
 }
 
@@ -129,6 +145,21 @@ export function fitFromPoints(pts: FitPoint[]): FitData {
   }
 }
 
+/** What a constant reaction lag of `shift_s` does to a, c1 and the mean velocity 0..90 cm (refit with every mark time shifted). */
+export function reactionEffect(marks: readonly MarkStat[], base: FitData, whole: Velocity | null, shift_s = 0.1): ReactionEffect | null {
+  const shifted = marks.map((m): MarkStat => (m.row > 0 && m.mean_s !== null ? { ...m, mean_s: m.mean_s + shift_s } : m))
+  const pts = fitPoints(shifted)
+  if (!pts) return null
+  const f = fitFromPoints(pts).fit
+  const w2 = velocityBetween(shifted, 0, 9)
+  return {
+    shift_s,
+    da_pct: ((f.a_mps2 - base.fit.a_mps2) / base.fit.a_mps2) * 100,
+    dc1_mps: f.c1 - base.fit.c1,
+    dvWhole_pct: whole && w2 ? ((w2.v_mps - whole.v_mps) / whole.v_mps) * 100 : null,
+  }
+}
+
 /** The whole analysis from the table values. Safe with empty or partial tables. */
 export function analyse(values_s: readonly (readonly (number | null)[])[], reactionHalfWidth_s = 0.1): AnalysisResult {
   const marks = markStats(values_s, reactionHalfWidth_s)
@@ -137,6 +168,7 @@ export function analyse(values_s: readonly (readonly (number | null)[])[], react
   const d10 = Array.from({ length: 9 }, (_, i) => velocityBetween(marks, i, i + 1))
   const pts = fitPoints(marks)
   const fit = pts ? fitFromPoints(pts) : null
+  const reaction = fit ? reactionEffect(marks, fit, whole) : null
   let vEnd: AnalysisResult['vEnd'] = null
   const m9 = marks[9]!
   if (fit && whole && m9.mean_s !== null) {
@@ -148,7 +180,7 @@ export function analyse(values_s: readonly (readonly (number | null)[])[], react
     marksWithData: marks.filter((m) => m.row > 0 && m.n > 0).length,
     marksForFit: marks.filter((m) => m.row > 0 && m.n >= MIN_READINGS_FOR_FIT).length,
     readingsTotal: marks.reduce((a, m) => a + (m.row > 0 ? m.n : 0), 0),
-    whole, d30, d10, fit, vEnd,
+    whole, d30, d10, fit, reaction, vEnd,
   }
 }
 

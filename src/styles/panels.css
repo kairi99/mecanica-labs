@@ -1,17 +1,29 @@
 /* Inventory, adjustments, procedure. */
 .inv-list, .miss-list, .mark-list, .check-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: var(--space-2); }
-.inv-item { background: var(--surface-2); border-radius: var(--radius-s); padding: var(--space-3); display: flex; flex-direction: column; gap: var(--space-2); }
-.inv-item.on { outline: 1px solid var(--separator); }
-.inv-row { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: var(--space-2) var(--space-3); align-items: center; }
-.inv-text { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
-.inv-nameline { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-2); }
-.inv-name { font-weight: 600; }
-.inv-hint { font: var(--text-footnote); color: var(--label-2); }
-.joint-list { display: flex; flex-direction: column; gap: var(--space-2); }
-.joint { background: var(--surface-2); border-radius: var(--radius-s); padding: var(--space-3); display: flex; flex-direction: column; gap: var(--space-2); }
-.joint-head { display: flex; justify-content: space-between; gap: var(--space-2); align-items: center; }
-.joint-actions { display: flex; flex-direction: column; gap: var(--space-2); }
+/* Inventory: compact rows with hairlines, no card per item. */
+.inv-head { display: flex; align-items: center; justify-content: space-between; gap: var(--space-2); flex-wrap: wrap; }
+.inv-summary { font: var(--text-callout); font-weight: 600; }
+.inv-bulk { display: flex; gap: var(--space-1); }
+.inv-item { border-top: var(--stroke-hair) solid var(--separator); padding: 0; display: flex; flex-direction: column; }
+.inv-item:first-child { border-top: 0; }
+.inv-row { display: grid; grid-template-columns: 24px minmax(0, 1fr) auto auto; gap: var(--space-2); align-items: center; min-height: var(--touch); }
+.inv-icon { width: 24px; height: 24px; color: var(--label-2); }
+.inv-item.on .inv-icon { color: var(--label); }
+.inv-text { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-1) var(--space-2); min-width: 0; }
+.inv-name { font: var(--text-callout); font-weight: 600; }
+.inv-hint { font: var(--text-footnote); color: var(--label-2); padding: 0 0 var(--space-2) calc(24px + var(--space-2)); }
+.inv-item .why, .inv-item .seg { margin: 0 0 var(--space-2) calc(24px + var(--space-2)); align-self: flex-start; }
+.inv-info { min-width: var(--touch); font-style: italic; color: var(--label-2); background: transparent; border-radius: var(--radius-full); font-family: serif; }
+.inv-info[aria-expanded='true'] { background: var(--fill); }
+.joint-list { display: flex; flex-direction: column; }
+.joint { border-top: var(--stroke-hair) solid var(--separator); padding: var(--space-2) 0; display: flex; flex-direction: column; gap: var(--space-1); }
+.joint:first-child { border-top: 0; }
+.joint-head { display: flex; align-items: center; gap: var(--space-2); flex-wrap: wrap; }
+.joint-mark { width: 1.2rem; font-weight: 700; text-align: center; color: var(--label-2); }
+.joint.done .joint-mark { color: var(--success); }
+.joint-actions { display: flex; flex-wrap: wrap; gap: var(--space-2); padding-left: calc(1.2rem + var(--space-2)); }
 .joint-opt { display: flex; flex-direction: column; gap: var(--space-1); align-items: flex-start; }
+.joint > .muted, .joint > .why { padding-left: calc(1.2rem + var(--space-2)); }
 .miss-list li { font: var(--text-callout); }
 .miss-list li + li { border-top: var(--stroke-hair) solid var(--separator); padding-top: var(--space-2); }
 
@@ -40,3 +52,11 @@
 .check.ok .check-status { color: var(--success); }
 .help-box summary { cursor: pointer; min-height: var(--touch); display: flex; align-items: center; font-weight: 600; }
 .help-box ol { margin: 0 0 var(--space-2); padding-left: var(--space-5); font: var(--text-callout); }
+
+.mark-sum-row { display: flex; align-items: center; justify-content: space-between; gap: var(--space-2); }
+.mark-summary { font: var(--text-callout); }
+.sheet-dialog { border: 0; border-radius: var(--radius-l); padding: var(--space-4); width: min(34rem, calc(100% - 2 * var(--space-3))); max-height: 86svh; background: var(--surface); color: var(--label); box-shadow: var(--shadow-sheet); }
+.sheet-dialog::backdrop { background: var(--scrim); }
+.sheet-dialog[open] { display: flex; flex-direction: column; gap: var(--space-3); }
+.sheet-dialog-head { display: flex; align-items: center; justify-content: space-between; gap: var(--space-2); }
+.sheet-dialog-title { font: var(--text-headline); }

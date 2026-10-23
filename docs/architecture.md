@@ -119,3 +119,17 @@ Derived from state, no text: `setupComplete`, `canRun`, `scaleOk`, `levelledBefo
 `load()` restores it and the run variability continues identically. `preset('assembled')` builds a careful student's bench through the
 real actions (marks A..+900 mm at 200..1100 mm, cart on A, theta within 0.005 deg of 1.30 deg); `preset('empty')` is a bare bench.
 The seed fixes the hidden values; a different seed gives a different table tilt, so the foot offset of the preset changes.
+
+# Shell layout (`src/main.ts`, `src/styles/layout.css`)
+
+Five lab steps, one panel each: 1 Setup (inventory) · 2 Adjustments and height (adjust, caliper) · 3 Timing and Table 1.1
+(table, timing notes) · 4 DigiCart (tablet) · 5 Analysis. The header holds the step tracker (done checks come from the
+procedure checklist through `ChecklistHooks.onProgress`); the checklist itself is a drawer bar above the panel. The step is
+remembered (`persist.ts`) and `?step=1..5` deep-links to it. `?view=2d|3d` and `?cam=` choose the stage view.
+
+* Desktop (>= 1080 px): sticky stage on the left, the active step panel on the right (scrolls on its own).
+* Tablet (820 to 1079 px): stage and timing bar fill the screen, the panel is a bottom sheet (30 % / 60 %, drag or toggle).
+* Phone (< 820 px): sticky stage (46 svh), step menu in the header, timing bar fixed to the bottom in step 3.
+* The timing bar (`views/timingbar.ts`) is the only stopwatch UI: one LCD, mark target, start/stop, release, copy to the table.
+  Global keys (`views/stopwatchkeys.ts`) never fire on buttons, links, checkboxes, ranges, selects or text fields.
+* Statistics: the reaction-time Type B is a common systematic; it is not a per-point fit weight (see `analysis/compute.ts`).

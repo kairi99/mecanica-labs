@@ -11,6 +11,8 @@ export interface ChecklistHooks {
   teacher: boolean
   onShow: (step: ChecklistStep) => void
   onTour: () => void
+  /** Called after every render with the live steps (the shell draws the step tracker and the "next step" line from them). */
+  onProgress?: (steps: ChecklistStep[], next: ChecklistStep | null) => void
 }
 
 /** Numbers with the language's decimal mark, for the {placeholders} of the detail strings. */
@@ -65,6 +67,7 @@ export function mountChecklist(hooks: ChecklistHooks): MountView {
       steps = buildChecklist(app, { teacher: hooks.teacher })
       const done = steps.filter((s) => s.status === 'ok').length
       const nxt = nextStep(steps)
+      hooks.onProgress?.(steps, nxt)
       progress.textContent = nxt ? fmt(T.progress, { n: done, total: steps.length }) : T.allDone
       for (const s of steps) {
         const r = rows.get(s.id)!

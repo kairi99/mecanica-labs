@@ -32,6 +32,7 @@
 </section>
 
 <section id="uso"><h2>2. Cómo usar el laboratorio</h2>
+<p>El laboratorio va en cinco pasos, que ves en la barra de arriba: 1 Montaje, 2 Ajustes y altura, 3 Cronometraje y Tabla 1.1, 4 DigiCart, 5 Análisis. Los pasos que ya cumpliste llevan una marca. El escenario siempre queda a la vista; en el paso 3 la barra de cronometraje queda justo debajo de él.</p>
 <ol>
 <li><b>Materiales.</b> En el inventario pon sobre la mesa todas las piezas: riel, DigiCart, soporte con cremallera y su base, soporte de dos patas, receptor, tornillos, nivelador, cronómetro, calibrador y marcas.</li>
 <li><b>Montaje.</b> Pon el soporte con cremallera sobre su base. Sujeta un extremo de la riel en su pinza: ese será el extremo alto y el 0 de la escala impresa debe quedar ahí. En el extremo opuesto van el soporte de dos patas y el receptor. Usa los seis tornillos (dos por unión).</li>
@@ -42,7 +43,7 @@
 <li><b>Análisis.</b> El panel de análisis calcula las tareas de la sección 1.4 con tu tabla y se actualiza solo. Las preguntas las respondes tú.</li>
 </ol>
 <p class="note">El DigiCart nunca debe quedar fuera de la riel: rueda con facilidad sobre cualquier superficie y puede caer de la mesa.</p>
-<p>La lista de verificación del laboratorio sigue estos pasos y, con el botón «Muéstramelo», resalta la pieza en el escenario y abre el panel que necesitas. Desde esa lista también puedes repetir el recorrido inicial.</p>
+<p>El «Procedimiento» (la barra desplegable arriba del panel) sigue estos pasos y, con el botón «Muéstramelo», resalta la pieza en el escenario y te lleva al paso y al panel que necesitas. Desde ahí también puedes repetir el recorrido inicial.</p>
 </section>
 
 <section id="calibrador"><h2>3. El calibrador (pie de rey)</h2>
@@ -89,6 +90,8 @@
 <p>Redondea la incertidumbre a una o dos cifras significativas (dos si la primera es 1 o 2) y el valor al mismo lugar decimal. Se escribe 1,02 ± 0,06 s, no 1,0213 ± 0,058 s. Conserva los ceros finales: 0,030 y 0,03 no dicen lo mismo.</p>
 <h3>Ajuste de x(t)</h3>
 <p>Como los tiempos son la magnitud con ruido, el ajuste cuadrático x = c₀ + c₁t + c₂t² pondera cada punto con una incertidumbre efectiva σ<sub>ef</sub>² = σ<sub>x</sub>² + (dx/dt)²·σ<sub>t</sub>² (método de la varianza efectiva). La aceleración es <em>a</em> = 2c₂. Una χ² reducida cercana a 1 indica que las barras de error describen bien la dispersión.</p>
+<h3>El sesgo de reacción es un sistemático</h3>
+<p>Tu retraso al pulsar es parecido en todas las marcas: está totalmente correlacionado. Por eso no se suma, punto por punto, a la incertidumbre del ajuste (que usa solo u<sub>A</sub> y la resolución de la pantalla). Se informa aparte: la tabla de la tarea 1 muestra u<sub>reac</sub> en su propia columna y la u combinada de t̄, y el panel de análisis estima qué hace un retraso constante de +0,1 s: <em>a</em> casi no cambia (≈ −0,3 %), c₁ baja unos −0,02 m/s y la velocidad media 0–90 cm baja ≈ 3 %. Una c₁ lejos de 0 delata ese sesgo.
 </section>
 
 <section id="errores"><h2>6. Fuentes de error en un plano inclinado</h2>
@@ -108,11 +111,12 @@
 <thead><tr><th>Tecla</th><th>Acción</th></tr></thead>
 <tbody>
 <tr><td><kbd>Espacio</kbd></td><td>Iniciar o detener el cronómetro (cuenta el instante de la pulsación)</td></tr>
+<tr><td><kbd>Enter</kbd></td><td>Copiar la lectura detenida a la Tabla 1.1</td></tr>
 <tr><td><kbd>R</kbd></td><td>Reiniciar el cronómetro</td></tr>
 <tr><td><kbd>S</kbd></td><td>Soltar el DigiCart</td></tr>
 <tr><td><kbd>Flechas</kbd> / <kbd>+</kbd> <kbd>−</kbd></td><td>Con el escenario 3D enfocado: girar la vista y acercar o alejar</td></tr>
 <tr><td><kbd>Flechas</kbd>, <kbd>Enter</kbd></td><td>En la Tabla 1.1: moverse entre casillas</td></tr>
-<tr><td><kbd>Tab</kbd></td><td>Recorrer los controles. Todo se puede operar con el teclado</td></tr>
+<tr><td><kbd>Tab</kbd></td><td>Recorrer los controles. Todo se puede operar con el teclado. Los atajos no se activan sobre botones, casillas, listas ni campos de texto: ahí las teclas hacen lo suyo</td></tr>
 <tr><td><kbd>Esc</kbd></td><td>Cerrar el recorrido inicial o una ficha del escenario</td></tr>
 </tbody></table>
 </section>

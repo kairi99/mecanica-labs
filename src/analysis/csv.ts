@@ -16,12 +16,12 @@ export function analysisCSV(r: AnalysisResult, o: CsvOptions): string {
   const blank = (): void => { rows.push([]) }
 
   rows.push([T.csvT1])
-  rows.push([T.colX, T.colN, 't (s)', 'u(t) (s)', T.colSd, T.colUA, T.colURes, T.colUReact])
+  rows.push([T.colX, T.colN, 't (s)', 'u_c(t) (s)', T.colSd, T.colUA, T.colURes, T.colUReact, T.colU])
   for (const m of r.marks) {
     if (m.row === 0) continue
     if (m.mean_s === null || m.u_s === null) { rows.push([String(m.x_cm), '0']); continue }
-    const [t, u] = pair(m.mean_s, m.u_s)
-    rows.push([String(m.x_cm), String(m.n), t, u, numText(m.sd_s, 3, o.lang), numText(m.uA_s, 3, o.lang), numText(m.uRes_s, 4, o.lang), numText(m.uReact_s, 4, o.lang)])
+    const [t, u] = pair(m.mean_s, m.uTotal_s ?? m.u_s)
+    rows.push([String(m.x_cm), String(m.n), t, u, numText(m.sd_s, 3, o.lang), numText(m.uA_s, 3, o.lang), numText(m.uRes_s, 4, o.lang), numText(m.uReact_s, 4, o.lang), numText(m.u_s, 3, o.lang)])
   }
   blank()
   rows.push([T.csvVelocity])

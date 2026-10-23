@@ -6,14 +6,16 @@ import { fmt, store } from './dom.ts'
 import { strings } from './strings/tour.ts'
 
 export const TOUR_KEY = 'digicart-mruv-tour-done'
-export const TOUR_STEP_IDS = ['stage', 'inventory', 'adjust', 'caliper', 'stopwatch', 'table', 'tablet', 'analysis'] as const
+export const TOUR_STEP_IDS = ['steps', 'stage', 'inventory', 'adjust', 'caliper', 'stopwatch', 'table', 'tablet', 'analysis'] as const
 export type TourStepId = (typeof TOUR_STEP_IDS)[number]
+/** A comma list: the first match that is on screen wins (the step tracker on wide screens, the step menu button on phones). */
 export const TOUR_SELECTORS: Record<TourStepId, string> = {
+  steps: '[data-region="steps"], [data-region="steps-menu"]',
   stage: '[data-region="stage"]',
   inventory: '[data-panel="inventory"]',
   adjust: '[data-panel="adjust"]',
   caliper: '[data-panel="caliper"]',
-  stopwatch: '[data-panel="stopwatch"]',
+  stopwatch: '[data-timing-bar]',
   table: '[data-panel="table"]',
   tablet: '[data-panel="tablet"]',
   analysis: '[data-region="analysis"]',
@@ -21,6 +23,11 @@ export const TOUR_SELECTORS: Record<TourStepId, string> = {
 
 /** ?tour=0 never starts it on its own, ?tour=1 starts it on every load, otherwise only on the first visit. */
 export type TourFlag = '0' | '1' | null
+
+/** The shell shows the lab step that holds a tour target (steps live in tabs; only the active one is visible). */
+export interface TourHooks {
+  reveal(id: TourStepId): void
+}
 
 export interface Tour {
   start(): void
@@ -31,7 +38,13 @@ export interface Tour {
 
 const PAD = 6
 
-export function mountTour(ctx: ViewContext): Tour {
+/** The first element matching the step's selector that has a size on screen (hidden tabs and hidden tools have none). */
+function visibleTarget(id: TourStepId): HTMLElement | null {
+  for (const e of document.querySelectorAll<HTMLElement>(TOUR_SELECTORS[id])) if (e.getBoundingClientRect().width > 0) return e
+  return null
+}
+
+export function mountTour(ctx: ViewContext, hooks?: TourHooks): Tour {
   let root: HTMLElement | null = null
   let idx = 0
   let steps: Array<{ id: TourStepId; target: HTMLElement }> = []
@@ -70,6 +83,8 @@ export function mountTour(ctx: ViewContext): Tour {
     backBtn.hidden = idx === 0
     nextBtn.textContent = idx === steps.length - 1 ? T.finish : T.next
     skipBtn.textContent = T.skip
+    hooks?.reveal(step.id)
+    step.target = visibleTarget(step.id) ?? step.target
     step.target.scrollIntoView({ block: 'center', inline: 'nearest', behavior: ctx.reducedMotion() ? 'auto' : 'smooth' })
     place()
     nextBtn.focus({ preventScroll: true })
@@ -105,8 +120,8 @@ export function mountTour(ctx: ViewContext): Tour {
     relabel() { if (root) show(idx) },
     start() {
       if (root) return
-      steps = TOUR_STEP_IDS.map((id) => ({ id, target: document.querySelector<HTMLElement>(TOUR_SELECTORS[id]) }))
-        .filter((s): s is { id: TourStepId; target: HTMLElement } => s.target !== null && s.target.getBoundingClientRect().width > 0)
+      steps = TOUR_STEP_IDS.map((id) => { hooks?.reveal(id); return { id, target: visibleTarget(id) } })
+        .filter((s): s is { id: TourStepId; target: HTMLElement } => s.target !== null)
       if (steps.length === 0) return
       opener = document.activeElement as HTMLElement | null
       root = el('div', 'tour')

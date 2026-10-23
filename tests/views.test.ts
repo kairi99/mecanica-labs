@@ -142,6 +142,42 @@ describe('stopwatch keys use event.timeStamp', () => {
     expect(handleStopwatchKey({ timeStamp: 4, code: 'KeyR', key: 'r', ctrlKey: true }, actions)).toBe(false)
     expect(calls).toEqual([])
   })
+  it('does not hijack buttons, links, summaries, checkboxes, radios, ranges or [role=button] (B5)', () => {
+    const { calls, actions } = mk()
+    const targets: Array<Record<string, unknown>> = [
+      { tagName: 'BUTTON' }, { tagName: 'A' }, { tagName: 'SUMMARY' },
+      { tagName: 'INPUT', type: 'checkbox' }, { tagName: 'INPUT', type: 'radio' }, { tagName: 'INPUT', type: 'range' },
+      { tagName: 'DIV', getAttribute: (k: string) => (k === 'role' ? 'button' : null) },
+    ]
+    for (const t of targets) {
+      for (const [code, key] of [['Space', ' '], ['KeyS', 's'], ['KeyR', 'r'], ['Enter', 'Enter']] as const) {
+        expect(handleStopwatchKey({ timeStamp: 1, code, key, target: t as unknown as EventTarget }, actions), `${String(t.tagName)} ${code}`).toBe(false)
+      }
+    }
+    expect(calls).toEqual([])
+  })
+  it('works on the page body and on the stage canvas, and Enter copies to the table', () => {
+    const { calls, actions } = mk()
+    const copies: number[] = []
+    const withCopy = { ...actions, copy: (t: number) => copies.push(t) }
+    for (const tagName of ['BODY', 'CANVAS', 'DIV']) {
+      expect(handleStopwatchKey({ timeStamp: 5, code: 'Space', key: ' ', target: { tagName } as unknown as EventTarget }, withCopy)).toBe(true)
+    }
+    expect(handleStopwatchKey({ timeStamp: 9, code: 'Enter', key: 'Enter', target: { tagName: 'BODY' } as unknown as EventTarget }, withCopy)).toBe(true)
+    expect(copies).toEqual([9])
+    expect(calls).toEqual(['startStop@5', 'startStop@5', 'startStop@5'])
+    expect(handleStopwatchKey({ timeStamp: 9, code: 'Enter', key: 'Enter' }, actions)).toBe(false) // no copy action: Enter is not ours
+  })
+  it("the timing bar's own buttons keep Space and Enter; S and R still work there, never in its select", () => {
+    const { calls, actions } = mk()
+    const inBar = (tagName: string, extra: Record<string, unknown> = {}) => ({ tagName, closest: (s: string) => (s === '[data-timing-bar]' ? {} : null), ...extra }) as unknown as EventTarget
+    expect(handleStopwatchKey({ timeStamp: 1, code: 'Space', key: ' ', target: inBar('BUTTON') }, actions)).toBe(false)
+    expect(handleStopwatchKey({ timeStamp: 1, code: 'Enter', key: 'Enter', target: inBar('BUTTON') }, actions)).toBe(false)
+    expect(handleStopwatchKey({ timeStamp: 2, code: 'KeyS', key: 's', target: inBar('BUTTON') }, actions)).toBe(true)
+    expect(handleStopwatchKey({ timeStamp: 3, code: 'KeyR', key: 'r', target: inBar('BUTTON') }, actions)).toBe(true)
+    expect(handleStopwatchKey({ timeStamp: 4, code: 'KeyS', key: 's', target: inBar('SELECT') }, actions)).toBe(false)
+    expect(calls).toEqual(['release@2', 'reset'])
+  })
   it('the stop is recorded at that timestamp by the apparatus', () => {
     const a = new Apparatus({ seed: 1 })
     a.preset('assembled')

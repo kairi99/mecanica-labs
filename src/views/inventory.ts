@@ -1,7 +1,7 @@
 // Inventory and assembly panel: what is on the table, how it is joined, what is missing.
 import { SCREWS_PER_JOINT, type ApparatusState, type ItemId, type JointId, type Reason, type RailEnd } from '../apparatus/index.ts'
 import type { MountView, View } from './view.ts'
-import { button, card, el, rebuild, setBlocked, isBlocked, watch } from './dom.ts'
+import { button, card, el, rebuild, setBlocked, isBlocked, svg, watch } from './dom.ts'
 import { reasonText } from './reasons.ts'
 import { strings } from './strings/inventory.ts'
 
@@ -32,41 +32,75 @@ export function jointBlock(s: ApparatusState, joint: JointId, railEnd?: RailEnd)
   return null
 }
 
+/** 24 px line icons, one per item (generic drawings, no brand marks). */
+const ICONS: Record<ItemId, string[]> = {
+  rail: ['M3 15h18', 'M5 15v-3M9 15v-2M13 15v-3M17 15v-2'],
+  cart: ['M4 9h16v7H4z', 'M8 19a1.5 1.5 0 1 0 0-.1M16 19a1.5 1.5 0 1 0 0-.1'],
+  rackStand: ['M8 3v18', 'M8 8h9', 'M5 21h6'],
+  standBase: ['M3 17h18v4H3z', 'M12 17V9'],
+  twoLegStand: ['M12 4L6 20M12 4l6 16', 'M8.5 14h7'],
+  screws: ['M12 3v13', 'M9 6h6M9 9h6M9 12h6', 'M10 16l2 5 2-5'],
+  level: ['M3 9h18v6H3z', 'M10 12h4'],
+  receiver: ['M4 7h8v11H4z', 'M17 14a3.5 3.5 0 1 0 0-.1'],
+  stopwatch: ['M12 21a7 7 0 1 0 0-.1', 'M12 14v-4M10 3h4'],
+  caliper: ['M3 8h18', 'M3 8v11M7 8v7', 'M12 8v4h3'],
+  markers: ['M12 20a8 8 0 1 0 0-.1', 'M12 14a2 2 0 1 0 0-.1'],
+}
+function itemIcon(id: ItemId): SVGElement {
+  const g = svg('svg', { viewBox: '0 0 24 24', 'aria-hidden': 'true', class: 'icon inv-icon' })
+  for (const d of ICONS[id]) g.append(svg('path', { d }))
+  return g
+}
+
+/** Items that are "fixed" (joined to the rail or the base) rather than just on the table. */
+function isFixed(id: ItemId, s: ApparatusState): boolean {
+  if (id === 'standBase') return s.joints.standBase
+  if (id === 'rackStand') return s.joints.rackClamp !== null
+  if (id === 'twoLegStand') return s.joints.twoLegStand
+  if (id === 'receiver') return s.joints.receiver
+  return false
+}
+
 export const mountInventory: MountView = (root, ctx): View => {
   const app = ctx.apparatus
   const S = () => strings[ctx.lang()]
   const w = watch(app)
   const c = card('inventory', S().title, 'card-inventory')
-  const summary = el('p', 'muted')
-  const itemsHead = el('h3', 'sub-title')
+  const headRow = el('div', 'inv-head')
+  const summary = el('p', 'inv-summary')
+  const bulk = el('div', 'inv-bulk')
+  const putAll = button('', 'link-btn', () => { for (const id of ORDER) if (!app.getState().items[id]) app.addItem(id); ctx.changed() })
+  const removeAll = button('', 'link-btn', () => { for (const id of [...ORDER].reverse()) if (app.getState().items[id]) app.removeItem(id); ctx.changed() })
+  bulk.append(putAll, removeAll)
+  headRow.append(summary, bulk)
   const list = el('ul', 'inv-list')
   const jointsHead = el('h3', 'sub-title')
   const jointsIntro = el('p', 'muted')
   const joints = el('div', 'joint-list')
   const missHead = el('h3', 'sub-title')
   const missing = el('div', 'missing')
-  c.body.append(summary, itemsHead, list, jointsHead, jointsIntro, joints, missHead, missing)
+  c.body.append(headRow, list, jointsHead, jointsIntro, joints, missHead, missing)
   root.append(c.root)
-
+  const openInfo = new Set<ItemId>()
   const fill = (tpl: string, vars: Record<string, string | number>): string =>
     tpl.replace(/\{(\w+)\}/g, (_m, k: string) => String(vars[k] ?? ''))
-
   function act(r: { ok: boolean }): void { ctx.changed(); void r }
-
-  function itemRow(id: ItemId, s: ApparatusState): HTMLElement {
+  function itemRow(id: ItemId, s: ApparatusState, suggested: boolean): HTMLElement {
     const T = S()
     const on = s.items[id]
     const li = el('li', `inv-item${on ? ' on' : ''}`)
-    const text = el('div', 'inv-text')
+    const row = el('div', 'inv-row')
     const name = el('span', 'inv-name', T.items[id].name)
-    const hint = el('span', 'inv-hint', T.items[id].hint)
-    const nameLine = el('span', 'inv-nameline')
-    nameLine.append(name)
-    text.append(nameLine, hint)
-    if (id === 'screws' && on) text.append(el('span', 'inv-hint', fill(T.screws, { n: s.screwsAvailable })))
-    const tag = el('span', `chip${on ? ' chip-on' : ''}`, on ? T.onTable : T.inBox)
+    const fixed = on && isFixed(id, s)
+    const tag = el('span', `chip${on ? ' chip-on' : ''}`, fixed ? T.attached : on ? T.onTable : T.inBox)
+    const text = el('div', 'inv-text')
+    text.append(name, tag)
+    const info = button('i', 'info-btn inv-info')
+    info.dataset.k = `info-${id}`
+    info.setAttribute('aria-label', fill(T.info, { x: T.items[id].name }))
+    info.setAttribute('aria-expanded', String(openInfo.has(id)))
     const lock = id === 'screws' && on && s.screwsUsed > 0
-    const b = button(on ? T.remove : T.add, `btn ${on ? 'btn-quiet' : 'btn-primary'}`, () => {
+    const b = button(on ? T.remove : T.add, `link-btn${suggested ? ' link-accent' : ''}`, () => {
       if (isBlocked(b)) return
       act(on ? app.removeItem(id) : app.addItem(id))
     })
@@ -74,10 +108,17 @@ export const mountInventory: MountView = (root, ctx): View => {
     b.setAttribute('aria-label', fill(on ? T.removeAria : T.addAria, { x: T.items[id].name }))
     setBlocked(b, lock)
     if (lock) b.addEventListener('click', () => app.removeItem(id)) // refusal feeds the shell's message line
-    nameLine.append(tag)
-    const row = el('div', 'inv-row')
-    row.append(text, b)
+    row.append(itemIcon(id), text, info, b)
     li.append(row)
+    const hint = el('p', 'inv-hint', T.items[id].hint)
+    hint.hidden = !openInfo.has(id)
+    info.addEventListener('click', () => {
+      if (openInfo.has(id)) openInfo.delete(id); else openInfo.add(id)
+      hint.hidden = !openInfo.has(id)
+      info.setAttribute('aria-expanded', String(openInfo.has(id)))
+    })
+    li.append(hint)
+    if (id === 'screws' && on) li.append(el('p', 'inv-hint', fill(T.screws, { n: s.screwsAvailable })))
     if (lock) li.append(el('p', 'why', T.screwsInUse))
     if (id === 'caliper' && on) {
       const seg = el('div', 'seg', undefined, { role: 'group', 'aria-label': T.caliperVariant })
@@ -91,14 +132,13 @@ export const mountInventory: MountView = (root, ctx): View => {
     }
     return li
   }
-
-  function jointRow(joint: JointId, s: ApparatusState): HTMLElement {
+  function jointRow(joint: JointId, s: ApparatusState, suggested: boolean): HTMLElement {
     const T = S()
     const j = T.joints[joint]
     const done = joint === 'rackClamp' ? s.joints.rackClamp !== null : s.joints[joint]
     const row = el('div', `joint${done ? ' done' : ''}`)
     const head = el('div', 'joint-head')
-    head.append(el('span', 'inv-name', j.name), el('span', `chip${done ? ' chip-on' : ''}`, done ? j.done : j.todo))
+    head.append(el('span', 'joint-mark', done ? '✓' : '○', { 'aria-hidden': 'true' }), el('span', 'inv-name', j.name), el('span', `chip${done ? ' chip-on' : ''}`, done ? j.done : j.todo))
     row.append(head)
     if (joint === 'rackClamp' && s.joints.rackClamp) {
       row.append(el('p', 'muted', fill(T.highEndIs, { x: `${s.joints.rackClamp} (${s.joints.rackClamp === 'E1' ? '0' : '1200'} mm)` })))
@@ -107,13 +147,13 @@ export const mountInventory: MountView = (root, ctx): View => {
     const why = el('p', 'why')
     if (done) {
       const label = joint === 'standBase' ? T.undoStandBase : joint === 'rackClamp' ? T.undoClamp : joint === 'twoLegStand' ? T.undoTwoLeg : T.undoReceiver
-      const b = button(label, 'btn btn-quiet', () => act(app.detach(joint)))
+      const b = button(label, 'link-btn', () => act(app.detach(joint)))
       b.dataset.k = `j-${joint}-undo`
       actions.append(b)
     } else if (joint === 'rackClamp') {
       const blk = jointBlock(s, joint)
       for (const end of ['E1', 'E2'] as const) {
-        const b = button(end === 'E1' ? T.attachE1 : T.attachE2, 'btn btn-primary', () => { if (!isBlocked(b)) act(app.attach(joint, { railEnd: end })) })
+        const b = button(end === 'E1' ? T.attachE1 : T.attachE2, `btn btn-sm${suggested && end === 'E1' ? ' btn-primary' : ''}`, () => { if (isBlocked(b)) return; act(app.attach(joint, { railEnd: end })) })
         b.dataset.k = `j-${joint}-${end}`
         setBlocked(b, blk !== null)
         b.title = end === 'E1' ? T.hintE1 : T.hintE2
@@ -125,7 +165,7 @@ export const mountInventory: MountView = (root, ctx): View => {
     } else {
       const blk = jointBlock(s, joint)
       const label = joint === 'standBase' ? T.doStandBase : joint === 'twoLegStand' ? T.attachTwoLeg : T.attachReceiver
-      const b = button(label, 'btn btn-primary', () => { if (!isBlocked(b)) act(app.attach(joint)) })
+      const b = button(label, `btn btn-sm${suggested ? ' btn-primary' : ''}`, () => { if (isBlocked(b)) return; act(app.attach(joint)) })
       b.dataset.k = `j-${joint}`
       setBlocked(b, blk !== null)
       actions.append(b)
@@ -135,18 +175,24 @@ export const mountInventory: MountView = (root, ctx): View => {
     if (why.textContent) row.append(why)
     return row
   }
-
   function render(): void {
     const T = S()
     c.title.textContent = T.title
     const s = app.getState()
-    summary.textContent = fill(T.summary, { n: ORDER.filter((i) => s.items[i]).length })
-    itemsHead.textContent = T.itemsTitle
+    const nOn = ORDER.filter((i) => s.items[i]).length
+    summary.textContent = fill(T.summary, { n: nOn })
+    putAll.textContent = T.putAll
+    removeAll.textContent = T.removeAll
+    putAll.hidden = nOn === ORDER.length
+    removeAll.hidden = nOn === 0
     jointsHead.textContent = T.jointsTitle
     jointsIntro.textContent = T.jointsIntro
     missHead.textContent = T.missingTitle
-    rebuild(list, () => { for (const id of ORDER) list.append(itemRow(id, s)) })
-    rebuild(joints, () => { for (const j of ['standBase', 'rackClamp', 'twoLegStand', 'receiver'] as const) joints.append(jointRow(j, s)) })
+    const nextItem = ORDER.find((i) => !s.items[i])
+    rebuild(list, () => { for (const id of ORDER) list.append(itemRow(id, s, id === nextItem)) })
+    const order = ['standBase', 'rackClamp', 'twoLegStand', 'receiver'] as const
+    const nextJoint = nextItem === undefined ? order.find((j) => jointBlock(s, j) === null) : undefined
+    rebuild(joints, () => { for (const j of order) joints.append(jointRow(j, s, j === nextJoint)) })
     rebuild(missing, () => {
       const m = app.missing()
       if (m.length === 0) { missing.append(el('p', 'ok-note', T.missingNone)); return }
@@ -161,7 +207,6 @@ export const mountInventory: MountView = (root, ctx): View => {
       missing.append(ul)
     })
   }
-
   return {
     update() { if (w.dirty()) { w.clear(); render() } },
     relabel() { w.touch() },

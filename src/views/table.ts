@@ -1,10 +1,12 @@
 // Table 1.1 panel: 10 positions x 10 timings. Cells are inputs; values go through Apparatus.tableSet.
 import { TABLE_COLS, TABLE_POSITIONS_cm, TABLE_ROWS } from '../apparatus/index.ts'
 import type { MountView, View } from './view.ts'
-import { button, card, el, nextId, watch } from './dom.ts'
+import { button, card, el, watch } from './dom.ts'
 import { toCSV } from './csv.ts'
-import { formatCell, formatNum } from './numfmt.ts'
+import { formatCell } from './numfmt.ts'
 import { reasonText } from './reasons.ts'
+import { copyReading } from './copyReading.ts'
+import { onPress } from './press.ts'
 import { getMarkRow, onMarkRow, setMarkRow } from './uistate.ts'
 import { strings } from './strings/table.ts'
 
@@ -17,14 +19,9 @@ export const mountTable: MountView = (root, ctx): View => {
   root.append(c.root)
 
   const tools = el('div', 'table-tools')
-  const selId = nextId('tr')
-  const selLabel = el('label', 'field-label', undefined, { for: selId })
-  const sel = el('select', 'select', undefined, { id: selId })
-  for (let r = 1; r < TABLE_ROWS; r++) sel.append(el('option', undefined, undefined, { value: String(r) }))
-  sel.addEventListener('change', () => setMarkRow(Number(sel.value)))
   const copyBtn = button('', 'btn btn-primary')
   const copyHint = el('p', 'muted')
-  tools.append(selLabel, sel, copyBtn)
+  tools.append(copyBtn)
   const msg = el('p', 'readout-text msg', undefined, { 'aria-live': 'polite' })
   const filled = el('p', 'muted')
 
@@ -39,8 +36,10 @@ export const mountTable: MountView = (root, ctx): View => {
   thead.append(hr)
   const tbody = el('tbody')
   const inputs: HTMLInputElement[][] = []
+  const rowEls: HTMLElement[] = []
   for (let r = 0; r < TABLE_ROWS; r++) {
-    const tr = el('tr')
+    const tr = el('tr', undefined, undefined, { 'data-row': String(r) })
+    rowEls[r] = tr
     tr.append(el('th', 'row-head', String(TABLE_POSITIONS_cm[r]), { scope: 'row' }))
     inputs[r] = []
     for (let j = 0; j < TABLE_COLS; j++) {
@@ -48,7 +47,7 @@ export const mountTable: MountView = (root, ctx): View => {
       const inp = el('input', 'cell', undefined, { type: 'text', inputmode: 'decimal', autocomplete: 'off', spellcheck: 'false', 'data-r': String(r), 'data-c': String(j) })
       inp.addEventListener('input', () => { inp.dataset.dirty = '1'; inp.removeAttribute('aria-invalid') })
       inp.addEventListener('change', () => commit(r, j))
-      inp.addEventListener('focus', () => { lastFocus = [r, j]; clearBtn.disabled = false })
+      inp.addEventListener('focus', () => { lastFocus = [r, j]; clearBtn.disabled = false; if (r > 0) setMarkRow(r) })
       inp.addEventListener('keydown', (e) => onKey(e, r, j))
       td.append(inp)
       tr.append(td)
@@ -119,15 +118,10 @@ export const mountTable: MountView = (root, ctx): View => {
     else if (e.key === 'Escape') { inp.dataset.dirty = ''; inp.removeAttribute('aria-invalid'); msg.textContent = ''; w.touch() }
   }
 
-  copyBtn.addEventListener('click', () => {
-    const r = getMarkRow()
-    const vals = app.tableData().values_s[r]!
-    const j = vals.findIndex((v) => v === null)
-    if (j < 0) { msg.textContent = S().rowFull; return }
-    const res = app.tableCopyDisplay(r, j, ctx.now())
-    if (!res.ok) { msg.textContent = reasonText(L(), res.reason); ctx.changed(); return }
-    msg.textContent = S().copied.replace('{t}', formatNum(res.value_s, 2, L())).replace('{c}', String(j + 1)).replace('{x}', String(TABLE_POSITIONS_cm[r]))
-    ctx.changed()
+  onPress(copyBtn, (t) => {
+    const res = copyReading(ctx, t)
+    msg.textContent = res.message
+    if (res.ok) w.touch()
   })
 
   function download(): void {
@@ -141,16 +135,18 @@ export const mountTable: MountView = (root, ctx): View => {
     setTimeout(() => URL.revokeObjectURL(url), 1000)
   }
 
-  const offMark = onMarkRow(() => { sel.value = String(getMarkRow()) })
+  const markRows = (): void => {
+    const cur = getMarkRow()
+    rowEls.forEach((tr, r) => { tr.classList.toggle('current', r === cur); if (r === cur) tr.setAttribute('aria-current', 'true'); else tr.removeAttribute('aria-current') })
+  }
+  const offMark = onMarkRow(markRows)
 
   function labels(): void {
     const T = S()
     c.title.textContent = T.title
     caption.textContent = T.caption
     corner.textContent = T.corner
-    selLabel.textContent = T.rowSelect
-    ;[...sel.options].forEach((o, i) => { o.textContent = T.rowOption.replace('{n}', String(TABLE_POSITIONS_cm[i + 1])) })
-    sel.value = String(getMarkRow())
+    markRows()
     copyBtn.textContent = T.copy
     copyHint.textContent = T.copyHint
     clearBtn.textContent = T.clearCell
@@ -179,7 +175,7 @@ export const mountTable: MountView = (root, ctx): View => {
       if (fromWatch) inp.title = T.copiedMark; else inp.removeAttribute('title')
     }
     filled.textContent = T.filled.replace('{n}', String(n))
-    sel.value = String(getMarkRow())
+    markRows()
   }
 
   labels()

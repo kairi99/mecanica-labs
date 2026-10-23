@@ -1,9 +1,8 @@
-/* 2D side view. Stage colours (dark plate in both themes). */
-.side2d { display: flex; flex-direction: column; gap: var(--space-2); padding-bottom: var(--space-3); }
-.s2d-scroll { overflow-x: auto; }
-.s2d { display: block; width: 100%; min-width: 720px; height: auto; }
+/* 2D side view. Stage colours (dark plate in both themes). Fits the width of the stage; --k = viewbox units per CSS px. */
+.side2d { display: flex; flex-direction: column; gap: var(--space-2); padding: var(--space-2) 0 var(--space-3); --k: 1; }
+.s2d { display: block; width: 100%; height: auto; --k: 1; }
 .s2d-table { fill: var(--stage-metal); opacity: 0.5; }
-.s2d-ground { stroke: var(--stage-metal-hi); stroke-width: 2; }
+.s2d-ground { stroke: var(--stage-metal-hi); stroke-width: calc(2px * var(--k)); }
 .s2d-metal { fill: var(--stage-metal-hi); }
 .s2d-metal-hi { fill: var(--stage-ink-2); }
 .s2d-blue { fill: var(--stage-blue); }
@@ -11,19 +10,23 @@
 .s2d-leg { stroke: var(--stage-metal-hi); stroke-width: 7; stroke-linecap: round; fill: none; }
 .s2d-leg.thin { stroke-width: 4; }
 .s2d-rail { stroke: var(--stage-ink-2); stroke-width: 12; stroke-linecap: butt; }
-.s2d-tick { stroke: var(--stage-ink-2); stroke-width: 1.5; }
-.s2d-scale, .s2d-label { fill: var(--stage-ink-2); font: 500 12px var(--font); }
-.s2d-mark { stroke: var(--stage-yellow); stroke-width: 3; }
-.s2d-mark-label { fill: var(--stage-yellow); font: 600 12px var(--font); }
+.s2d-tick { stroke: var(--stage-ink-2); stroke-width: 1.5px; vector-effect: non-scaling-stroke; }
+.s2d-scale, .s2d-label {
+  fill: var(--stage-ink); font: 500 calc(11px * var(--k)) var(--font);
+  paint-order: stroke; stroke: var(--stage-plate); stroke-width: calc(3px * var(--k)); stroke-linejoin: round;
+}
+.s2d-mark { stroke: var(--stage-yellow); stroke-width: 2px; vector-effect: non-scaling-stroke; }
+.s2d-tape { fill: var(--stage-yellow); stroke: none; }
+.s2d-tape-label { fill: var(--stage-black); font: 700 calc(11px * var(--k)) var(--font); }
 .s2d-level { fill: var(--stage-green); stroke: var(--stage-black); stroke-width: 1; }
 .s2d-bubble { fill: var(--stage-white); }
-.s2d-dash { stroke: var(--stage-ink-2); stroke-width: 1.5; stroke-dasharray: 6 5; }
-.s2d-arc { stroke: var(--stage-violet); stroke-width: 2.5; fill: none; }
-.s2d-theta { fill: var(--stage-violet); font: 600 20px var(--font); }
+.s2d-dash { stroke: var(--stage-ink-2); stroke-width: 1.5px; stroke-dasharray: 6 5; vector-effect: non-scaling-stroke; }
+.s2d-arc { stroke: var(--stage-violet); stroke-width: 2.5px; fill: none; vector-effect: non-scaling-stroke; }
+.s2d-theta { fill: var(--stage-violet); font: 600 calc(18px * var(--k)) var(--font); }
 .s2d-cart-body { fill: var(--stage-white); stroke: var(--stage-black); stroke-width: 1; }
 .s2d-wheel { fill: var(--stage-black); }
 .s2d-front { stroke: var(--stage-blue); stroke-width: 3; }
-.s2d-cart-label { fill: var(--stage-black); font: 600 11px var(--font); }
-.s2d-bar { display: flex; flex-wrap: wrap; gap: var(--space-2); align-items: center; padding: 0 var(--space-3); }
-.s2d-sw { display: flex; gap: var(--space-2); align-items: center; margin-left: auto; }
-.s2d-bar .btn-quiet { background: var(--stage-metal); color: var(--stage-ink); }
+.s2d-legend { list-style: none; margin: 0; padding: 0 var(--space-3); display: flex; flex-wrap: wrap; gap: var(--space-1) var(--space-3); font: var(--text-footnote); color: var(--stage-ink-2); }
+.s2d-legend-item { display: inline-flex; align-items: center; gap: var(--space-1); }
+.s2d-swatch { width: 16px; height: 12px; }
+.s2d-leg-sw { fill: var(--stage-metal-hi); }

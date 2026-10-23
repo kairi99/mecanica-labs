@@ -58,21 +58,21 @@ For constant a from rest, v(t) = 2 x / t. Model: v(2.959 s) = 0.6080 m/s against
 
 ## Typical reaction-time effects
 
-The analysis assumes a Type B reaction bias of +-0.1 s (u = 0.0577 s, ASSUMED). Averaging 10 readings reduces the random part but **not** a constant bias between start and stop. Effect on the fit of a constant shift added to every mark time (two identical readings per mark, origin kept):
+The analysis assumes a Type B reaction bias of +-0.1 s (u = 0.0577 s, ASSUMED). It is common to all marks (fully correlated), so it is not part of the per-point fit weights (those use u_A and the display resolution only); the app reports its effect separately and shows it in the combined u of each mean time. Averaging 10 readings reduces the random part but **not** a constant bias between start and stop. Effect on the fit of a constant shift added to every mark time (two identical readings per mark, origin kept):
 
 | Constant shift (s) | fitted a (m/s^2) | change vs 0 | c1 (m/s) | v at t90 from the fit | mean v 0..90 (m/s) |
 |---|---|---|---|---|---|
-| +0.00 | 0.2056 | 0.0000 (0.0 %) | 0.0001 | 0.6083 | 0.3042 |
+| +0.00 | 0.2055 | 0.0000 (0.0 %) | 0.0001 | 0.6083 | 0.3042 |
 | +0.05 | 0.2054 | -0.0001 (-0.1 %) | -0.0099 | 0.6081 | 0.2991 |
-| +0.10 | 0.2050 | -0.0006 (-0.3 %) | -0.0193 | 0.6077 | 0.2942 |
-| +0.20 | 0.2035 | -0.0021 (-1.0 %) | -0.0367 | 0.6061 | 0.2849 |
-| -0.10 | 0.2048 | -0.0007 (-0.4 %) | 0.0220 | 0.6075 | 0.3148 |
+| +0.10 | 0.2050 | -0.0005 (-0.2 %) | -0.0194 | 0.6078 | 0.2942 |
+| +0.20 | 0.2037 | -0.0019 (-0.9 %) | -0.0370 | 0.6063 | 0.2849 |
+| -0.10 | 0.2049 | -0.0006 (-0.3 %) | 0.0219 | 0.6076 | 0.3148 |
 
-A constant late stop (positive shift) lengthens every t, so the mean velocities come out low (+0.10 s: -3.3 % on the 0..90 cm mean velocity). The quadratic fit has a free c1, which absorbs most of the shift: a barely moves (-0.3 % for +0.10 s), but c1 becomes clearly non-zero (about -2 a x shift, softened by the pinned origin), even though the cart starts from rest. So a c1 well away from 0 is the footprint of a systematic time offset, and the offset per mark in the app's comparison block (your readings minus the DigiCart true times) makes it visible. A random reaction (zero-mean) does not bias these results; it only scatters them.
+A constant late stop (positive shift) lengthens every t, so the mean velocities come out low (+0.10 s: -3.3 % on the 0..90 cm mean velocity). The quadratic fit has a free c1, which absorbs most of the shift: a barely moves (-0.2 % for +0.10 s), but c1 becomes clearly non-zero (about -2 a x shift, softened by the pinned origin), even though the cart starts from rest. So a c1 well away from 0 is the footprint of a systematic time offset, and the offset per mark in the app's comparison block (your readings minus the DigiCart true times) makes it visible. A random reaction (zero-mean) does not bias these results; it only scatters them.
 
 ## A simulated careful student
 
-Preset `assembled` (seed 1), 90 simulated readings (start press 0.20 s late, stop press 0.25 s late, 0.05 s reaction scatter): fitted a = 0.2051 +- 0.0135 m/s^2, reduced chi^2 = 0.16 (the Type B reaction term is generous, so chi^2 below 1 is normal), reference a from the DigiCart true times = 0.2055 +- 0.0005, model a = 0.2057 m/s^2.
+Preset `assembled` (seed 1), 90 simulated readings (start press 0.20 s late, stop press 0.25 s late, 0.05 s reaction scatter): fitted a = 0.2052 +- 0.0051 m/s^2, reduced chi^2 = 1.37, reference a from the DigiCart true times = 0.2055 +- 0.0005, model a = 0.2057 m/s^2.
 
 ## URL flags
 

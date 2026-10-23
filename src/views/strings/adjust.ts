@@ -30,6 +30,12 @@ export interface AdjustStrings {
   highEnd: string
   lowEnd: string
   markTitle: string
+  markSummaryNone: string
+  markSummaryOne: string
+  markSummary: string
+  markEdit: string
+  markDone: string
+  markEditAria: string
   markNeed: string
   markPos: string
   markUnit: string
@@ -74,7 +80,7 @@ export const strings: Strings<AdjustStrings> = {
     fine: 'Ajuste fino', coarse: 'Ajuste grueso', up: 'Subir {n} mm', down: 'Bajar {n} mm',
     levelTitle: 'Nivelador',
     levelNeed: 'Pon el nivelador sobre la mesa desde el inventario.',
-    levelOnRail: 'En la riel', levelOnTable: 'En la mesa', levelAway: 'Guardar',
+    levelOnRail: 'En la riel', levelOnTable: 'En la mesa', levelAway: 'Retirar',
     levelGroup: 'Dónde apoyas el nivelador',
     bubbleCentered: 'Burbuja centrada entre las marcas: horizontal.',
     bubbleHigh: 'Burbuja desplazada hacia el extremo alto: el extremo bajo está más bajo.',
@@ -85,6 +91,8 @@ export const strings: Strings<AdjustStrings> = {
     vialAria: 'Tubo del nivelador con la burbuja',
     highEnd: 'extremo alto', lowEnd: 'extremo bajo',
     markTitle: 'Marcas en la riel',
+    markSummaryNone: 'Sin marcas todavía', markSummaryOne: '1 marca puesta', markSummary: '{n} marcas puestas',
+    markEdit: 'Editar', markDone: 'Listo', markEditAria: 'Editar las marcas de la riel',
     markNeed: 'Necesitas la riel y los marcadores sobre la mesa.',
     markPos: 'Posición en la escala de la riel',
     markUnit: 'mm',
@@ -124,7 +132,7 @@ export const strings: Strings<AdjustStrings> = {
     fine: 'Fine adjustment', coarse: 'Coarse adjustment', up: 'Raise {n} mm', down: 'Lower {n} mm',
     levelTitle: 'Level',
     levelNeed: 'Put the level on the table from the inventory.',
-    levelOnRail: 'On the rail', levelOnTable: 'On the table', levelAway: 'Put away',
+    levelOnRail: 'On the rail', levelOnTable: 'On the table', levelAway: 'Remove',
     levelGroup: 'Where you rest the level',
     bubbleCentered: 'Bubble centred between the marks: level.',
     bubbleHigh: 'Bubble shifted toward the high end: the low end sits lower.',
@@ -135,6 +143,8 @@ export const strings: Strings<AdjustStrings> = {
     vialAria: 'Level vial with the bubble',
     highEnd: 'high end', lowEnd: 'low end',
     markTitle: 'Marks on the rail',
+    markSummaryNone: 'No marks yet', markSummaryOne: '1 mark placed', markSummary: '{n} marks placed',
+    markEdit: 'Edit', markDone: 'Done', markEditAria: 'Edit the marks on the rail',
     markNeed: 'You need the rail and the markers on the table.',
     markPos: 'Position on the rail scale',
     markUnit: 'mm',

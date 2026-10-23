@@ -1,19 +1,11 @@
 /* Stopwatch, LCD, caliper, Table 1.1. Instrument colours are device tokens, fixed in both themes. */
-.sw-body { background: var(--device); border-radius: var(--radius-l); padding: var(--space-4); display: flex; flex-direction: column; gap: var(--space-4); max-width: 24rem; margin-inline: auto; width: 100%; box-shadow: var(--shadow-1); }
-.lcd { background: var(--lcd-bg); color: var(--lcd-ink); border-radius: var(--radius-s); padding: var(--space-3) var(--space-4); text-align: right; box-shadow: inset 0 2px 6px var(--key-edge); font-family: var(--font-mono); }
-.lcd-digits { font-size: 44px; line-height: 52px; letter-spacing: 0.04em; font-weight: 600; font-variant-numeric: tabular-nums; display: block; }
+.lcd { background: var(--lcd-bg); color: var(--lcd-ink); border-radius: var(--radius-s); padding: var(--space-2) var(--space-3); text-align: right; box-shadow: inset 0 2px 6px var(--key-edge); font-family: var(--font-mono); }
+.lcd-digits { font-size: 28px; line-height: 32px; letter-spacing: 0.04em; font-weight: 600; font-variant-numeric: tabular-nums; display: block; }
 .lcd.off { opacity: 0.55; }
 .lcd-cal { display: flex; align-items: baseline; justify-content: flex-end; gap: var(--space-2); max-width: 16rem; }
 .lcd-cal .lcd-digits { font-size: 36px; display: inline; }
 .lcd-unit { font: var(--text-callout); }
 .lcd-mini { font-family: var(--font-mono); background: var(--lcd-bg); color: var(--lcd-ink); padding: var(--space-1) var(--space-3); border-radius: var(--radius-s); font-weight: 600; min-height: var(--touch); display: inline-flex; align-items: center; font-variant-numeric: tabular-nums; }
-.sw-buttons { display: grid; grid-template-columns: 1fr 1.6fr; gap: var(--space-3); }
-.sw-btn { min-height: 64px; border: 0; border-radius: var(--radius-m); font: var(--text-headline); cursor: pointer; background: var(--device-hi); color: var(--device-ink); box-shadow: 0 2px 0 var(--key-edge); touch-action: manipulation; user-select: none; }
-.sw-start { background: var(--accent-fill); color: var(--on-accent); }
-.sw-start.running { background: var(--danger); }
-.sw-btn:active { transform: translateY(1px); box-shadow: none; }
-.release-row { display: flex; align-items: center; gap: var(--space-3); }
-.release-row .btn { flex: 1; }
 
 /* caliper */
 .cal-overview { width: 100%; max-width: 22rem; height: auto; }

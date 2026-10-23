@@ -6,8 +6,6 @@ export interface TableStrings {
   corner: string
   cellAria: string
   rowZero: string
-  rowSelect: string
-  rowOption: string
   copy: string
   copyHint: string
   rowFull: string
@@ -32,10 +30,8 @@ export const strings: Strings<TableStrings> = {
     corner: 'x (cm)',
     cellAria: 't{c} hasta x = {x} cm (s)',
     rowZero: 'Inicio: t = 0 s',
-    rowSelect: 'Fila para copiar',
-    rowOption: '{n} cm',
-    copy: 'Copiar lectura del cronómetro',
-    copyHint: 'La lectura detenida va a la primera casilla vacía de la fila.',
+    copy: 'Copiar a la tabla',
+    copyHint: 'La lectura detenida va a la primera casilla vacía de la fila resaltada (la marca elegida en la barra de cronometraje).',
     rowFull: 'Esa fila ya tiene sus 10 tiempos. Borra una casilla para reemplazarla.',
     copied: 'Copiado: {t} s en t{c} a {x} cm.',
     clearCell: 'Borrar casilla',
@@ -56,10 +52,8 @@ export const strings: Strings<TableStrings> = {
     corner: 'x (cm)',
     cellAria: 't{c} up to x = {x} cm (s)',
     rowZero: 'Start: t = 0 s',
-    rowSelect: 'Row to copy into',
-    rowOption: '{n} cm',
-    copy: 'Copy stopwatch reading',
-    copyHint: 'The stopped reading goes to the first empty cell of the row.',
+    copy: 'Copy to the table',
+    copyHint: 'The stopped reading goes to the first empty cell of the highlighted row (the mark chosen in the timing bar).',
     rowFull: 'That row already has its 10 times. Clear a cell to replace it.',
     copied: 'Copied: {t} s into t{c} at {x} cm.',
     clearCell: 'Clear cell',

@@ -103,7 +103,7 @@ export function teacherKey(): string {
     '',
     '## Typical reaction-time effects',
     '',
-    `The analysis assumes a Type B reaction bias of +-0.1 s (u = ${f(reactionBiasTypeB_s(), 4)} s, ASSUMED). Averaging 10 readings reduces the random part but **not** a constant bias between start and stop. Effect on the fit of a constant shift added to every mark time (two identical readings per mark, origin kept):`,
+    `The analysis assumes a Type B reaction bias of +-0.1 s (u = ${f(reactionBiasTypeB_s(), 4)} s, ASSUMED). It is common to all marks (fully correlated), so it is not part of the per-point fit weights (those use u_A and the display resolution only); the app reports its effect separately and shows it in the combined u of each mean time. Averaging 10 readings reduces the random part but **not** a constant bias between start and stop. Effect on the fit of a constant shift added to every mark time (two identical readings per mark, origin kept):`,
     '',
     '| Constant shift (s) | fitted a (m/s^2) | change vs 0 | c1 (m/s) | v at t90 from the fit | mean v 0..90 (m/s) |',
     '|---|---|---|---|---|---|',
@@ -126,7 +126,7 @@ export function teacherKey(): string {
   const cmp = compare(comparisonInput(app))
   const q = r.fit!.fit
   push(
-    `Preset \`assembled\` (seed 1), 90 simulated readings (start press 0.20 s late, stop press 0.25 s late, 0.05 s reaction scatter): fitted a = ${f(q.a_mps2, 4)} +- ${f(q.sigma_a_mps2, 4)} m/s^2, reduced chi^2 = ${f(q.chi2_red ?? NaN, 2)} (the Type B reaction term is generous, so chi^2 below 1 is normal), reference a from the DigiCart true times = ${f(cmp.reference!.a_mps2, 4)} +- ${f(cmp.reference!.sigma_a_mps2, 4)}, model a = ${f(aModel, 4)} m/s^2.`,
+    `Preset \`assembled\` (seed 1), 90 simulated readings (start press 0.20 s late, stop press 0.25 s late, 0.05 s reaction scatter): fitted a = ${f(q.a_mps2, 4)} +- ${f(q.sigma_a_mps2, 4)} m/s^2, reduced chi^2 = ${f(q.chi2_red ?? NaN, 2)}, reference a from the DigiCart true times = ${f(cmp.reference!.a_mps2, 4)} +- ${f(cmp.reference!.sigma_a_mps2, 4)}, model a = ${f(aModel, 4)} m/s^2.`,
     '',
     '## URL flags',
     '',

@@ -38,7 +38,7 @@ export interface CaliperStrings {
 
 export const strings: Strings<CaliperStrings> = {
   es: {
-    title: 'Calibrador (pie de rey)',
+    title: 'Pie de rey',
     needCaliper: 'Pon el calibrador sobre la mesa desde el inventario.',
     target: '¿Qué mides?',
     tClamp: 'Altura de la riel en el soporte alto',
@@ -78,7 +78,7 @@ export const strings: Strings<CaliperStrings> = {
     unit: 'mm',
   },
   en: {
-    title: 'Caliper',
+    title: 'Caliper (pie de rey)',
     needCaliper: 'Put the caliper on the table from the inventory.',
     target: 'What are you measuring?',
     tClamp: 'Rail height at the high stand',

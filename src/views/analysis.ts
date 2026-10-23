@@ -15,6 +15,12 @@ export interface AnalysisOptions {
   teacher: boolean
 }
 
+/** Signed number with a real minus sign and the language's decimal mark. */
+function signed(v: number, dec: number, lang: 'es' | 'en'): string {
+  const t = numText(Math.abs(v), dec, lang)
+  return (v < 0 ? '−' : '+') + t
+}
+
 function table(headers: string[], rows: string[][], cls = 'data-table an-table'): HTMLElement {
   const wrap = el('div', 'table-scroll', undefined, { tabindex: '0' })
   const t = el('table', cls)
@@ -79,8 +85,10 @@ export function mountAnalysis(opts: AnalysisOptions): MountView {
 
     const t78Note = el('p', 'muted'), vtHost = el('div', 'plot'), legend78 = el('p', 'muted an-legend')
     const vOfT = el('p', 'readout-text'), aRes = el('p', 'readout-value'), aNote = el('p', 'muted')
+    const reactBox = el('div', 'note'), reactTitle = el('strong'), reactBody = el('p')
+    reactBox.append(reactTitle, reactBody)
     const body78 = el('div', 'an-body')
-    body78.append(t78Note, vtHost, legend78, vOfT, aRes, aNote)
+    body78.append(t78Note, vtHost, legend78, vOfT, aRes, aNote, reactBox)
     s78.body.append(gate78, body78)
 
     const t9Fit = el('p', 'readout-text'), t9Twice = el('p', 'readout-text'), t9Note = el('p', 'muted')
@@ -148,9 +156,9 @@ export function mountAnalysis(opts: AnalysisOptions): MountView {
       s1.h.textContent = T.t1Title
       t1Host.replaceChildren(table(
         [T.colX, T.colN, T.colMean, T.colSd, T.colUA, T.colURes, T.colUReact, T.colU],
-        r.marks.filter((m) => m.row > 0).map((m) => m.mean_s === null || m.u_s === null
+        r.marks.filter((m) => m.row > 0).map((m) => m.mean_s === null || m.u_s === null || m.uTotal_s === null
           ? [String(m.x_cm), '0', T.noData, '', '', '', '', '']
-          : [String(m.x_cm), String(m.n), pmText(m.mean_s, m.u_s, lang), numText(m.sd_s, 3, lang), numText(m.uA_s, 3, lang), numText(m.uRes_s, 4, lang), numText(m.uReact_s, 4, lang), numText(m.u_s, 3, lang)]),
+          : [String(m.x_cm), String(m.n), pmText(m.mean_s, m.uTotal_s, lang), numText(m.sd_s, 3, lang), numText(m.uA_s, 3, lang), numText(m.uRes_s, 4, lang), numText(m.uReact_s, 4, lang), numText(m.u_s, 3, lang)]),
       ))
       t1Note.textContent = T.t1Note
       t1One.textContent = T.t1OneReading
@@ -211,6 +219,9 @@ export function mountAnalysis(opts: AnalysisOptions): MountView {
         vOfT.textContent = fmt(T.vOfT, { c1: pmText(q.c1, q.sigma_c1, lang), c2: pmText(q.c2, q.sigma_c2, lang) })
         aRes.textContent = fmt(T.aResult, { a: pmText(q.a_mps2, q.sigma_a_mps2, lang) })
         aNote.textContent = T.aNote
+        reactTitle.textContent = T.reactTitle
+        const re = r.reaction
+        reactBody.textContent = re ? fmt(T.reactBody, { s: numText(re.shift_s, 1, lang), a: signed(re.da_pct, 1, lang), c1: signed(re.dc1_mps, 3, lang), v: re.dvWhole_pct === null ? '–' : signed(re.dvWhole_pct, 1, lang) }) : T.reactNone
         // task 9
         if (r.vEnd) {
           t9Fit.textContent = fmt(T.t9Fitted, { v: pmText(r.vEnd.fitted_mps, r.vEnd.sigma_fitted_mps, lang) })
