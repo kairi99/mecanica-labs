@@ -23,7 +23,7 @@ export const strings: Strings<CoachStrings> = {
       startEarly: 'Pulsaste iniciar unos {s} s antes de soltar el carro. La lectura incluye esa espera: inicia justo al soltar.',
       wrongMark: 'Estabas cronometrando la marca de {target} cm, pero tu parada se parece más a la de {other} cm. Revisa qué marca elegiste.',
       implausible: 'El valor {t} s en {x} cm no encaja con tus otras lecturas ni con las marcas vecinas. ¿Lo copiaste bien?',
-      emptyCopy: 'El cronómetro está en cero o sin lectura: no hay nada que copiar. Cronometra una corrida primero.',
+      emptyCopy: 'El cronómetro está en cero o sin lectura: no hay nada que copiar. Cronometra una repetición primero.',
     },
   },
   en: {

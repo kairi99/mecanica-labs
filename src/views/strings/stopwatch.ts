@@ -33,9 +33,9 @@ export const strings: Strings<StopwatchStrings> = {
     phaseUnplaced: 'DigiCart: sin colocar en la riel.',
     phaseAtStart: 'DigiCart: en reposo, listo para soltar.',
     phaseRolling: 'DigiCart: rodando.',
-    phaseStopped: 'DigiCart: detenido. Devuélvelo al inicio para otra corrida.',
+    phaseStopped: 'DigiCart: detenido. Devuélvelo al inicio para otra repetición.',
     phaseStuck: 'DigiCart: detenido sobre la riel.',
-    runs: 'Corridas realizadas: {n}',
+    runs: 'Repeticiones realizadas: {n}',
     steps: 'Suelta el DigiCart (S), inicia el cronómetro cuando pase por el inicio, detenlo en la marca elegida y copia la lectura a la tabla.',
   },
   en: {

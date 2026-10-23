@@ -113,7 +113,7 @@ export const strings: Strings<AdjustStrings> = {
     cartPhaseUnplaced: 'Sin colocar en la riel.',
     cartPhaseAtStart: 'En reposo, listo para soltar.',
     cartPhaseRolling: 'Rodando.',
-    cartPhaseStopped: 'Detenido en el receptor. Devuélvelo al inicio para otra corrida.',
+    cartPhaseStopped: 'Detenido en el receptor. Devuélvelo al inicio para otra repetición.',
     cartPhaseStuck: 'Detenido sobre la riel (no avanza).',
     cartFront: 'La referencia es el frente del carro.',
     cartFrontHint: 'Escala en mm de la riel',

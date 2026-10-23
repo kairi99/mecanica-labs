@@ -56,7 +56,7 @@ export const strings: Strings<ShellStrings> = {
     loading3d: 'Cargando la vista 3D…',
     credits: 'Basado en la guía de laboratorio de la EPN. Proyecto independiente y de código abierto, sin afiliación con la EPN ni con PHYWE.',
     new: 'Empezar de nuevo',
-    newConfirm: 'Se borrará el montaje, las corridas y la tabla. ¿Continuar?',
+    newConfirm: 'Se borrará el montaje, las repeticiones y la tabla. ¿Continuar?',
     newYes: 'Sí, empezar de nuevo', newNo: 'Cancelar',
     more: 'Más opciones',
     stepsNav: 'Pasos del laboratorio',

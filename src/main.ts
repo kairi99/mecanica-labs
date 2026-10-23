@@ -551,7 +551,11 @@ new ResizeObserver(() => document.documentElement.style.setProperty('--tb-h', `$
 
 // ---- go -------------------------------------------------------------------------------------------------------------------
 const coach = mountCoach(ctx)
+// The tour walks through every lab step; afterwards the student goes back to the step they were on (step 1 on a first visit).
+let stepBeforeTour = currentStep
 const tour = mountTour(ctx, {
+  begin() { stepBeforeTour = currentStep },
+  end() { setStep(stepBeforeTour, { scroll: true }) },
   reveal(id) {
     const n = TOUR_STEP[id]
     if (n && n <= STEP_COUNT && n !== currentStep) setStep(n)

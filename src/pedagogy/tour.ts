@@ -27,6 +27,10 @@ export type TourFlag = '0' | '1' | null
 /** The shell shows the lab step that holds a tour target (steps live in tabs; only the active one is visible). */
 export interface TourHooks {
   reveal(id: TourStepId): void
+  /** Called once when the tour starts, before any step is revealed. */
+  begin?(): void
+  /** Called when the tour closes (finished or skipped): the shell returns the student to where they start working. */
+  end?(): void
 }
 
 export interface Tour {
@@ -96,6 +100,7 @@ export function mountTour(ctx: ViewContext, hooks?: TourHooks): Tour {
     root = null
     store.set(TOUR_KEY, '1')
     document.removeEventListener('keydown', onKey, true)
+    hooks?.end?.()
     opener?.focus({ preventScroll: true })
   }
   const next = (): void => { if (idx >= steps.length - 1) close(); else show(idx + 1) }
@@ -120,6 +125,7 @@ export function mountTour(ctx: ViewContext, hooks?: TourHooks): Tour {
     relabel() { if (root) show(idx) },
     start() {
       if (root) return
+      hooks?.begin?.()
       steps = TOUR_STEP_IDS.map((id) => { hooks?.reveal(id); return { id, target: visibleTarget(id) } })
         .filter((s): s is { id: TourStepId; target: HTMLElement } => s.target !== null)
       if (steps.length === 0) return
