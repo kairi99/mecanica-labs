@@ -25,4 +25,19 @@ describe('scene3d strings', () => {
       expect(strings.en.refused[r], r).toBeTruthy()
     }
   })
+  it('naming: DigiCart as the device label, never "carrito"; Retirar not Guardar; Extremo bajo and Pie de rey in the short labels', () => {
+    const flat = (o: unknown): string[] => (typeof o === 'string' ? [o] : typeof o === 'object' && o !== null ? Object.values(o).flatMap(flat) : [])
+    for (const t of flat(strings.es)) {
+      expect(t, t).not.toMatch(/carrito/i)
+      expect(t, t).not.toMatch(/guardar/i)
+      expect(t, t).not.toMatch(/\bel riel\b|\bdel riel\b|\bal riel\b/i) // the EPN guide says "la riel"
+    }
+    expect(strings.es.presets.lowEnd).toBe('Extremo bajo')
+    expect(strings.es.presets.caliper).toBe('Pie de rey')
+    expect(strings.es.tools.caliper).toBe('Pie de rey')
+    expect(strings.es.parts.cart.name).toBe('DigiCart')
+    expect(strings.es.resetCart).toContain('DigiCart')
+    expect(Object.keys(strings.es.presets)).toEqual(['overview', 'highEnd', 'lowEnd', 'lateral', 'mark', 'caliper'])
+    expect('release' in strings.es).toBe(false) // release lives in the shell's timing bar
+  })
 })

@@ -54,15 +54,18 @@ export const STAGING: Record<Exclude<ItemId, 'rail'> | 'caliperRest', Slot> = {
   cart: { x: 24, z: 38, rotY: 0 },
   twoLegStand: { x: 56, z: 38, rotY: 0 },
   receiver: { x: 84, z: 37, rotY: 0 },
-  screws: { x: 103, z: 38, rotY: 0 },
-  level: { x: 120, z: 36, rotY: 0.05 },
-  stopwatch: { x: -3, z: 33, rotY: -0.3 },
   rackStand: { x: 8, z: -34, rotY: 0 },
   standBase: { x: 62, z: -33, rotY: 0 },
-  markers: { x: 92, z: -32, rotY: 0 },
-  caliper: { x: 118, z: -30, rotY: 0.12 },
-  caliperRest: { x: 118, z: -30, rotY: 0.12 },
+  // small props share one tray near the low end of the bench
+  stopwatch: { x: 96, z: -26, rotY: 0.3 },
+  caliper: { x: 112, z: -34, rotY: 0 },
+  caliperRest: { x: 112, z: -34, rotY: 0 },
+  level: { x: 119, z: -19, rotY: -0.03 },
+  markers: { x: 128, z: -30, rotY: 0 },
+  screws: { x: 130, z: -20, rotY: 0 },
 }
+/** The parts tray (a flat plate on the table) that holds the small props. */
+export const TRAY = { x: 112, z: -26, width: 50, depth: 29, height: 0.5 }
 /** Where a level lying on the table sits (tool "table"). */
 export const LEVEL_ON_TABLE: Slot = { x: 60, z: -14, rotY: 0 }
 
@@ -144,6 +147,42 @@ export function caliperRailX_cm(t: Extract<CaliperTarget, { kind: 'railHeight' }
   if (t.at === 'clamp') return SUPPORT_FROM_END_cm + 3.4
   if (t.at === 'twoLeg') return RAIL.length - SUPPORT_FROM_END_cm - 2.6
   return railLocalX_cm(t.at.railPos_mm, geo?.scaleZeroAtHighEnd ?? true)
+}
+
+// ---- Camera framing (pure; the scene only applies the result) ----------------------------------------------------------
+/** Rail-frame point (cm) to scene cm: the rail is a child frame at the high end, tilted about z by `tilt_rad`. */
+export function railLocalToWorld(highEnd_cm: readonly [number, number, number], tilt_rad: number, local: readonly [number, number, number]): [number, number, number] {
+  const c = Math.cos(tilt_rad), s = Math.sin(tilt_rad)
+  return [highEnd_cm[0] + local[0] * c - local[1] * s, highEnd_cm[1] + local[0] * s + local[1] * c, highEnd_cm[2] + local[2]]
+}
+/** Camera preset angles. Lateral and mark look perpendicular to the rail axis (azimuth 0) from a low elevation. */
+export const VIEW_ANGLES = {
+  overview: { azimuth: -15, elevation: 20 },
+  lateral: { azimuth: 0, elevation: 5 },
+  mark: { azimuth: 0, elevation: 6 },
+} as const
+/** Lateral view frames the printed scale from this mm to this mm. */
+export const LATERAL_MM = { from: 150, to: 1150 } as const
+/** The mark view frames this many cm each side of the mark. */
+export const MARK_HALF_cm = 12
+/** Local rail x (cm) of a mark `fromA_cm` below A (marks lie down-slope from A); falls back to the rail middle without A. Clamped to the rail. */
+export function markLocalX_cm(aRailPos_mm: number | null, fromA_cm: number, scaleZeroAtHighEnd: boolean): number {
+  const base = aRailPos_mm === null ? RAIL.length / 2 - fromA_cm : railLocalX_cm(aRailPos_mm, scaleZeroAtHighEnd)
+  return Math.min(RAIL.length, Math.max(0, base + fromA_cm))
+}
+/** Rail-frame points (cm) that a lateral / mark view must keep inside the frame: x range, top of the cart to the underside of the rail. */
+export function railSpanPoints(x0_cm: number, x1_cm: number): [number, number, number][] {
+  const out: [number, number, number][] = []
+  for (const x of [x0_cm, x1_cm]) for (const y of [-RAIL.height, 4.2]) for (const z of [-RAIL.halfW - 0.4, RAIL.halfW + 0.4]) out.push([x, y, z])
+  return out
+}
+/** Points of the assembled bench the overview must keep in frame (cm): stand base and rod top, the rail ends, the receiver, the parts tray. */
+export function overviewPoints(): [number, number, number][] {
+  const pts: [number, number, number][] = [[0, 42, -3.4]]
+  for (const x of [-6.5, 9.5]) for (const z of [-6.5, 4.5]) pts.push([x, 0, z])
+  for (const x of [0, RAIL.length + 8]) for (const y of [0, 12]) for (const z of [-3, 3]) pts.push([x, y, z])
+  for (const x of [TRAY.x - TRAY.width / 2, TRAY.x + TRAY.width / 2]) for (const z of [TRAY.z - TRAY.depth / 2, TRAY.z + TRAY.depth / 2]) pts.push([x, TRAY.height, z])
+  return pts
 }
 
 // ---- Misc ----------------------------------------------------------------------------------------------------------

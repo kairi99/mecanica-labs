@@ -6,9 +6,11 @@ import type { View, ViewContext } from '../view.ts'
 import { strings } from '../strings/scene3d.ts'
 import type { Scene3D, Tool } from './scene.ts'
 import type { CardInfo } from './types.ts'
+import { createMenu } from './menu.ts'
+import { PRESET_NAMES, parsePreset, type PresetName } from './presets.ts'
 
-export type PresetName = 'overview' | 'highEnd' | 'lowEnd' | 'alongRail' | 'caliper'
-const PRESET_ORDER: readonly PresetName[] = ['overview', 'highEnd', 'lowEnd', 'alongRail', 'caliper']
+export type { PresetName }
+const PRESET_ORDER: readonly PresetName[] = PRESET_NAMES
 const TOOL_ORDER: readonly Tool[] = ['select', 'markers', 'level', 'caliper']
 
 export interface Scene3DOptions {
@@ -29,6 +31,8 @@ export type Scene3DView = View & {
   /** Caliper target shown in the scene (null: the caliper rests on the table). */
   setCaliperTarget?(target: CaliperTarget | null): void
   getCaliperTarget?(): CaliperTarget | null
+  /** The 'mark' view frames +-12 cm around this mark (cm from A, perpendicular to the rail) and follows changes. */
+  setMarkTarget(markFromA_cm: number): void
 }
 export type { Tool as Scene3DTool }
 
@@ -45,10 +49,10 @@ export function webgl2Available(): boolean {
 
 export function mountScene3D(root: HTMLElement, ctx: ViewContext, opts: Scene3DOptions = {}): Scene3DView {
   const S = () => strings[ctx.lang()]
-  const camParam = new URLSearchParams(location.search).get('cam') as PresetName | null
+  const camParam = parsePreset(new URLSearchParams(location.search).get('cam')) // 'alongRail' is an alias of 'lateral'
   // a portrait phone shows the 1.2 m bench only as a thin strip: start at the stand end where the cart waits
   const portraitPhone = matchMedia('(max-width: 819px) and (orientation: portrait)').matches
-  const initial: PresetName = opts.preset ?? (camParam && PRESET_ORDER.includes(camParam) ? camParam : portraitPhone ? 'highEnd' : 'overview')
+  const initial: PresetName = parsePreset(opts.preset) ?? camParam ?? (portraitPhone ? 'highEnd' : 'overview')
 
   const wrap = document.createElement('div')
   wrap.className = 'scene3d'
@@ -59,43 +63,36 @@ export function mountScene3D(root: HTMLElement, ctx: ViewContext, opts: Scene3DO
   const status = document.createElement('p')
   status.className = 'scene3d-status'
   status.setAttribute('role', 'status')
-  stage.append(status)
 
-  const presets = document.createElement('div')
-  presets.className = 'scene3d-presets'
-  presets.setAttribute('role', 'group')
-  const presetBtns = PRESET_ORDER.map((p) => {
-    const b = document.createElement('button')
-    b.type = 'button'
-    b.dataset.preset = p
-    b.addEventListener('click', () => choose(p))
-    presets.append(b)
-    return b
-  })
-  const tools = document.createElement('div')
-  tools.className = 'scene3d-tools'
-  tools.setAttribute('role', 'group')
+  // top-left: tools (a menu chip; a chip row on wide screens). Top-right: the view menu.
+  const toolMenu = createMenu('scene3d-toolmenu', (id) => setTool(id as Tool))
+  const toolRow = document.createElement('div')
+  toolRow.className = 'scene3d-toolrow'
+  toolRow.setAttribute('role', 'group')
   const toolBtns = TOOL_ORDER.map((t) => {
     const b = document.createElement('button')
     b.type = 'button'
+    b.className = 'scene3d-chip'
     b.dataset.tool = t
     b.addEventListener('click', () => setTool(t))
-    tools.append(b)
+    toolRow.append(b)
     return b
   })
-  const release = document.createElement('button')
-  release.type = 'button'
-  release.className = 'scene3d-release'
-  release.hidden = true
-  release.addEventListener('click', (e) => {
-    const r = ctx.apparatus.releaseCart(e.timeStamp)
-    if (r.ok) ctx.changed(); else showCard(refusal(r.reason))
-  })
+  const topLeft = document.createElement('div')
+  topLeft.className = 'scene3d-topleft'
+  topLeft.append(toolMenu.root, toolRow)
+  const viewMenu = createMenu('scene3d-viewmenu', (id) => choose(id as PresetName))
+  const topRight = document.createElement('div')
+  topRight.className = 'scene3d-topright'
+  topRight.append(viewMenu.root)
+  const stack = document.createElement('div')
+  stack.className = 'scene3d-stack'
   const card = document.createElement('div')
   card.className = 'scene3d-card'
   card.hidden = true
   card.setAttribute('aria-live', 'polite')
-  stage.append(tools, presets, release, card)
+  stack.append(status, card)
+  stage.append(topLeft, topRight, stack)
   wrap.append(stage)
   root.append(wrap)
 
@@ -106,10 +103,8 @@ export function mountScene3D(root: HTMLElement, ctx: ViewContext, opts: Scene3DO
   let pendingFocus: string[] | null = null
   let pendingTarget: CaliperTarget | null | undefined
   let cardInfo: CardInfo | null = null
+  let pendingMark: number | null = null
 
-  const refusal = (reason: string): CardInfo => ({
-    title: '', text: (S().refused as Record<string, string>)[reason] ?? `${S().refusedGeneric} (${reason}).`, actions: [], panel: null, alert: true,
-  })
   const showCard = (c: CardInfo | null): void => {
     cardInfo = c
     card.hidden = c === null
@@ -150,12 +145,20 @@ export function mountScene3D(root: HTMLElement, ctx: ViewContext, opts: Scene3DO
     card.append(row)
   }
 
-  const syncPresets = (): void => presetBtns.forEach((b, i) => b.setAttribute('aria-pressed', String(PRESET_ORDER[i] === current)))
-  const syncTools = (): void => toolBtns.forEach((b, i) => b.setAttribute('aria-pressed', String(TOOL_ORDER[i] === tool)))
+  const syncPresets = (): void => {
+    viewMenu.setValue(current)
+    viewMenu.button.setAttribute('aria-label', `${S().viewMenu}: ${S().presets[current]}`)
+  }
+  const syncTools = (): void => {
+    toolBtns.forEach((b, i) => b.setAttribute('aria-pressed', String(TOOL_ORDER[i] === tool)))
+    toolMenu.setValue(tool)
+    toolMenu.button.setAttribute('aria-label', `${S().toolMenu}: ${S().tools[tool]}`)
+    toolMenu.button.classList.toggle('scene3d-chip-on', tool !== 'select')
+  }
   function choose(p: PresetName): void {
-    current = p
+    current = parsePreset(p) ?? 'overview'
     syncPresets()
-    scene?.setPreset(p)
+    scene?.setPreset(current)
   }
   function setTool(t: Tool): void {
     tool = t
@@ -168,12 +171,15 @@ export function mountScene3D(root: HTMLElement, ctx: ViewContext, opts: Scene3DO
     const s = S()
     stage.setAttribute('aria-label', s.figure)
     if (!scene && !destroyed) status.textContent = s.loading
-    presets.setAttribute('aria-label', s.presetsLabel)
-    tools.setAttribute('aria-label', s.toolsLabel)
-    presetBtns.forEach((b, i) => { b.textContent = s.presets[PRESET_ORDER[i]!] })
+    viewMenu.root.setAttribute('aria-label', s.presetsLabel)
+    viewMenu.setLabel(s.viewMenu)
+    viewMenu.setItems(PRESET_ORDER.map((p) => ({ id: p, label: s.presets[p] })))
+    toolMenu.setLabel(s.toolMenu)
+    toolMenu.setItems(TOOL_ORDER.map((t) => ({ id: t, label: s.tools[t] })))
+    toolRow.setAttribute('aria-label', s.toolsLabel)
     toolBtns.forEach((b, i) => { b.textContent = s.tools[TOOL_ORDER[i]!] })
-    release.textContent = s.release
-    release.title = s.releaseHint
+    syncPresets()
+    syncTools()
     scene?.relabel()
     showCard(cardInfo)
   }
@@ -193,6 +199,7 @@ export function mountScene3D(root: HTMLElement, ctx: ViewContext, opts: Scene3DO
         openPanel: opts.openPanel,
       })
       status.textContent = ''
+      if (pendingMark !== null) scene.setMarkTarget(pendingMark)
       if (pendingFocus) scene.focus(pendingFocus)
       if (pendingTarget !== undefined) scene.setCaliperTarget(pendingTarget)
       if (current !== initial) scene.setPreset(current)
@@ -206,21 +213,19 @@ export function mountScene3D(root: HTMLElement, ctx: ViewContext, opts: Scene3DO
 
   return {
     update() {
-      // the release handle: shown while the cart waits at its start on a complete track
-      const a = ctx.apparatus
-      const show = scene !== null && a.canRun().ok && a.cartState(ctx.now()).phase === 'atStart'
-      if (release.hidden === show) release.hidden = !show
       scene?.update()
     },
     relabel,
     focus(list) { pendingFocus = list; scene?.focus(list) },
     setVisible(v) { wrap.hidden = !v; scene?.setVisible(v) },
     setPreset: choose,
+    setMarkTarget(m) { pendingMark = m; scene?.setMarkTarget(m) },
     setTool,
     setCaliperTarget(t) { pendingTarget = t; scene?.setCaliperTarget(t) },
     getCaliperTarget: () => scene?.getCaliperTarget() ?? (pendingTarget ?? null),
     destroy() {
       destroyed = true
+      toolMenu.destroy(); viewMenu.destroy()
       scene?.destroy()
       scene = null
       wrap.remove()

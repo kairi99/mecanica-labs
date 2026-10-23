@@ -12,6 +12,10 @@ export interface Materials {
   rubber: THREE.MeshStandardMaterial
   red: THREE.MeshStandardMaterial
   tape: THREE.MeshStandardMaterial
+  tapeRoll: THREE.MeshStandardMaterial
+  slate: THREE.MeshStandardMaterial
+  skirt: THREE.MeshStandardMaterial
+  tray: THREE.MeshStandardMaterial
   levelBody: THREE.MeshStandardMaterial
   glass: THREE.MeshStandardMaterial
   bubble: THREE.MeshStandardMaterial
@@ -44,6 +48,10 @@ export function createMaterials(probe: HTMLElement): Materials {
     rubber: std(0x131316, 0, 0.85),
     red: std(0xd23b30, 0.05, 0.5),
     tape: std(0xf2b01e, 0, 0.7),
+    tapeRoll: std(0xcdb878, 0, 0.8),
+    slate: std(0x4a6a8a, 0, 0.7),
+    skirt: std(0x2b2e34, 0.1, 0.55),
+    tray: std(0x9aa0aa, 0.05, 0.7),
     levelBody: std(0xe0a526, 0.1, 0.5),
     glass: new THREE.MeshStandardMaterial({ color: 0xbfe8c8, transparent: true, opacity: 0.45, roughness: 0.1, metalness: 0, depthWrite: false }),
     bubble: std(0xf6fff4, 0, 0.2),
@@ -58,9 +66,10 @@ export function createMaterials(probe: HTMLElement): Materials {
       const lum = surface2.r * 0.3 + surface2.g * 0.59 + surface2.b * 0.11
       m.table.color.copy(surface2).multiplyScalar(lum > 0.5 ? 0.62 : 1.4)
       m.ghost.color.copy(accent)
+      m.tray.color.copy(m.table.color).multiplyScalar(lum > 0.5 ? 0.82 : 0.75)
     },
     dispose() {
-      for (const x of [m.alu, m.aluDark, m.black, m.steel, m.blue, m.white, m.rubber, m.red, m.tape, m.levelBody, m.glass, m.bubble, m.invalid, m.table, m.ghost]) x.dispose()
+      for (const x of [m.alu, m.aluDark, m.black, m.steel, m.blue, m.white, m.rubber, m.red, m.tape, m.tapeRoll, m.slate, m.skirt, m.tray, m.levelBody, m.glass, m.bubble, m.invalid, m.table, m.ghost]) x.dispose()
     },
   }
   m.refresh()

@@ -1,11 +1,12 @@
 // Dev harness for the 3D table scene: an Apparatus, a ViewContext, the scene and buttons that call apparatus actions.
-// Query: ?preset=assembled|empty  &cam=overview|highEnd|lowEnd|alongRail|caliper  &lang=es|en  &theme=dark|light
+// Query: ?preset=assembled|empty  &cam=overview|highEnd|lowEnd|lateral|mark|caliper (alongRail = lateral)  &markfrom=50  &lang=es|en  &theme=dark|light
 //        &setup=add:rail,add:cart,attach:standBase,attach:rackClamp:E1,rack:25,foot:0.5,place:0,release,wait:1500,tool:markers,caliper:clamp
 import '../src/styles/tokens.css'
 import { createApparatus, ITEM_IDS, type ItemId } from '../src/apparatus/index.ts'
 import { loadLang } from '../src/i18n.ts'
 import type { ViewContext } from '../src/views/view.ts'
 import { mountScene3D, webgl2Available, type PresetName } from '../src/views/scene3d/index.ts'
+import { parsePreset } from '../src/views/scene3d/presets.ts'
 
 const q = new URLSearchParams(location.search)
 const theme = q.get('theme')
@@ -23,11 +24,15 @@ a.on((e) => { const { seq: _s, t_ms: _t, ...rest } = e; log(JSON.stringify(rest)
 if (!webgl2Available()) log('no WebGL2')
 const root = document.getElementById('root')!
 const view = mountScene3D(root, ctx, {
-  preset: (q.get('cam') as PresetName | null) ?? 'overview',
+  preset: parsePreset(q.get('cam')) ?? 'overview',
   onFail: (r) => log(`onFail ${r}`),
   openPanel: (p) => log(`openPanel ${p}`),
   onCaliperTarget: (t) => log(`caliper target ${JSON.stringify(t)}`),
 })
+if (q.get('markfrom')) view.setMarkTarget(Number(q.get('markfrom')))
+const fitRoot = (): void => { root.style.height = `${Math.max(300, innerHeight - root.getBoundingClientRect().top - 40)}px` }
+fitRoot()
+addEventListener('resize', fitRoot)
 const stEl = document.getElementById('st')!
 function frame(): void {
   view.update()
@@ -61,7 +66,8 @@ btn('caliper variant', () => a.setCaliperVariant(a.getState().caliper.variant ==
 btn('stopwatch', () => a.stopwatchStartStop(performance.now()))
 btn('preset assembled', () => { a.preset('assembled') })
 btn('preset empty', () => { a.preset('empty') })
-for (const p of ['overview', 'highEnd', 'lowEnd', 'alongRail', 'caliper'] as const) btn(p, () => view.setPreset(p))
+for (const p of ['overview', 'highEnd', 'lowEnd', 'lateral', 'mark', 'caliper'] as const) btn(p, () => view.setPreset(p))
+for (const m of [0, 10, 50, 90]) btn(`mark ${m}`, () => view.setMarkTarget(m))
 
 // scripted setup from the URL (used by the screenshot checks)
 const steps = (q.get('setup') ?? '').split(',').filter(Boolean)
@@ -119,3 +125,12 @@ for (const s of acts) {
   }, t)
   t += 250
 }
+
+// ?open=view|tool: open a menu after load and press ArrowDown, to check it in a screenshot
+const openMenu = q.get('open')
+if (openMenu) setTimeout(() => {
+  const b = root.querySelector<HTMLButtonElement>(openMenu === 'view' ? '.scene3d-viewmenu .scene3d-chip' : '.scene3d-toolmenu .scene3d-chip')
+  b?.click()
+  document.activeElement?.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowDown', bubbles: true }))
+  log(`menu open: expanded=${b?.getAttribute('aria-expanded')} focus=${document.activeElement?.textContent}`)
+}, 1500)

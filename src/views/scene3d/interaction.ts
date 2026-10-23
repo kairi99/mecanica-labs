@@ -133,7 +133,6 @@ export function createInteraction(d: InteractionDeps): Interaction {
     if (id === 'cart') {
       if (gids.includes('cart')) attach(S.placeCartHere, () => a.placeCart(ghostFront()))
       else if (st.cart.placed) {
-        actions.push({ label: S.release, run: (ts) => { act(a.releaseCart(ts)) } })
         attach(S.resetCart, () => a.resetCart())
       }
     }
@@ -323,7 +322,7 @@ export function createInteraction(d: InteractionDeps): Interaction {
         const phase = a.cartState(e?.timeStamp ?? d.ctx.now()).phase
         if (!st.cart.placed) d.onCard(cardFor(ac.pick))
         else if (phase === 'stopped' || phase === 'stuck') act(a.resetCart())
-        else act(a.releaseCart(e?.timeStamp ?? d.ctx.now()))
+        else act(a.releaseCart(ac.time)) // the press instant (pointerdown), like onPress
       }
       d.refreshSoon()
     } else if (!ac.moved && !cancelled) {

@@ -1,11 +1,13 @@
-/* 3D table scene overlay: tool and preset buttons, status line, part card, tooltips. Tokens only. */
-.scene3d { display: grid; margin-bottom: var(--space-3); }
+/* 3D table scene overlay: tool and view menus, status line, part card, tooltips. Tokens only.
+   The stage fills its root element (the shell sizes the root); aspect-ratio is only the fallback for an auto-height root. */
+.scene3d { display: grid; height: 100%; }
 .scene3d[hidden] { display: none; }
 .scene3d-stage {
-  position: relative; background: var(--bg); border-radius: var(--radius-l); overflow: hidden;
-  box-shadow: var(--shadow-1); aspect-ratio: 16 / 10; min-height: 300px; max-height: 76vh; width: 100%;
+  position: relative; background: var(--bg); border-radius: var(--radius-l); overflow: hidden; isolation: isolate;
+  clip-path: inset(0 round var(--radius-l)); box-shadow: var(--shadow-1);
+  width: 100%; height: 100%; aspect-ratio: 16 / 10; min-height: 260px;
 }
-.scene3d-stage canvas { display: block; width: 100%; height: 100%; outline: none; touch-action: none; }
+.scene3d-stage canvas { position: absolute; inset: 0; display: block; width: 100%; height: 100%; outline: none; touch-action: none; border-radius: inherit; }
 .scene3d-stage canvas:focus-visible { outline: 2px solid var(--accent); outline-offset: -3px; }
 .scene3d-tip, .scene3d-readout {
   position: absolute; left: 0; top: 0; pointer-events: none; z-index: 2; padding: var(--space-1) var(--space-3);
@@ -14,41 +16,57 @@
 }
 .scene3d-readout { font-weight: 600; font-variant-numeric: tabular-nums; }
 .scene3d-tip[hidden], .scene3d-readout[hidden] { display: none; }
+
+/* chips and menus */
+.scene3d-topleft, .scene3d-topright { position: absolute; top: var(--space-2); z-index: 4; display: flex; gap: var(--space-1); }
+.scene3d-topleft { left: var(--space-2); }
+.scene3d-topright { right: var(--space-2); justify-content: flex-end; }
+.scene3d-chip, .scene3d-card button {
+  min-height: var(--touch); min-width: var(--touch); padding-inline: var(--space-3); border: none; border-radius: var(--radius-full);
+  background: color-mix(in srgb, var(--surface) 90%, transparent); color: var(--label); font: var(--text-footnote); cursor: pointer;
+  white-space: nowrap; box-shadow: var(--shadow-1); backdrop-filter: blur(6px); display: inline-flex; align-items: center; gap: var(--space-1);
+}
+.scene3d-chip[aria-pressed='true'], .scene3d-chip-on { background: var(--accent-fill); color: var(--on-accent); font-weight: 600; }
+.scene3d-chip:focus-visible, .scene3d-card button:focus-visible, .scene3d-menu-pop button:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.scene3d-menu { position: relative; }
+.scene3d-menu-pop {
+  position: absolute; top: calc(100% + var(--space-1)); left: 0; min-width: 11rem; max-height: 15rem; overflow-y: auto; padding: var(--space-1); z-index: 5;
+  border-radius: var(--radius-m); background: var(--surface); color: var(--label); box-shadow: var(--shadow-1);
+  display: flex; flex-direction: column; animation: scene3d-pop var(--dur-base) var(--ease-out);
+}
+.scene3d-menu-pop[hidden] { display: none; }
+.scene3d-viewmenu .scene3d-menu-pop { left: auto; right: 0; }
+.scene3d-menu-pop button {
+  min-height: var(--touch); padding-inline: var(--space-3); border: none; border-radius: var(--radius-s, var(--radius-m)); background: transparent;
+  color: inherit; font: var(--text-callout); text-align: left; cursor: pointer; display: flex; justify-content: space-between; align-items: center; gap: var(--space-3);
+}
+.scene3d-menu-pop button:hover, .scene3d-menu-pop button:focus-visible { background: var(--fill); }
+.scene3d-menu-pop button[aria-checked='true'] { font-weight: 600; }
+.scene3d-menu-pop button[aria-checked='true']::after { content: '✓'; color: var(--accent); }
+.scene3d-toolrow { display: none; gap: var(--space-1); }
+@media (min-width: 1080px) {
+  .scene3d-toolrow { display: flex; }
+  .scene3d-toolmenu { display: none; }
+}
+
+/* status line and part card sit under the chips (never at the bottom edge: the shell's timing bar is below the stage) */
+.scene3d-stack {
+  position: absolute; left: var(--space-2); right: var(--space-2); top: calc(var(--touch) + 2 * var(--space-2)); z-index: 3;
+  display: flex; flex-direction: column; align-items: flex-start; gap: var(--space-2); pointer-events: none;
+}
 .scene3d-status {
-  position: absolute; left: var(--space-2); top: var(--space-2); max-width: calc(100% - 2 * var(--space-2)); margin: 0; z-index: 1;
-  padding: var(--space-1) var(--space-3); border-radius: var(--radius-full); background: color-mix(in srgb, var(--surface) 86%, transparent);
-  color: var(--label-2); font: var(--text-footnote); pointer-events: none;
+  margin: 0; max-width: 100%; padding: var(--space-1) var(--space-3); border-radius: var(--radius-full);
+  background: color-mix(in srgb, var(--surface) 86%, transparent); color: var(--label-2); font: var(--text-footnote);
 }
 .scene3d-status:empty { display: none; }
-.scene3d-presets, .scene3d-tools { position: absolute; display: flex; gap: var(--space-1); flex-wrap: wrap; z-index: 1; }
-.scene3d-presets { left: var(--space-2); right: var(--space-2); bottom: var(--space-2); }
-.scene3d-tools { right: var(--space-2); top: var(--space-2); justify-content: flex-end; max-width: 70%; }
-.scene3d-presets button, .scene3d-tools button, .scene3d-release, .scene3d-card button {
-  min-height: var(--touch); min-width: var(--touch); padding-inline: var(--space-3); border: none; border-radius: var(--radius-full);
-  background: color-mix(in srgb, var(--surface) 88%, transparent); color: var(--label); font: var(--text-footnote); cursor: pointer;
-  white-space: nowrap; flex: 0 0 auto; box-shadow: var(--shadow-1); backdrop-filter: blur(6px);
-}
-.scene3d-presets button[aria-pressed='true'], .scene3d-tools button[aria-pressed='true'] { background: var(--accent-fill); color: var(--on-accent); font-weight: 600; }
-.scene3d-presets button:focus-visible, .scene3d-tools button:focus-visible, .scene3d-release:focus-visible, .scene3d-card button:focus-visible {
-  outline: 2px solid var(--accent); outline-offset: 2px;
-}
-.scene3d-release { position: absolute; right: var(--space-2); bottom: calc(var(--touch) + 2 * var(--space-2)); background: var(--accent-fill); color: var(--on-accent); font-weight: 600; z-index: 1; }
-.scene3d-release[hidden] { display: none; }
 .scene3d-card {
-  position: absolute; left: var(--space-2); right: var(--space-2); top: calc(var(--touch) + 2 * var(--space-2)); z-index: 3;
-  padding: var(--space-3); border-radius: var(--radius-m); background: var(--surface); color: var(--label); box-shadow: var(--shadow-1);
-  animation: scene3d-pop var(--dur-base) var(--ease-out); max-width: 28rem;
+  pointer-events: auto; padding: var(--space-3); border-radius: var(--radius-m); background: var(--surface); color: var(--label);
+  box-shadow: var(--shadow-1); animation: scene3d-pop var(--dur-base) var(--ease-out); max-width: 28rem;
 }
 .scene3d-card[hidden] { display: none; }
 .scene3d-card p { margin: 0 0 var(--space-2); font: var(--text-callout); }
 .scene3d-card-actions { display: flex; gap: var(--space-2); flex-wrap: wrap; }
 .scene3d-card button { background: var(--fill); backdrop-filter: none; box-shadow: none; }
 @keyframes scene3d-pop { from { opacity: 0; transform: translateY(-4px); } to { opacity: 1; transform: none; } }
-@media (prefers-reduced-motion: reduce) { .scene3d-card { animation: none; } }
-@media (max-width: 819px) {
-  .scene3d-stage { aspect-ratio: auto; height: min(70vh, 520px); max-height: none; }
-  .scene3d-presets { flex-wrap: nowrap; overflow-x: auto; }
-  .scene3d-tools { max-width: 100%; left: var(--space-2); top: calc(var(--touch) + 2 * var(--space-2)); justify-content: flex-start; }
-  .scene3d-status { top: auto; bottom: calc(var(--touch) + 2 * var(--space-2)); }
-  .scene3d-card { top: calc(2 * var(--touch) + 3 * var(--space-2)); }
-}
+@media (prefers-reduced-motion: reduce) { .scene3d-card, .scene3d-menu-pop { animation: none; } }
+@media (max-width: 819px) { .scene3d-stage { aspect-ratio: 4 / 3; } }

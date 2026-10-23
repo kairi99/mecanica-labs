@@ -156,14 +156,18 @@ export interface CartModel {
 export function buildCart(kit: Kit): CartModel {
   const { M } = kit
   const root = new THREE.Group()
-  const body = rbox(CART.length, CART.bodyHeight, CART.width, 0.4, M.white, -CART.length / 2, CART.bodyBottom + CART.bodyHeight / 2, 0, root)
+  // rounded white shell above a dark lower skirt band (the wheels sit inset below it)
+  const skirtH = 0.9
+  rbox(CART.length - 0.12, skirtH, CART.width - 0.12, 0.3, M.skirt, -CART.length / 2, CART.bodyBottom + skirtH / 2, 0, root)
+  const body = rbox(CART.length, CART.bodyHeight - skirtH + 0.2, CART.width, 0.55, M.white, -CART.length / 2, CART.bodyBottom + skirtH + (CART.bodyHeight - skirtH + 0.2) / 2 - 0.2, 0, root)
   tag(root, 'cart')
-  // label area on top (generic, no brand)
-  const lab = plane(5.2, 1.7, new THREE.MeshStandardMaterial({
-    map: canvasTexture(kit, 260, 85, (c) => {
-      c.fillStyle = '#dfe3ea'; c.fillRect(0, 0, 260, 85)
-      c.fillStyle = '#2b3140'; c.font = `700 30px ${FONT}`; c.textAlign = 'center'; c.textBaseline = 'middle'
-      c.fillText('DigiCart', 130, 44)
+  // generic label decal on top (a few grey bars and a dot; no brand, no text)
+  const lab = plane(5.0, 1.6, new THREE.MeshStandardMaterial({
+    map: canvasTexture(kit, 250, 80, (c) => {
+      c.fillStyle = '#e3e6ec'; c.fillRect(0, 0, 250, 80)
+      c.fillStyle = '#5a6272'; c.fillRect(14, 18, 120, 10); c.fillRect(14, 36, 150, 8); c.fillRect(14, 52, 90, 8)
+      c.beginPath(); c.arc(206, 40, 18, 0, Math.PI * 2); c.fill()
+      c.fillStyle = '#e3e6ec'; c.beginPath(); c.arc(206, 40, 8, 0, Math.PI * 2); c.fill()
     }), roughness: 0.5,
   }))
   lab.rotation.x = -Math.PI / 2
@@ -297,18 +301,24 @@ export function buildTwoLeg(kit: Kit): TwoLegModel {
   tag(root, 'twoLegStand')
   const bridge = new THREE.Group()
   root.add(bridge)
-  box(2.0, 0.8, 8.4, M.black, 0, -0.4, 0, bridge) // top of the bridge at the origin (touches the rail underside)
-  const legL = cyl(0.55, 0.55, 1, M.steel, root), pad = cyl(1.2, 1.3, 0.5, M.black, root)
+  box(2.4, 0.8, 9.0, M.black, 0, -0.4, 0, bridge) // top of the bridge at the origin (touches the rail underside)
+  // fixed leg (black tube on a black pad) and adjustable leg (silver threaded rod, knurled nut, black pad screw foot)
+  const legL = cyl(0.75, 0.75, 1, M.black, root), pad = cyl(1.4, 1.5, 0.5, M.rubber, root)
   pad.position.set(0, 0.25, -3.4)
   legL.position.z = -3.4
-  const thread = cyl(0.35, 0.35, 1, M.steel, root)
+  const threadTex = canvasTexture(kit, 16, 16, (c) => {
+    c.fillStyle = '#c9ced6'; c.fillRect(0, 0, 16, 16)
+    c.fillStyle = '#6d737c'; c.fillRect(0, 9, 16, 4)
+  })
+  threadTex.wrapS = threadTex.wrapT = THREE.RepeatWrapping
+  const thread = cyl(0.45, 0.45, 1, new THREE.MeshStandardMaterial({ map: threadTex, metalness: 0.8, roughness: 0.35 }), root)
   thread.position.z = 3.4
   const foot = new THREE.Group()
   root.add(foot)
-  const nut = cyl(0.95, 0.95, 1.1, M.black, foot, 24)
+  const nut = cyl(1.0, 1.0, 1.1, M.black, foot, 24)
   for (let i = 0; i < 12; i++) { // knurling
     const a = (i / 12) * Math.PI * 2
-    const k = box(0.16, 1.1, 0.3, M.rubber, Math.cos(a) * 0.95, 0, Math.sin(a) * 0.95, foot)
+    const k = box(0.16, 1.1, 0.3, M.rubber, Math.cos(a) * 1.0, 0, Math.sin(a) * 1.0, foot)
     k.rotation.y = -a
   }
   void nut
@@ -327,35 +337,48 @@ export function buildTwoLeg(kit: Kit): TwoLegModel {
       legL.scale.y = lenL; legL.position.y = 0.5 + lenL / 2
       const lenT = Math.max(0.1, top - 0.8 - 0.5)
       thread.scale.y = lenT; thread.position.y = 0.5 + lenT / 2
+      threadTex.repeat.set(1, Math.max(1, lenT * 1.2))
       foot.position.set(0, top - 0.8 - 0.55, 3.4)
     },
   }
 }
 
 // ---------------------------------------------------------------------------------------------------------------- receiver
-/** Receiver with pulley; the origin is the low rail end (rail frame: stop face at x = -4). */
+/**
+ * Receiver: a slate blue-grey bevelled wedge end block with a red stop insert and a black spoked pulley of about 0.6 of the block
+ * height on the rail end (no arm). The origin is the low rail end (rail frame: stop face at x = -4).
+ */
 export function buildReceiver(kit: Kit): THREE.Group {
   const { M } = kit
   const root = new THREE.Group()
   tag(root, 'receiver')
-  rbox(4.6, 6.4, 4.4, 0.35, M.blue, -1.7, 0.6, 0, root)
-  const stopFace = plane(3.0, 2.8, M.red)
+  // side profile (x along the rail, y up): taller at the rail end, sloping down toward the cart
+  const prof = new THREE.Shape()
+  const pts: [number, number][] = [[-4, -2.7], [0.8, -2.7], [0.8, 4.6], [-0.6, 4.6], [-4, 3.3]]
+  pts.forEach(([x, y], i) => (i === 0 ? prof.moveTo(x, y) : prof.lineTo(x, y)))
+  const bev = 0.22
+  const g = new THREE.ExtrudeGeometry(prof, { depth: 4.4 - 2 * bev, bevelEnabled: true, bevelThickness: bev, bevelSize: bev, bevelOffset: -bev, bevelSegments: 2 })
+  g.translate(0, 0, -(4.4 - 2 * bev) / 2)
+  const block = new THREE.Mesh(g, M.slate)
+  block.castShadow = true; block.receiveShadow = true
+  root.add(block)
+  const stopFace = plane(2.8, 2.6, M.red)
   stopFace.rotation.y = -Math.PI / 2
-  stopFace.position.set(-4.003, 2.4, 0)
+  stopFace.position.set(-4.004, 1.7, 0)
   root.add(stopFace)
-  box(3.4, 0.9, 1.2, M.blue, 2.3, 0.6, 0, root) // bracket to the axle
   const wheel = new THREE.Group()
-  wheel.position.set(4.0, 0.6, 0)
+  wheel.position.set(0.9, 1.4, 0)
   root.add(wheel)
   tag(wheel, 'pulley')
-  const rim = new THREE.Mesh(new THREE.TorusGeometry(2.9, 0.32, 10, 36), M.black)
+  const R = 2.2
+  const rim = new THREE.Mesh(new THREE.TorusGeometry(R - 0.3, 0.3, 10, 36), M.black)
   rim.castShadow = true
   wheel.add(rim)
-  zcyl(0.8, 0.7, M.black, wheel)
-  zcyl(0.3, 1.1, M.steel, wheel)
-  for (let i = 0; i < 8; i++) {
-    const a = (i / 8) * Math.PI * 2
-    const sp = box(2.6, 0.28, 0.3, M.black, Math.cos(a) * 1.7, Math.sin(a) * 1.7, 0, wheel)
+  zcyl(0.55, 0.9, M.black, wheel)
+  zcyl(0.2, 1.4, M.steel, wheel)
+  for (let i = 0; i < 6; i++) {
+    const a = (i / 6) * Math.PI * 2 + 0.2
+    const sp = box(R - 0.5, 0.22, 0.28, M.black, Math.cos(a) * (R / 2 + 0.1), Math.sin(a) * (R / 2 + 0.1), 0, wheel)
     sp.rotation.z = a
   }
   return root
@@ -451,9 +474,9 @@ export function buildStopwatch(kit: Kit): StopwatchModel {
 export function buildTapeRoll(kit: Kit): THREE.Group {
   const g = new THREE.Group()
   tag(g, 'markers')
-  const t = new THREE.Mesh(new THREE.TorusGeometry(2.2, 0.9, 10, 28), kit.M.tape)
+  const t = new THREE.Mesh(new THREE.TorusGeometry(1.9, 0.6, 12, 32), kit.M.tapeRoll)
   t.rotation.x = Math.PI / 2
-  t.position.y = 0.9
+  t.position.y = 0.6
   t.castShadow = true
   g.add(t)
   return g
@@ -571,23 +594,27 @@ export function buildCaliper(kit: Kit): CaliperModel {
   }
 }
 
-export function labelSprite(kit: Kit, text: string, cache: Map<string, THREE.SpriteMaterial>): THREE.Sprite {
+/** Yellow tape flag on the front face of the rail with the distance from A in cm (readable in the lateral and mark views). */
+export function tapeFlag(kit: Kit, text: string, cache: Map<string, THREE.Material>): THREE.Mesh {
   let mat = cache.get(text)
   if (!mat) {
-    const tex = canvasTexture(kit, 128, 64, (c) => {
-      c.fillStyle = '#ffffff'; c.strokeStyle = '#111'; c.lineWidth = 3
-      const r = 14
-      c.beginPath(); c.roundRect(4, 4, 120, 56, r); c.fill(); c.stroke()
-      c.fillStyle = '#111'; c.font = `700 36px ${FONT}`; c.textAlign = 'center'; c.textBaseline = 'middle'
-      c.fillText(text, 64, 34)
+    const tex = canvasTexture(kit, 256, 128, (c) => {
+      c.fillStyle = '#f2b01e'; c.fillRect(0, 0, 256, 128)
+      c.fillStyle = '#1b1608'
+      c.fillRect(124, 0, 8, 14); c.fillRect(124, 114, 8, 14) // tick: the exact position of the mark
+      let size = 104
+      c.font = `800 ${size}px ${FONT}`
+      while (c.measureText(text).width > 232 && size > 40) { size -= 6; c.font = `800 ${size}px ${FONT}` }
+      c.textAlign = 'center'; c.textBaseline = 'middle'
+      c.fillText(text, 128, 70)
     })
-    mat = new THREE.SpriteMaterial({ map: tex, depthWrite: false })
+    mat = new THREE.MeshStandardMaterial({ map: tex, roughness: 0.7, polygonOffset: true, polygonOffsetFactor: -2, polygonOffsetUnits: -2 })
     cache.set(text, mat)
   }
-  const s = new THREE.Sprite(mat)
-  s.scale.set(2.4, 1.2, 1)
-  s.raycast = () => {}
-  return s
+  const m = new THREE.Mesh(new THREE.PlaneGeometry(TAPE_FLAG.w, TAPE_FLAG.h), mat)
+  m.receiveShadow = true
+  return m
 }
+export const TAPE_FLAG = { w: 4.0, h: 2.0 }
 
 export { SUPPORT_FROM_END_cm }
