@@ -44,8 +44,6 @@ const PRESETS = ['overview', 'highEnd', 'lowEnd', 'lateral', 'mark', 'caliper'] 
 const camParam = params.get('cam')
 type Cam = (typeof PRESETS)[number]
 const cam: Cam | undefined = (PRESETS as readonly string[]).includes(camParam ?? '') ? (camParam as Cam) : undefined
-/** The scene branch adds setMarkTarget; until it is merged the method is simply absent. */
-type SceneWithMark = Scene3DView & { setMarkTarget?: (markFromA_cm: number) => void }
 const showAnalysis = params.get('analysis') !== '0'
 /** ?teacher shows target values (checklist angle, the model's expected a in the analysis comparison). */
 const teacher = params.has('teacher') && params.get('teacher') !== '0'
@@ -354,21 +352,20 @@ function paintProgress(steps: ChecklistStep[], next: ChecklistStep | null): void
 
 // ---- stage: 3D / 2D ------------------------------------------------------------------------------------------------------------
 let view2d: View | null = null
-let scene3d: SceneWithMark | null = null
+let scene3d: Scene3DView | null = null
 let failed3d = false
 let loading3d = false
 const viewParam = params.get('view')
 let mode: StageMode = viewParam === '2d' || viewParam === '3d' ? viewParam : (loadStageMode() ?? '3d')
 let notice = ''
 
-/** Camera preset by name (works with the old scene too: unknown names are only sent when the new scene is there). */
+/** Camera preset by name. */
 function setCamera(name: Cam): void {
   if (!scene3d || effectiveMode() !== '3d') return
-  if ((name === 'mark' || name === 'lateral') && typeof scene3d.setMarkTarget !== 'function') return
   scene3d.setPreset(name as ScenePreset)
 }
 function sendMarkTarget(): void {
-  scene3d?.setMarkTarget?.(TABLE_POSITIONS_cm[getMarkRow()]!)
+  scene3d?.setMarkTarget(TABLE_POSITIONS_cm[getMarkRow()]!)
 }
 onMarkRow(sendMarkTarget)
 app.on((e) => {
@@ -412,7 +409,7 @@ async function ensure3d(): Promise<void> {
       preset: cam === 'mark' || cam === 'lateral' ? undefined : (cam as ScenePreset | undefined),
       openPanel,
       onFail: () => fail3d(S().notice3d),
-    }) as SceneWithMark
+    })
     sendMarkTarget()
     if (cam === 'mark' || cam === 'lateral') setCamera(cam)
     else if (!cam && currentStep === 3 && phoneQuery.matches) setCamera('mark')
