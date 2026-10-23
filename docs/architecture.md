@@ -179,24 +179,39 @@ deletes them.
 Pure model of Práctica 2 (no apparatus or views yet). Pipeline for one release:
 incline (`incline.ts`) -> tip junction and roll over the gap (`junction.ts`) -> projectile flight (`flight.ts`) -> carbon mark (`marks.ts`), composed by `simulateLaunch(setup, ball, releaseS_m, run?, opts?)` in `launch.ts`.
 
-- `constants.ts`: ball presets (`MARBLE`, `PING_PONG`), `DEFAULT_SETUP`, Magnus `C_L(S)`; all empirical values are in PARAMETERS.md.
-- `incline.ts`: theta = asin(rise / supportDist); mark positions `s_m` run along the rail from the LOW tip (upper half is s >= 0.60 m). Two-line channel: r_eff, k_eff = k_body (R/r_eff)^2, constant a, `v_tip`, roll-down time.
-- `junction.ts`: slope-to-table transition (keep v cos theta, lose the normal part, angular momentum about the contact conserved, energy lost >= 0), gap roll with rolling resistance (can stop), `leavesHorizontally` (v^2 >= gR).
-- `flight.ts`: RK4 (0.5 ms) with buoyancy, quadratic drag and Magnus (topspin pushes down); landing by Brent on the last step; optional sampled trajectory (e.g. 240 fps); `idealFlight` closed form (vacuum run matches it to < 1e-6).
-- `variability.ts`: `sampleRun(rng, ball)` returns `RunOffsets` (release, push, junction factor, lateral angle, mark draw). `ZERO_RUN` is the expectation; noise is injected, never `Math.random`.
+- `constants.ts`: ball presets (`MARBLE`, `PING_PONG`, now with `mu_k`), `hollowShellInertiaFactor` (ping-pong k = 0.6535 for a 0.4 mm shell), `DEFAULT_SETUP`, Magnus `C_L(S)` (ASSUMED form); all empirical values are in PARAMETERS.md.
+- `incline.ts`: theta = asin(rise / supportDist); mark positions `s_m` run along the rail from the LOW tip (upper half is s >= 0.60 m). Two-line channel: r_eff, k_eff = k_body (R/r_eff)^2. Rolling resistance acts on the sum of the line normals (m g cos theta R/r_eff). Air drag on the slope: (1 + k_eff) dv/dt = F - k_d v^2, so v^2 = (a0/kappa)(1 - exp(-2 kappa s)), kappa = k_d/(1 + k_eff); `quadraticDragMotion` gives speed and time in closed form (tanh, tan and constant-a laws; kappa = 0 is the vacuum formula).
+- `junction.ts`: corner impact (normal part destroyed, Coulomb friction impulse), closed-form slip phase on the table (dv/dt = + mu_k g sgn(R omega - v); rolling after Delta t = |v_roll - v1|/(mu_k g), or the ball leaves still slipping if the slip is longer than the gap), `tableRoll` (slip then rolling with rolling resistance and drag over the rest of the gap, can stop), `leavesHorizontally` (v^2 >= gR). Exact energy loss up to rolling: 1/2 m (v sin th)^2 + m g step + 1/2 m k/(1 + k)(v cos th - R omega0)^2. `mu_k = Infinity` is the old instant-rolling model. `simulateLaunch` returns `slipDistance_m`, `rollingAtEdge`, `omega_edge_radps`; the flight gets that omega.
+- `flight.ts`: RK4 (0.5 ms) with buoyancy and added mass (a = [(m - rho V) g + F_air]/(m + rho V/2)), quadratic drag and Magnus (topspin pushes down); landing by Brent on the last step; optional sampled trajectory (e.g. 240 fps); `idealFlight` closed form (vacuum run matches it to < 1e-6).
+- `variability.ts`: `sampleRun(rng, ball)` returns `RunOffsets` (release, push, junction factor = 1 - sigma |N(0,1)| one-sided so scatter cannot create energy, lateral angle, mark draw). `ZERO_RUN` is the expectation; noise is injected, never `Math.random`.
 - `marks.ts`: `carbonMark` (inside the paper, impact-momentum threshold, size, darkness) and `firstBounce` (animation only).
 
-Expected values (default set-up, H = 0.76 m, air on) and the ideal projectile (vacuum, c_rr = 0, single line, lossless corner):
+Expected values (default set-up, H = 0.76 m, air on, `mu_k` 0.30 / 0.35) and the ideal projectile (vacuum, c_rr = 0, single line, lossless corner with v_roll = v_tip). Regenerated 2026-10-23 after the slip-phase, air-on-slope and Cd changes:
 
 | ball | s (m) | v_edge (m/s) | t (s) | x (m) | ideal v / t / x |
 |---|---|---|---|---|---|
-| marble | 0.60 | 1.207 | 0.3947 | 0.4740 | 1.234 / 0.3944 / 0.4867 |
-| marble | 0.725 | 1.327 | 0.3947 | 0.5211 | 1.357 / 0.3944 / 0.5350 |
-| marble | 0.85 | 1.436 | 0.3947 | 0.5641 | 1.469 / 0.3944 / 0.5793 |
-| marble | 0.975 | 1.539 | 0.3947 | 0.6041 | 1.573 / 0.3944 / 0.6204 |
-| marble | 1.10 | 1.634 | 0.3947 | 0.6416 | 1.671 / 0.3944 / 0.6590 |
-| ping-pong | 0.60 | 1.103 | 0.4004 | 0.4153 | 1.131 / 0.3944 / 0.4461 |
-| ping-pong | 0.85 | 1.313 | 0.3999 | 0.4932 | 1.346 / 0.3944 / 0.5309 |
-| ping-pong | 1.10 | 1.494 | 0.3995 | 0.5597 | 1.531 / 0.3944 / 0.6040 |
+| marble | 0.60 | 1.204 | 0.3947 | 0.4730 | 1.234 / 0.3944 / 0.4867 |
+| marble | 0.725 | 1.323 | 0.3947 | 0.5197 | 1.357 / 0.3944 / 0.5350 |
+| marble | 0.85 | 1.432 | 0.3947 | 0.5626 | 1.469 / 0.3944 / 0.5793 |
+| marble | 0.975 | 1.533 | 0.3947 | 0.6023 | 1.573 / 0.3944 / 0.6204 |
+| marble | 1.10 | 1.628 | 0.3946 | 0.6395 | 1.671 / 0.3944 / 0.6590 |
+| ping-pong | 0.60 | 1.088 | 0.4005 | 0.4121 | 1.136 / 0.3944 / 0.4478 |
+| ping-pong | 0.725 | 1.192 | 0.4003 | 0.4512 | 1.248 / 0.3944 / 0.4923 |
+| ping-pong | 0.85 | 1.287 | 0.4001 | 0.4866 | 1.352 / 0.3944 / 0.5330 |
+| ping-pong | 0.975 | 1.374 | 0.3998 | 0.5191 | 1.447 / 0.3944 / 0.5709 |
+| ping-pong | 1.10 | 1.455 | 0.3996 | 0.5491 | 1.537 / 0.3944 / 0.6064 |
 
-Honest caveat: the ping-pong flight time is ~1.5 % longer than the ideal 0.394 s (drag and buoyancy outweigh the Magnus pull-down) and the range ~7-8 % shorter; all of these effects depend on assumed coefficients (PARAMETERS.md).
+Effect size on x at s = 0.85 m (full model: marble 0.5626 m, ping-pong 0.4866 m). Each row switches ONE effect off; dx = x(off) - x(full), so positive means the effect shortens the range:
+
+| effect switched off | marble dx (mm) | ping-pong dx (mm) |
+|---|---|---|
+| rolling resistance (c_rr = 0, slope and gap) | +3.0 (0.5 %) | +7.3 (1.5 %) |
+| air drag (slope, gap and flight) | +2.1 (0.4 %) | +21.2 (4.4 %) |
+| Magnus (topspin) | +1.4 (0.25 %) | +15.5 (3.2 %) |
+| buoyancy and added mass | -0.1 (-0.03 %) | -4.0 (-0.8 %) |
+| all air terms (vacuum) | +3.4 (0.6 %) | +33.2 (6.8 %) |
+| slip phase (mu_k = Infinity, instant rolling) | -0.1 | 0.0 |
+| impact friction (`impactFriction: false`, more slip on the table) | -2.7 | +0.3 |
+| channel (single line, w = 0) | +3.7 (0.7 %) | 0.0 |
+
+Reading: for the marble the corner/slip and the air each move x by a few mm; for the ping-pong ball air (drag + Magnus) is 7 % of x, buoyancy and added mass work the other way. The ping-pong flight time is ~1.5 % longer than the ideal 0.394 s (drag and buoyancy outweigh the Magnus pull-down). At s = 1.10 m air cuts v_tip by 2.7 % (ping-pong) and 0.24 % (marble). With the default `mu_k` the marble slips 1.4-2.5 cm (rolling before the edge); without the impact friction impulse it slips 4-5 cm and at s = 1.10 m leaves the table still slipping. All of these depend on assumed coefficients (PARAMETERS.md).

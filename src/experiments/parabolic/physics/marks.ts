@@ -24,9 +24,13 @@ export interface MarkParams {
   minDiameter_m: number
   maxDiameter_m: number
 }
-/** Marble always marks, 2-4 mm dot. Ping-pong (light): faint, may fail below the threshold. ASSUMED. */
+/**
+ * Marble always marks, 2-4 mm dot. Ping-pong (light): faint, may fail below the threshold. ASSUMED. The ping-pong median
+ * threshold 0.009 kg m/s (+-30 %, i.e. 0.0063-0.0117) brackets its landing momentum at H = 0.76 m (~0.0100), so a faint or
+ * missing mark happens sometimes.
+ */
 export const MARBLE_MARK: MarkParams = { thresholdImpulse_kgmps: 0, thresholdSpread: 0, refDiameter_m: 0.003, refImpulse_kgmps: 0.021, minDiameter_m: 0.002, maxDiameter_m: 0.004 }
-export const PING_PONG_MARK: MarkParams = { thresholdImpulse_kgmps: 0.006, thresholdSpread: 0.3, refDiameter_m: 0.003, refImpulse_kgmps: 0.021, minDiameter_m: 0.0015, maxDiameter_m: 0.004 }
+export const PING_PONG_MARK: MarkParams = { thresholdImpulse_kgmps: 0.009, thresholdSpread: 0.3, refDiameter_m: 0.003, refImpulse_kgmps: 0.021, minDiameter_m: 0.0015, maxDiameter_m: 0.004 }
 export const markParamsFor = (ball: BallSpec): MarkParams => (ball.id === 'marble' ? MARBLE_MARK : PING_PONG_MARK)
 
 export interface CarbonMark {

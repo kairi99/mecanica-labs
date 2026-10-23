@@ -1,11 +1,14 @@
 // Projectile flight from the table edge to the paper. Pure, deterministic. Fixed-step RK4.
 // Frame: x horizontal away from the edge, y up (floor reference y = 0, ball CENTRE height), z lateral.
 // Start: centre at x = 0, y = H + R (ball resting on the table top at the edge), velocity (v0, 0, vz0).
-// Forces (per ball mass m, volume V = 4/3 pi R^3, area A = pi R^2):
-//   gravity reduced by buoyancy   -(1 - rho V / m) g y^
-//   quadratic drag                -(rho Cd A / (2 m)) |v| v         (Cd ~ 0.5 smooth sphere, Re ~ 10^3-10^4)
-//   Magnus (topspin)              (rho A C_L(S) / (2 m)) |v|^2 (omega^ x v^),  S = R omega / |v|
-// Added mass (~ rho V / 2 extra inertia, ~0.5 % of a ping-pong ball's mass) is NEGLECTED. The spin axis is horizontal and
+// Forces (ball mass m, volume V = 4/3 pi R^3, area A = pi R^2, air density rho):
+//   weight less buoyancy   -(m - rho V) g y^
+//   quadratic drag         -(1/2) rho Cd A |v| v           (Cd constant; Re ~ 1e3-1e4, PARAMETERS.md)
+//   Magnus (topspin)       (1/2) rho A C_L(S) |v|^2 (omega^ x v^),  S = R omega / |v|
+// Added mass: accelerating a sphere in air also accelerates ~ rho V / 2 of air, so the inertia is m + rho V / 2 and
+//   a = [(m - rho V) g + F_air] / (m + rho V / 2).
+// The `buoyancy` switch turns on both the displaced-air weight and the added mass (they are the same physics: the body
+// displaces air), so the two stay consistent. Without it: a = g + F_air / m. The spin axis is horizontal and
 // perpendicular to the launch heading: omega_vec = omega (y^ x heading^); for a ball moving along +x this is -z^, so
 // omega^ x v^ = -y^ (the force points DOWN for topspin). Spin decay over ~0.4 s is neglected (omega constant).
 import { brent } from '../../../core/physics/roots.ts'
@@ -87,9 +90,10 @@ export function simulateFlight(inp: FlightInput): FlightResult {
   const vz0 = inp.vz0_mps ?? 0
   const omega = inp.omega_radps ?? 0
 
-  const gEff = fx.buoyancy ? g * (1 - (rho * V) / m) : g
-  const kDrag = fx.drag ? (rho * ball.Cd * A) / (2 * m) : 0
-  const kMag = fx.magnus ? (rho * A) / (2 * m) : 0
+  const mInertia = fx.buoyancy ? m + (rho * V) / 2 : m
+  const gEff = fx.buoyancy ? (g * (m - rho * V)) / mInertia : g
+  const kDrag = fx.drag ? (rho * ball.Cd * A) / (2 * mInertia) : 0
+  const kMag = fx.magnus ? (rho * A) / (2 * mInertia) : 0
   // Spin axis unit vector: y^ x heading^, heading = (v0, vz0) horizontal.
   const hn = Math.hypot(inp.v0_mps, vz0) || 1
   const ax = vz0 / hn

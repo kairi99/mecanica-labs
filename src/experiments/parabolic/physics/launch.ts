@@ -2,8 +2,8 @@
 // `run` carries the run-to-run offsets (variability.ts); ZERO_RUN is the expectation.
 import { type BallSpec, type LaunchSetup } from './constants.ts'
 import { ALL_EFFECTS, simulateFlight, type FlightEffects, type FlightResult } from './flight.ts'
-import { effectiveInertiaFactor, effectiveRollingRadius_m, inclineAcceleration_mps2, inclineAngle_rad, rollDownTime_s, speedAtTip_mps } from './incline.ts'
-import { junctionTransition, leavesHorizontally, rollGap, tableRollDecel_mps2 } from './junction.ts'
+import { airDragK_pm, effectiveInertiaFactor, effectiveRollingRadius_m, inclineAcceleration_mps2, inclineAngle_rad, rollDownTime_s, speedAtTip_mps } from './incline.ts'
+import { junctionTransition, leavesHorizontally, rollGap, tableRoll, tableRollDecel_mps2 } from './junction.ts'
 
 /** Offsets of one run, all zero for the expectation. */
 export interface RunOffsets {
@@ -11,7 +11,7 @@ export interface RunOffsets {
   releaseOffset_m: number
   /** Speed given at release (finger push), m/s, >= 0 down the slope. */
   pushSpeed_mps: number
-  /** Multiplicative factor on v_roll (junction loss scatter), 1 = expectation. */
+  /** Extra-loss factor on the post-impact state at the corner, in (0, 1]: 1 = expectation (no extra loss); never above 1 (no energy created). */
   junctionFactor: number
   /** Lateral launch angle off the x axis, rad (gives z drift). */
   lateralAngle_rad: number
@@ -24,8 +24,10 @@ export const ZERO_RUN: RunOffsets = { releaseOffset_m: 0, pushSpeed_mps: 0, junc
 export interface ModelOptions {
   /** Air terms of the flight. */
   effects?: FlightEffects
-  /** Skip the junction: v_roll = v_tip (lossless corner; energy conserved, an unphysical upper bound). */
+  /** Skip the junction: v_roll = v_tip, rolling at once, omega = v/R (lossless corner; energy conserved, an unphysical upper bound). */
   idealJunction?: boolean
+  /** Coulomb friction impulse during the corner impact (default true); false puts the whole slip on the table. */
+  impactFriction?: boolean
   /** RK4 step, s. */
   dt_s?: number
   /** Trajectory sampling rate, Hz (0 = none). */
@@ -36,11 +38,19 @@ export interface LaunchResult {
   theta_rad: number
   /** Release position actually used, m along the rail from the low tip (after offset). */
   releaseS_m: number
-  /** Acceleration along the incline, m/s^2. */
+  /** Acceleration along the incline at v = 0, m/s^2 (air drag then reduces it as v grows). */
   a_incline_mps2: number
   v_tip_mps: number
+  /** Rolling speed at the start of rolling, m/s (angular-momentum value; the ball reaches it only if rollingAtEdge). */
   v_roll_mps: number
   v_edge_mps: number
+  /** Spin at the table edge, rad/s: v_edge/R if rolling, the actual slipping value otherwise (goes to the Magnus term). */
+  omega_edge_radps: number
+  /** Centre travel while slipping on the table, m (the gap if the ball leaves while slipping). */
+  slipDistance_m: number
+  /** True if the slip ended before the edge. False: the ball leaves the table still slipping. */
+  rollingAtEdge: boolean
+  /** Energy lost at the corner and in the slip up to the start of rolling (or the edge), J. */
   energyLostJunction_J: number
   /** True if the ball does not start, or stops on the table before the edge. */
   stopped: boolean
@@ -60,28 +70,44 @@ export function simulateLaunch(setup: LaunchSetup, ball: BallSpec, releaseS_m: n
   const theta = inclineAngle_rad(setup.rise_m, setup.supportDist_m)
   const rEff = effectiveRollingRadius_m(ball.R_m, setup.channelWidth_m)
   const kEff = effectiveInertiaFactor(ball.k_body, ball.R_m, setup.channelWidth_m)
-  const a = inclineAcceleration_mps2(theta, kEff, ball.c_rr, g)
+  const fx = opts.effects ?? ALL_EFFECTS
+  const kd = fx.drag ? airDragK_pm(setup.rho_air_kgpm3, ball.Cd, ball.R_m, ball.m_kg) : 0
+  const a = inclineAcceleration_mps2(theta, kEff, ball.c_rr, g, ball.R_m / rEff)
+  const kappaSlope = kd / (1 + kEff)
   const v0 = Math.max(0, run.pushSpeed_mps)
-  const v_tip = speedAtTip_mps(s, a, v0)
+  const v_tip = speedAtTip_mps(s, a, v0, kappaSlope)
   const dead = (stopped: boolean): LaunchResult => ({
-    theta_rad: theta, releaseS_m: s, a_incline_mps2: a, v_tip_mps: v_tip, v_roll_mps: 0, v_edge_mps: 0, energyLostJunction_J: 0, stopped,
-    leavesHorizontally: false, flight: null, rollDownTime_s: rollDownTime_s(s, a, v0), gapTime_s: 0,
+    theta_rad: theta, releaseS_m: s, a_incline_mps2: a, v_tip_mps: v_tip, v_roll_mps: 0, v_edge_mps: 0, omega_edge_radps: 0, slipDistance_m: 0, rollingAtEdge: false,
+    energyLostJunction_J: 0, stopped, leavesHorizontally: false, flight: null, rollDownTime_s: rollDownTime_s(s, a, v0, kappaSlope), gapTime_s: 0,
   })
   if (v_tip === 0) return dead(true)
 
-  const j = opts.idealJunction
-    ? { v_roll_mps: v_tip, energyLost_J: 0 }
-    : junctionTransition({ v_tip_mps: v_tip, theta_rad: theta, R_m: ball.R_m, m_kg: ball.m_kg, k_body: ball.k_body, rEff_m: rEff, stepDrop_m: setup.stepDrop_m, g_mps2: g })
-  const v_roll = j.v_roll_mps * run.junctionFactor
-  const gap = rollGap(v_roll, setup.gap_m, tableRollDecel_mps2(ball.c_rr, ball.k_body, g))
-  const out = { ...dead(gap.stopped), v_roll_mps: v_roll, v_edge_mps: gap.v_edge_mps, energyLostJunction_J: j.energyLost_J, gapTime_s: gap.t_s }
+  const decel = tableRollDecel_mps2(ball.c_rr, ball.k_body, g)
+  const kappaRoll = kd / (1 + ball.k_body)
+  let v_roll: number, gap: { v_edge_mps: number; omega_edge_radps: number; t_s: number; stopped: boolean; rollingAtEdge: boolean; slipDistance_m: number; energyLostJunction_J: number }
+  if (opts.idealJunction) {
+    v_roll = v_tip
+    const r = rollGap(v_roll, setup.gap_m, decel, kappaRoll)
+    gap = { v_edge_mps: r.v_edge_mps, omega_edge_radps: r.v_edge_mps / ball.R_m, t_s: r.t_s, stopped: r.stopped, rollingAtEdge: true, slipDistance_m: 0, energyLostJunction_J: 0 }
+  } else {
+    const j = junctionTransition({
+      v_tip_mps: v_tip, theta_rad: theta, R_m: ball.R_m, m_kg: ball.m_kg, k_body: ball.k_body, rEff_m: rEff, stepDrop_m: setup.stepDrop_m, g_mps2: g,
+      mu_k: ball.mu_k, junctionFactor: run.junctionFactor, impactFriction: opts.impactFriction,
+    })
+    v_roll = j.v_roll_mps
+    gap = tableRoll({ junction: j, R_m: ball.R_m, m_kg: ball.m_kg, k_body: ball.k_body, mu_k: ball.mu_k, c_rr: ball.c_rr, g_mps2: g, gap_m: setup.gap_m, kappaRoll_pm: kappaRoll })
+  }
+  const out = {
+    ...dead(gap.stopped), v_roll_mps: v_roll, v_edge_mps: gap.v_edge_mps, omega_edge_radps: gap.omega_edge_radps, slipDistance_m: gap.slipDistance_m,
+    rollingAtEdge: gap.rollingAtEdge, energyLostJunction_J: gap.energyLostJunction_J, gapTime_s: gap.t_s,
+  }
   if (gap.stopped) return out
   const leaves = leavesHorizontally(gap.v_edge_mps, ball.R_m, g)
   if (!leaves) return { ...out, leavesHorizontally: false }
   const flight = simulateFlight({
     ball, v0_mps: gap.v_edge_mps * Math.cos(run.lateralAngle_rad), vz0_mps: gap.v_edge_mps * Math.sin(run.lateralAngle_rad),
-    omega_radps: gap.v_edge_mps / ball.R_m, H_m: setup.H_m, paperHeight_m: setup.paperHeight_m, g_mps2: g, rho_air_kgpm3: setup.rho_air_kgpm3,
-    effects: opts.effects ?? ALL_EFFECTS, dt_s: opts.dt_s, sampleRate_hz: opts.sampleRate_hz,
+    omega_radps: gap.omega_edge_radps, H_m: setup.H_m, paperHeight_m: setup.paperHeight_m, g_mps2: g, rho_air_kgpm3: setup.rho_air_kgpm3,
+    effects: fx, dt_s: opts.dt_s, sampleRate_hz: opts.sampleRate_hz,
   })
   return { ...out, leavesHorizontally: true, flight }
 }

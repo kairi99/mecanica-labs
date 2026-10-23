@@ -32,100 +32,8 @@ Date of all rows: 2026-10-22.
 | Rolling-resistance coefficient `c_rr` | 5e-4 | - | ASSUMED, optimistic; plausible range 5e-4 to 5e-3 (hard wheel on aluminium rail; steel on steel is ~1e-3). Rolling resistance only. |
 | Bearing drag `F_bearing_N` | 3e-4 | N | ASSUMED, separate from rolling resistance: friction of the wheel bearings/axles, taken independent of load and speed. An ABSOLUTE force, so a depends on the cart mass through it (heavier cart, smaller relative effect). ~0.5 % of m g sin(theta) = 0.0556 N. |
 | Breakaway (static) force `F_breakaway_N` | 5e-3 | N | ASSUMED. Used only at v = 0: the cart starts only if m g sin(theta) > c_rr m g cos(theta) + F_bearing + F_breakaway. Gives a breakaway angle of 0.153 deg (so 0.1 deg stays put, 1.30 deg rolls). Once moving it does not act. |
-| Drag coefficient `Cd` | 1.0 | - | ASSUMED blunt box. |
-| Frontal area `A_m2` | 1.2e-3 | m^2 | ASSUMED (about 4 cm x 3 cm). |
-
-Derived: breakaway angle 0.153 deg (`breakawayAngle_rad`); ideal a = g sin(theta)/(1+k) = 0.2115 m/s^2; with friction and bearing a = 0.2057 m/s^2 (constant-force
-part). Air drag at v = 0.6 m/s is ~0.3 % of the driving force and lengthens t(0.9 m) by ~1 ms.
-
-## Run variability (`DEFAULT_VARIABILITY`, separate from the expectation)
-
-| Parameter | Value | Unit | Source |
-|---|---|---|---|
-| Release offset sigma | 1.0 | mm | ASSUMED. Placing the cart front on a mm mark by eye. |
-| Initial velocity sigma | 1 | mm/s | ASSUMED. Finger lift or release jolt, drawn HALF-normal: v0 = sigma |N(0,1)| >= 0 (a lift cannot push the cart uphill), so mean v0 = 0.8 mm/s and times run EARLY on average by E[v0]/a = 3.9 ms (all marks); zeroed when static friction holds the cart. Time scatter per mark (sd of the true crossing time, 4000 runs each, with the 1 mm release offset and 5 % c_rr): 0.1 m 5.8, 0.2 m 4.7, 0.3 m 4.0, 0.4 m 4.0, 0.5 m 3.7, 0.9 m 3.7 ms (earlier draft with 4 mm/s symmetric: ~19 ms). |
-| c_rr run-to-run sigma | 5 | % of c_rr | ASSUMED. Dust or film on the track; its effect on t is below 1 ms. |
-
-## Instruments (`instruments.ts`)
-
-| Parameter | Value | Source |
-|---|---|---|
-| Stopwatch resolution | 0.01 s | ASSUMED typical digital stopwatch. Human reaction time is added by the apparatus layer (phase 2), not here. |
-| Rail scale division | 1 mm | From the photos: millimetre scale. ASSUMED 1 mm. |
-| Tape measure division (`TAPE_DIVISION_m`) | 1 mm | Steel blade graduated in mm, numbers every cm; standard for a workshop tape. Analog, read by eye: Type B u = (d/2)/sqrt(3) = 0.29 mm. |
-
-**Tape measure tolerance: reported, not applied.** The class II maximum permissible error is a bound on the tape's systematic error, not a measured error of this tape. The model keeps the tape ideal (a reading is the true length quantised by the student's own reading of the 1 mm blade) and only reports the bound next to the reading (`TapeReading.mpe_m`, `tapeMaxPermissibleError_m`). Reason: the bound (0.3-0.5 mm) is no larger than the student's reading half-width (0.5 mm), a seeded hidden scale error would be invisible next to it and would only shift Delta h by a few tenths of a mm; stating it is the honest minimum. The teacher key gives its effect on the incline.
-
-Type B convention: digital display, u = resolution/sqrt(12). Analog scale: read to the nearest division d, half-width a = d/2, u = a/sqrt(3) = d/sqrt(12) (same number). The commonly taught "maximum error" d/2 is the half-width a, not the standard uncertainty u.
-
-**Stopwatch timing uncertainty.** uA = s/sqrt(n) of the n presses at a mark captures only the scatter of the reaction delays. A mean reaction bias (stop delay minus start delay) is common to all presses and does not average out. `reactionBiasTypeB_s(halfWidth_s = 0.1)` = halfWidth/sqrt(3) = 0.058 s with ASSUMED half-width 0.1 s (a typical range of human visual reaction-time asymmetry between start and stop; not measured). The combined time uncertainty of the mean at a mark is uA (+) resolution/sqrt(12) (+) reaction bias, in quadrature; this is the sigma_t of the effective-variance fit (`fit.ts`). The (t = 0, x = 0) origin has sigma_t = 0 and sigma_x = release-offset sigma (1 mm), or is excluded (`exclude: [0]`).
-
-## Model times at 1.30 deg (DEFAULT_CART, no run variability)
-
-| x (m) | t (s) | v (m/s) |
-|---|---|---|
-| 0.1 | 0.9860 | 0.2028 |
-| 0.2 | 1.3945 | 0.2868 |
-| 0.3 | 1.7079 | 0.3512 |
-| 0.4 | 1.9722 | 0.4055 |
-| 0.5 | 2.2051 | 0.4534 |
-| 0.6 | 2.4156 | 0.4966 |
-| 0.7 | 2.6092 | 0.5363 |
-| 0.8 | 2.7895 | 0.5733 |
-| 0.9 | 2.9588 | 0.6080 |
-
-## Known simplifications
-
-Rolling without slipping; rail perfectly straight and rigid; no sag of the 1.2 m rail; no sensor or cable on the
-cart; no Bouguer correction; no air humidity. The mean velocity over the whole path equals v(end)/2 only for ideal MRUV.
-
-## Apparatus (`src/experiments/mruv/apparatus/constants.ts`)
-
-All rows ASSUMED unless a source is given; none is a PHYWE specification. Date of all rows: 2026-10-22, except the tape rows (2026-10-23).
-
-| Parameter | Value | Unit | Source |
-|---|---|---|---|
-| Rail length / printed scale | 1.2 / 0..1200 | m / mm | EPN guide (1.2 m rail); mm scale from the photos (ASSUMED 1 mm division). |
-| Support points from nearest rail end | 0.05 | m | ASSUMED. |
-| Support separation d (clamp to two-leg stand) | 1.10 | m | ASSUMED = 1.2 - 2 x 0.05. Needed rise for 1.30 deg: d sin(1.30 deg) = 24.95 mm. |
-| Rack clamp height at rack reading 0 | 0.060 | m | ASSUMED. |
-| Rack range / resolution | 0..250 / 1 | mm | ASSUMED. 1 mm = 0.052 deg at d = 1.10 m, so the foot is needed to trim to +-0.05 deg. |
-| Two-leg stand height with foot at 0 | 0.060 | m | ASSUMED (equal to the rack base, so the rail is flat at rack 0 and foot 0). |
-| Screw foot range / step | +-5 / 0.05 | mm | ASSUMED (fine screw). Covers a table tilt of 0.15 deg (2.9 mm). |
-| Hidden table tilt along the rail | uniform +-0.15 | deg | ASSUMED. Seeded; revealed only by the level. |
-| Receiver end stop from low rail end | 0.040 | m | ASSUMED. Cart front stops there (no bounce). |
-| Level sensitivity | 20 (2 per 0.1 deg) | mm/deg | ASSUMED. Saturates at +-6 mm (0.3 deg); centred when |offset| <= 0.5 mm (|tilt| <= 0.025 deg). |
-| Cart length | 0.0984 | m | ASSUMED. |
-| Tape measure range (`TAPE_RANGE_m`) | 3 | m | ASSUMED typical workshop tape; every measurable length (heights ~0.06-0.2 m, cart 0.098 m, d 1.10 m) is far inside it. |
-| Tape accuracy, EU class II: maximum permissible error | +-(0.3 + 0.2 L/m) | mm | Directive 2014/32/EU (MID), Annex MI-008 (measuring tapes), class II. At L = 0.1 m: +-0.32 mm; at d = 1.10 m: +-0.52 mm. Date 2026-10-23. |
-| Mark snap / max marks | 0.5 / 30 | mm / - | ASSUMED. |
-| Mark check tolerance (spacing, position vs A + 100 i) | 2 | mm | ASSUMED (tape placement). AB >= 900 mm - 2 mm. |
-| Target angle / tolerance | 1.30 / 0.05 | deg | Guide angle; tolerance ASSUMED (pedagogical). |
-| Cart "at 0 cm" tolerance | 1.5 | mm | ASSUMED. |
-| DigiCart encoder | 50 Hz, 1 mm | - | ASSUMED. x(t) is displacement from the release instant. |
-| Stored trajectory step | 1 | ms | Same step as physics crossing time (RK4). |
-| Table 1.1 | 10 positions x 10 repetitions; max 30 s; 2 decimals | - | Guide layout; limits ASSUMED (stopwatch resolution 0.01 s). |
-
-Simplifications: no sag of the rail; the table tilt is not drawn (world frame = table frame) but is added to the incline; a flat or uphill rail does not move the cart (static friction / no uphill model); the cart stops at the receiver (no bounce); the release offset is applied at release (cart jumps by about 1 mm).
-
-# Práctica 2 · Movimiento parabólico (`src/experiments/parabolic/physics`)
-
-A ball rolls from rest down a 1.2 m rail (high end raised 20 cm, low tip on the table), crosses a ~5 cm gap on the table, leaves the edge horizontally and lands on carbon paper. Values below are inputs of the model; none was tuned to a target number. **ASSUMED** = chosen by us from typical values and physical reasoning, not measured. Date of all rows: 2026-10-23.
-
-## Balls (`MARBLE`, `PING_PONG`)
-
-| Parameter | Value | Unit | Source |
-|---|---|---|---|
-| Marble diameter / radius `R_m` | 16 / 0.008 | mm / m | Typical glass marble. ASSUMED (guide gives none). |
-| Marble mass `m_kg` | 5.5 | g | Glass 2.5 g/cm^3 x 2.145 cm^3 = 5.4 g; taken 5.5 g (common glass 2.5-2.6 g/cm^3). ASSUMED, not weighed. |
-| Marble inertia factor `k_body` | 2/5 | - | Solid sphere (rigid-body result). |
-| Marble `c_rr` | 1.5e-3 | - | ASSUMED. Hard glass on aluminium / laminate; typical hard-on-hard range 1e-3 to 2e-3. One value for rail and table. |
-| Ping-pong diameter / radius | 40 / 0.020 | mm / m | ITTF regulation ball (40 mm). |
-| Ping-pong mass | 2.7 | g | ITTF regulation (2.7 g). |
-| Ping-pong inertia factor `k_body` | 2/3 | - | Thin hollow shell. The real shell is ~0.4 mm thick (t/R = 0.02), which gives ~0.66; the thin-shell 2/3 is used. |
-| Ping-pong `c_rr` | 5e-3 | - | ASSUMED. Larger than the marble (soft, large, light shell); plausible 3e-3 to 1e-2. |
-| Drag coefficient `Cd` | 0.5 | - | Smooth sphere at Re ~ 10^3 to 10^4 (textbook value 0.4-0.5; White, Fluid Mechanics, drag of a sphere). Re ~ 1.0e3 (marble) to 3.5e3 (ping-pong) at v ~ 1.3 m/s with dynamic viscosity of air 1.8e-5 Pa s (ASSUMED). Held constant along the flight. |
-| Restitution `e` on paper over the floor | 0.5 (marble), 0.8 (ping-pong) | - | ASSUMED. Only used for the animation of the first bounce, never for measured quantities. |
+| Drag coefficient `Cd` | 0.45 (marble), 0.42 (ping-pong) | - | Standard smooth-sphere curve (White, Fluid Mechanics, Fig. 7.16): C_d ~ 0.47 at Re = 1e3, ~ 0.40 at Re = 3e3 to 1e4. Reynolds number Re = v 2R rho/mu with rho = 0.869 kg/m^3 and dynamic viscosity of air 1.8e-5 Pa s (ASSUMED), i.e. nu = 2.07e-5 m^2/s: marble Re ~ 930 (v = 1.2 m/s at the edge) to ~ 3200 (impact, 4.1 m/s); ping-pong Re ~ 2100 (1.1 m/s) to ~ 7500 (impact, 3.9 m/s), 2.5e3 at 1.3 m/s. One constant value per ball, picked in the middle of each range (the curve is flat to about 10 % there); held constant along slope, gap and flight. |
+| Restitution `e` on paper over the floor | 0.5 (marble), 0.8 (ping-pong) | - | ASSUMED. Only used for the animation of the first bounce, never for measured quantities. Context: the ITTF bounce rule (23-25 cm rebound from 30.5 cm onto steel, impact 2.4 m/s) gives e = 0.87-0.91 at low speed; the ball lands at ~3.7 m/s on paper over a floor, where e is lower, so 0.8 is kept as ASSUMED. |
 
 ## Rail, supports and table (`DEFAULT_SETUP`)
 
@@ -136,23 +44,25 @@ A ball rolls from rest down a 1.2 m rail (high end raised 20 cm, low tip on the 
 | Rail distance low tip to the high support `supportDist_m` | 1.10 | m | ASSUMED, support near the high end. Gives theta = asin(0.20/1.10) = 10.48 deg. The guide gives the rise, not this distance. |
 | Gap rail tip to table edge `gap_m` | 0.05 | m | Guide (about 5 cm). |
 | Table height `H_m` | 0.76 | m | ASSUMED default (typical table 0.74-0.78 m); seeded per bench elsewhere. |
-| Channel width `channelWidth_m` (distance between the two contact lines) | 10 | mm | ASSUMED, top groove of the metal rail. r_eff = sqrt(R^2 - (w/2)^2): marble 6.2 mm, ping-pong 17.3 mm. w >= 2R: the ball does not fit (error). w = 0 is a single line. |
-| Rail-top step to the table `stepDrop_m` | 0 | m | ASSUMED (rail thickness neglected); parameter kept. |
+| Channel width `channelWidth_m` (distance between the two contact lines) | 10 | mm | ASSUMED, top groove of the metal rail. r_eff = sqrt(R^2 - (w/2)^2): marble 6.2 mm, ping-pong 19.36 mm (= sqrt(20^2 - 5^2)). w >= 2R: the ball does not fit (error). w = 0 is a single line. |
+| Rail-top step to the table `stepDrop_m` | 0 | m | ASSUMED (rail thickness neglected); parameter kept. Geometry note: the ball's lowest point sits R - r_eff below the contact lines (1.75 mm for the marble, 0.64 mm for the ping-pong ball), so whether it touches the table inside the groove, and the true drop, depend on the rail profile, which we do not know. |
 | Paper height `paperHeight_m` | 0 | m | Floor reference; the ball bottom lands at this height. |
-| g, air density | 9.7717, 0.869 | m/s^2, kg/m^3 | Site constants (see Site above). |
+| g, air density | 9.7717, 0.869 | m/s^2, kg/m^3 | Site constants (see Site above). 0.869 kg/m^3 is for 15 °C; 20 °C gives 0.855 (-1.6 %), well inside the other uncertainties. |
 
 ## Mechanics model assumptions
 
 | Item | Value | Source |
 |---|---|---|
-| Rolling on the slope | no slipping on two lines, k_eff = k_body (R/r_eff)^2, a = g (sin theta - c_rr cos theta)/(1 + k_eff) | Rigid-body result; the c_rr term with the same (1 + k_eff) inertia is a model choice (ASSUMED form). |
-| Tip transition | normal velocity component destroyed (inelastic, no rebound), tangential kept, angular momentum about the contact point conserved: v_roll = (v cos theta + k_body R omega)/(1 + k_body), omega = v/r_eff | ASSUMED idealisation. Energy lost >= 0 is tested. For the narrow-groove marble (R/r_eff = 1.28) the channel spin exceeds flat rolling, so friction SPEEDS the ball up (v_roll > v_tip); this is a consequence of the assumed w. |
-| Table roll | decel c_rr g/(1 + k_body) over the gap; stops if v^2 <= 0 | Model choice with the same c_rr. |
+| Rolling on the slope | no slipping on two lines, k_eff = k_body (R/r_eff)^2, (1 + k_eff) dv/dt = g (sin theta - c_rr cos theta R/r_eff) - k_d v^2 | Rigid-body result. Rolling resistance: F_rr = c_rr x (sum of the two line normal forces) = c_rr m g cos theta R/r_eff (each line: N = m g cos theta/(2 cos phi), cos phi = r_eff/R), so the marble's effective c_rr is 1.28 times larger on the rail (ASSUMED form; c_rr itself ASSUMED). |
+| Air drag on the slope and the gap | k_d = rho C_d A/(2 m); slope kappa = k_d/(1 + k_eff), v^2 = (a0/kappa)(1 - exp(-2 kappa s)), a0 = g (sin theta - c_rr cos theta R/r_eff)/(1 + k_eff); table kappa = k_d/(1 + k_body) | Derived: drag acts on the translational DOF, the rolling constraint makes the inertia (1 + k). Vacuum limit (kappa -> 0) is v^2 = 2 a0 s (tested). Effect: -2.7 % on v_tip for the ping-pong ball at s = 1.10 m, -0.24 % for the marble. Buoyancy and added mass are neglected on the slope (about 1 % and 0.5 % of the ping-pong ball; opposite effects on a). |
+| Corner impact | normal velocity destroyed (perfectly inelastic, no rebound), tangential v cos theta kept; Coulomb friction impulse during the impact dv = min(mu_k v_n, sticking value), v_n^2 = (v sin theta)^2 + 2 g stepDrop; spin omega0 = v/r_eff from the channel | ASSUMED idealisation. The impact friction can be switched off (`impactFriction: false`): it is the largest unknown of the slip length (marble slip distance 1.4-2.5 cm with it, ~ 4-5 cm without it; ping-pong sticks within the impact with it, ~ 0.7-1.2 cm without it). |
+| Slip on the table | dv/dt = + mu_k g sgn(R omega - v), d(R omega)/dt = - mu_k g sgn(R omega - v)/k, closed form; rolling starts after Delta t = abs(v_roll - v1)/(mu_k g) at v_roll = (v cos theta + k R omega0)/(1 + k); if the edge comes first the ball leaves slipping with the actual v and omega | Derived (Coulomb friction, angular momentum about the contact line). For the narrow-groove marble R/r_eff = 1.28, so R omega0 > v cos theta and friction SPEEDS the ball up (v_roll > v_tip). Rolling resistance and drag are neglected during the slip. Energy lost up to rolling: 1/2 m (v sin theta)^2 + m g stepDrop + 1/2 m k/(1 + k) (v cos theta - R omega0)^2 (tested to 1e-12). |
+| Table roll | (1 + k_body) dv/dt = - c_rr m g - k_d v^2 over the rest of the gap (flat table, one contact: F_rr = c_rr m g); stops if v^2 <= 0 | Model choice with the same c_rr. |
 | Leaves horizontally | v_edge^2 >= g R | Centripetal condition at the edge; below it the ball rolls over the edge. |
-| Launch spin | omega = v_edge/R (topspin), constant in flight | Spin decay in 0.4 s neglected (viscous torque << inertia). ASSUMED. |
-| Added mass (~ rho V/2) | neglected | ~0.5 % of the ping-pong mass, ~0.02 % of the marble. |
-| Buoyancy | g_eff = g (1 - rho V/m) | Archimedes: 1.1 % (ping-pong), 0.05 % (marble). |
-| Magnus lift `C_L(S) = S/(2.022 S + 0.981)`, S = R omega/v | topspin pushes the ball DOWN | Fit as commonly quoted for baseball-type balls (Sawicki, Hubbard & Stronge 2003 lineage; coefficients not re-derived here). ASSUMED to carry over to the marble and, even more so, to the ping-pong ball (extrapolation at Re ~ 10^3-10^4). S = 1 at launch and falls to ~0.3 at landing. |
+| Launch spin | omega at the edge (v_edge/R if rolling, the actual slipping value otherwise), constant in flight | Spin decay in 0.4 s neglected (viscous torque << inertia). ASSUMED. |
+| Added mass (~ rho V/2) | included in the flight, together with buoyancy: a = [(m - rho V) g + F_air]/(m + rho V/2) | 0.5 % of the ping-pong inertia, 0.02 % of the marble. One `buoyancy` switch turns both on (same displaced-air physics). |
+| Buoyancy | weight (m - rho V) g | Archimedes: 1.1 % (ping-pong), 0.05 % (marble). Net g_eff = g (1 - 1.1 %)/(1 + 0.5 %) for the ping-pong ball. |
+| Magnus lift `C_L(S) = S/(2.022 S + 0.981)`, S = R omega/v | topspin pushes the ball DOWN | ASSUMED saturating form, no source claimed (an earlier attribution to a baseball fit could not be verified). C_L ~ S at small S, 0.33 at S = 1: inside the 0.2-0.35 that measurements on smooth spheres at Re ~ 10^3 give near S ~ 1 (Tanaka et al. 1990; Oesterle & Bui Dinh 1998), which show positive lift there; inverse Magnus appears only near the drag crisis (far from these Re). S = 1 at launch, ~0.3 at landing. Sign verified. |
 | RK4 step | 0.5 ms | Convergence tested (halving changes x by < 1e-6 m). Landing found by Brent on the last step. |
 
 ## Run variability (`MARBLE_VARIABILITY`, `PING_PONG_VARIABILITY`)
@@ -161,14 +71,46 @@ A ball rolls from rest down a 1.2 m rail (high end raised 20 cm, low tip on the 
 |---|---|---|---|---|
 | Release offset sigma | 2 | 2 | mm | ASSUMED. Finger placement against the mark, along the rail. |
 | Release push sigma (half-normal, >= 0) | 5 | 10 | mm/s | ASSUMED. "Release without pushing" but a finger lift always adds a little. |
-| Junction scatter (relative on v_roll) | 1.5 | 3 | % | ASSUMED. Larger for the soft light ball. Floor 0.5 of the mean. |
+| Junction extra loss sigma | 1.5 | 3 | % | ASSUMED. Junction factor = 1 - sigma abs(N(0,1)) on the post-impact state (one-sided: scatter can only add loss, never create energy; mean extra loss 0.8 sigma, floor 0.5). Larger for the soft light ball. |
 | Lateral launch angle sigma | 1.0 | 1.5 | deg | ASSUMED. Gives z drift of ~1 cm at x = 0.55 m. |
 
 ## Carbon mark and bounce (`MARBLE_MARK`, `PING_PONG_MARK`)
 
 | Parameter | Marble | Ping-pong | Unit | Source |
 |---|---|---|---|---|
-| Median no-mark impact momentum | 0 (always marks) | 0.006 | kg m/s | ASSUMED. Landing p = m vy: marble ~0.022, ping-pong ~0.010. |
+| Median no-mark impact momentum | 0 (always marks) | 0.009 | kg m/s | ASSUMED. Landing p = m vy at H = 0.76 m: marble ~0.021, ping-pong ~0.0100; with the +-30 % draw the ping-pong threshold spans 0.0063-0.0117, so a faint or missing mark happens for the upper part of the draws (about 30 % of the draws). |
 | Threshold scatter | - | +-30 | % (uniform draw) | ASSUMED. |
 | Dot diameter | 3 x sqrt(p/0.021), clamped 2-4 | same, clamped 1.5-4 | mm | ASSUMED. |
 | Darkness | p/(p + 0.021) | same | - | ASSUMED saturating shape; marble ~0.51, ping-pong ~0.33. |
+
+## Apparatus (`src/experiments/parabolic/apparatus/constants.ts`)
+
+Device and bench values of the Practica 2 apparatus layer. Date of all rows: 2026-10-23. **ASSUMED** = chosen by us, not measured; the guide gives only the rail length, the 20 cm rise, the 5 cm gap, the upper half, the A4 sheets and the counts.
+
+| Parameter | Value | Unit | Source |
+|---|---|---|---|
+| Rail length `RAIL_LENGTH_m` | 1.2 | m | Guide. |
+| Rack clamp from the low tip `RACK_FROM_TIP_m` | 1.10 | m | ASSUMED (same as `supportDist_m` of the physics). |
+| Two-leg support from the low tip `TWO_LEG_FROM_TIP_m` | 0.10 | m | ASSUMED ("near the low end"). |
+| Rail top height at the clamp with the rack at 0 `RACK_BASE_HEIGHT_m` | 0.06 | m | ASSUMED. Rack reading 0 to 250 mm in 1 mm steps (ASSUMED). The 20 cm rise needs 140 mm. |
+| Two-leg stand height range | 0 to 150, 1 mm steps | mm | ASSUMED. |
+| Two-leg span `TWO_LEG_SPAN_m` (lever of the screw foot) | 0.20 | m | ASSUMED. |
+| Screw foot range / step | +-5 / 0.05 | mm | ASSUMED (same as Practica 1). |
+| Tip counted as lifted above `TIP_LIFT_TOL_m` | 0.5 | mm | ASSUMED. |
+| Screws | 2 per rail joint, 4 in the box | - | ASSUMED (the guide lists no count). |
+| Table height `H_m` (hidden, per bench) | uniform 0.74 to 0.78 | m | ASSUMED (typical lab table). |
+| Table lateral tilt (hidden, per bench) | uniform +-0.3 | deg | ASSUMED. |
+| Lateral launch angle per rad of rail roll `LATERAL_DRIFT_GAIN` | 4 | - | ASSUMED, stylised: the ball rides one wall of the groove. Not derived; it only makes the level matter (0.3 deg of roll adds 1.2 deg of launch angle, comparable to the 1 deg run scatter). |
+| Level sensitivity / bubble end / centred tolerance | 20 / 6 / 0.5 | mm/deg, mm, mm | ASSUMED (same vial as Practica 1). |
+| Rail tip to edge when first put down / maximum | 0.15 / 0.60 | m | ASSUMED. 1 mm slider steps. A tip at or past the edge is refused. |
+| Rail mark: snap / student's placement error sigma / max count | 0.5 / 1 / 10 | mm, mm, - | ASSUMED. Guide: 5 marks in the upper half (s >= 0.60 m from the low tip). |
+| A4 sheet | 0.297 x 0.210 | m | Standard A4. 2 bond sheets, 1 carbon sheet (guide). Position snap 1 mm. |
+| Edge projection placement error sigma | 2 (per axis) | mm | ASSUMED (plumb line or set-square on the floor). |
+| Tape measure reach / division / MPE | 3 / 1 / 0.3 + 0.2 L | m, mm, mm and mm/m | Reach ASSUMED (3 m pocket tape); division and class II MPE as in Instruments above. The range reading is the Euclidean floor distance (tape laid straight). |
+| Rise and gap tolerances for the checklist | 20 cm +-5 mm, 5 cm +-20 mm | - | ASSUMED ("20 cm" and "about 5 cm" in the guide). |
+| Stored trajectory rate | 1200 | Hz | Numerical (linear interpolation error ~1e-6 m); not an instrument. |
+| Slow-motion video | 240 fps, 3 frames before launch and after landing | - | ASSUMED (typical phone slow motion). Frame positions carry no tracker noise (sub-pixel centre). Video phase of each run is a seeded draw in [0, 1) frame. |
+| Tabla 2.1 | 5 trials x 5 repetitions per ball; times <= 30 s, 2 decimals; ranges <= 3 m, 3 decimals | - | Guide layout; limits ASSUMED (stopwatch 0.01 s, tape 1 mm). |
+| Roll-over tail | 0.5 | s | Animation only: a ball that rolls over the edge instead of leaving horizontally is followed this long. |
+
+Simplifications: no longitudinal table tilt; the table is long enough for any rail position; heights are vertical and distances along the rail (small-angle bookkeeping for the two-leg lift); after the first bounce the ball is not followed; marks are the first contact only. With the physics rolling resistance (`c_rr` 1.5e-3 and 5e-3) a ball does not stop on a 0.6 m gap: only a nearly flat rail stops it.
