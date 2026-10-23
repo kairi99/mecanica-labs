@@ -107,3 +107,68 @@ All rows ASSUMED unless a source is given; none is a PHYWE specification. Date o
 | Table 1.1 | 10 positions x 10 repetitions; max 30 s; 2 decimals | - | Guide layout; limits ASSUMED (stopwatch resolution 0.01 s). |
 
 Simplifications: no sag of the rail; the table tilt is not drawn (world frame = table frame) but is added to the incline; a flat or uphill rail does not move the cart (static friction / no uphill model); the cart stops at the receiver (no bounce); the release offset is applied at release (cart jumps by about 1 mm).
+
+# Práctica 2 · Movimiento parabólico (`src/experiments/parabolic/physics`)
+
+A ball rolls from rest down a 1.2 m rail (high end raised 20 cm, low tip on the table), crosses a ~5 cm gap on the table, leaves the edge horizontally and lands on carbon paper. Values below are inputs of the model; none was tuned to a target number. **ASSUMED** = chosen by us from typical values and physical reasoning, not measured. Date of all rows: 2026-10-23.
+
+## Balls (`MARBLE`, `PING_PONG`)
+
+| Parameter | Value | Unit | Source |
+|---|---|---|---|
+| Marble diameter / radius `R_m` | 16 / 0.008 | mm / m | Typical glass marble. ASSUMED (guide gives none). |
+| Marble mass `m_kg` | 5.5 | g | Glass 2.5 g/cm^3 x 2.145 cm^3 = 5.4 g; taken 5.5 g (common glass 2.5-2.6 g/cm^3). ASSUMED, not weighed. |
+| Marble inertia factor `k_body` | 2/5 | - | Solid sphere (rigid-body result). |
+| Marble `c_rr` | 1.5e-3 | - | ASSUMED. Hard glass on aluminium / laminate; typical hard-on-hard range 1e-3 to 2e-3. One value for rail and table. |
+| Ping-pong diameter / radius | 40 / 0.020 | mm / m | ITTF regulation ball (40 mm). |
+| Ping-pong mass | 2.7 | g | ITTF regulation (2.7 g). |
+| Ping-pong inertia factor `k_body` | 2/3 | - | Thin hollow shell. The real shell is ~0.4 mm thick (t/R = 0.02), which gives ~0.66; the thin-shell 2/3 is used. |
+| Ping-pong `c_rr` | 5e-3 | - | ASSUMED. Larger than the marble (soft, large, light shell); plausible 3e-3 to 1e-2. |
+| Drag coefficient `Cd` | 0.5 | - | Smooth sphere at Re ~ 10^3 to 10^4 (textbook value 0.4-0.5; White, Fluid Mechanics, drag of a sphere). Re ~ 1.0e3 (marble) to 3.5e3 (ping-pong) at v ~ 1.3 m/s with dynamic viscosity of air 1.8e-5 Pa s (ASSUMED). Held constant along the flight. |
+| Restitution `e` on paper over the floor | 0.5 (marble), 0.8 (ping-pong) | - | ASSUMED. Only used for the animation of the first bounce, never for measured quantities. |
+
+## Rail, supports and table (`DEFAULT_SETUP`)
+
+| Parameter | Value | Unit | Source |
+|---|---|---|---|
+| Rail length `L_rail_m` | 1.20 | m | Guide (metal rail 1.2 m). |
+| Rise of the high support `rise_m` | 0.20 | m | Guide (20 cm). |
+| Rail distance low tip to the high support `supportDist_m` | 1.10 | m | ASSUMED, support near the high end. Gives theta = asin(0.20/1.10) = 10.48 deg. The guide gives the rise, not this distance. |
+| Gap rail tip to table edge `gap_m` | 0.05 | m | Guide (about 5 cm). |
+| Table height `H_m` | 0.76 | m | ASSUMED default (typical table 0.74-0.78 m); seeded per bench elsewhere. |
+| Channel width `channelWidth_m` (distance between the two contact lines) | 10 | mm | ASSUMED, top groove of the metal rail. r_eff = sqrt(R^2 - (w/2)^2): marble 6.2 mm, ping-pong 17.3 mm. w >= 2R: the ball does not fit (error). w = 0 is a single line. |
+| Rail-top step to the table `stepDrop_m` | 0 | m | ASSUMED (rail thickness neglected); parameter kept. |
+| Paper height `paperHeight_m` | 0 | m | Floor reference; the ball bottom lands at this height. |
+| g, air density | 9.7717, 0.869 | m/s^2, kg/m^3 | Site constants (see Site above). |
+
+## Mechanics model assumptions
+
+| Item | Value | Source |
+|---|---|---|
+| Rolling on the slope | no slipping on two lines, k_eff = k_body (R/r_eff)^2, a = g (sin theta - c_rr cos theta)/(1 + k_eff) | Rigid-body result; the c_rr term with the same (1 + k_eff) inertia is a model choice (ASSUMED form). |
+| Tip transition | normal velocity component destroyed (inelastic, no rebound), tangential kept, angular momentum about the contact point conserved: v_roll = (v cos theta + k_body R omega)/(1 + k_body), omega = v/r_eff | ASSUMED idealisation. Energy lost >= 0 is tested. For the narrow-groove marble (R/r_eff = 1.28) the channel spin exceeds flat rolling, so friction SPEEDS the ball up (v_roll > v_tip); this is a consequence of the assumed w. |
+| Table roll | decel c_rr g/(1 + k_body) over the gap; stops if v^2 <= 0 | Model choice with the same c_rr. |
+| Leaves horizontally | v_edge^2 >= g R | Centripetal condition at the edge; below it the ball rolls over the edge. |
+| Launch spin | omega = v_edge/R (topspin), constant in flight | Spin decay in 0.4 s neglected (viscous torque << inertia). ASSUMED. |
+| Added mass (~ rho V/2) | neglected | ~0.5 % of the ping-pong mass, ~0.02 % of the marble. |
+| Buoyancy | g_eff = g (1 - rho V/m) | Archimedes: 1.1 % (ping-pong), 0.05 % (marble). |
+| Magnus lift `C_L(S) = S/(2.022 S + 0.981)`, S = R omega/v | topspin pushes the ball DOWN | Fit as commonly quoted for baseball-type balls (Sawicki, Hubbard & Stronge 2003 lineage; coefficients not re-derived here). ASSUMED to carry over to the marble and, even more so, to the ping-pong ball (extrapolation at Re ~ 10^3-10^4). S = 1 at launch and falls to ~0.3 at landing. |
+| RK4 step | 0.5 ms | Convergence tested (halving changes x by < 1e-6 m). Landing found by Brent on the last step. |
+
+## Run variability (`MARBLE_VARIABILITY`, `PING_PONG_VARIABILITY`)
+
+| Parameter | Marble | Ping-pong | Unit | Source |
+|---|---|---|---|---|
+| Release offset sigma | 2 | 2 | mm | ASSUMED. Finger placement against the mark, along the rail. |
+| Release push sigma (half-normal, >= 0) | 5 | 10 | mm/s | ASSUMED. "Release without pushing" but a finger lift always adds a little. |
+| Junction scatter (relative on v_roll) | 1.5 | 3 | % | ASSUMED. Larger for the soft light ball. Floor 0.5 of the mean. |
+| Lateral launch angle sigma | 1.0 | 1.5 | deg | ASSUMED. Gives z drift of ~1 cm at x = 0.55 m. |
+
+## Carbon mark and bounce (`MARBLE_MARK`, `PING_PONG_MARK`)
+
+| Parameter | Marble | Ping-pong | Unit | Source |
+|---|---|---|---|---|
+| Median no-mark impact momentum | 0 (always marks) | 0.006 | kg m/s | ASSUMED. Landing p = m vy: marble ~0.022, ping-pong ~0.010. |
+| Threshold scatter | - | +-30 | % (uniform draw) | ASSUMED. |
+| Dot diameter | 3 x sqrt(p/0.021), clamped 2-4 | same, clamped 1.5-4 | mm | ASSUMED. |
+| Darkness | p/(p + 0.021) | same | - | ASSUMED saturating shape; marble ~0.51, ping-pong ~0.33. |

@@ -173,3 +173,30 @@ deletes them.
    there are any, restore from `createExperimentStore(id)`), and call `mountShell(config)`: store, strings, steps
    (`stepCount`, `panelStep`, `slots`), `procedure`, `timingBar`, `stage.mount2d` / `stage.load3d`, `refusalText`, `reset`,
    `save`, `tour`, `coach`, `help`, `landingUrl`. `?lang ?theme ?step ?tour ?view ?teacher` are parsed by the shell.
+
+# Parabolic physics (`src/experiments/parabolic/physics`)
+
+Pure model of Práctica 2 (no apparatus or views yet). Pipeline for one release:
+incline (`incline.ts`) -> tip junction and roll over the gap (`junction.ts`) -> projectile flight (`flight.ts`) -> carbon mark (`marks.ts`), composed by `simulateLaunch(setup, ball, releaseS_m, run?, opts?)` in `launch.ts`.
+
+- `constants.ts`: ball presets (`MARBLE`, `PING_PONG`), `DEFAULT_SETUP`, Magnus `C_L(S)`; all empirical values are in PARAMETERS.md.
+- `incline.ts`: theta = asin(rise / supportDist); mark positions `s_m` run along the rail from the LOW tip (upper half is s >= 0.60 m). Two-line channel: r_eff, k_eff = k_body (R/r_eff)^2, constant a, `v_tip`, roll-down time.
+- `junction.ts`: slope-to-table transition (keep v cos theta, lose the normal part, angular momentum about the contact conserved, energy lost >= 0), gap roll with rolling resistance (can stop), `leavesHorizontally` (v^2 >= gR).
+- `flight.ts`: RK4 (0.5 ms) with buoyancy, quadratic drag and Magnus (topspin pushes down); landing by Brent on the last step; optional sampled trajectory (e.g. 240 fps); `idealFlight` closed form (vacuum run matches it to < 1e-6).
+- `variability.ts`: `sampleRun(rng, ball)` returns `RunOffsets` (release, push, junction factor, lateral angle, mark draw). `ZERO_RUN` is the expectation; noise is injected, never `Math.random`.
+- `marks.ts`: `carbonMark` (inside the paper, impact-momentum threshold, size, darkness) and `firstBounce` (animation only).
+
+Expected values (default set-up, H = 0.76 m, air on) and the ideal projectile (vacuum, c_rr = 0, single line, lossless corner):
+
+| ball | s (m) | v_edge (m/s) | t (s) | x (m) | ideal v / t / x |
+|---|---|---|---|---|---|
+| marble | 0.60 | 1.207 | 0.3947 | 0.4740 | 1.234 / 0.3944 / 0.4867 |
+| marble | 0.725 | 1.327 | 0.3947 | 0.5211 | 1.357 / 0.3944 / 0.5350 |
+| marble | 0.85 | 1.436 | 0.3947 | 0.5641 | 1.469 / 0.3944 / 0.5793 |
+| marble | 0.975 | 1.539 | 0.3947 | 0.6041 | 1.573 / 0.3944 / 0.6204 |
+| marble | 1.10 | 1.634 | 0.3947 | 0.6416 | 1.671 / 0.3944 / 0.6590 |
+| ping-pong | 0.60 | 1.103 | 0.4004 | 0.4153 | 1.131 / 0.3944 / 0.4461 |
+| ping-pong | 0.85 | 1.313 | 0.3999 | 0.4932 | 1.346 / 0.3944 / 0.5309 |
+| ping-pong | 1.10 | 1.494 | 0.3995 | 0.5597 | 1.531 / 0.3944 / 0.6040 |
+
+Honest caveat: the ping-pong flight time is ~1.5 % longer than the ideal 0.394 s (drag and buoyancy outweigh the Magnus pull-down) and the range ~7-8 % shorter; all of these effects depend on assumed coefficients (PARAMETERS.md).
