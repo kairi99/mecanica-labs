@@ -531,9 +531,37 @@ export function buildTapeMeasure(kit: Kit): TapeModel {
     return windowTex
   }
 
-  const caseBody = (parent: THREE.Object3D, w: number, h: number, d: number, x: number, y: number, z: number): void => {
-    rbox(w, h, d, 0.5, M.red, x, y, z, parent)
-    box(w * 0.32, 0.12, d * 0.5, M.steel, x + w * 0.12, y + h / 2 + 0.04, z, parent) // lock button
+  /**
+   * Round case (the common pocket tape: chrome rim, black rubber grip band, yellow side faces, lock button, belt clip).
+   * Built in a canonical frame: the coil axis is x (the blade width), the blade leaves the mouth along -y in the plane
+   * z = 0 with its face toward +z, and the case sits on the side `side` (+1: +z, -1: -z). The origin is the reading
+   * point; the blade runs from there up into the coil. The caller places and rotates the returned group.
+   */
+  const R = 2.7 // case radius, cm (a 3 m pocket tape is about 5 to 6 cm across)
+  const T = 2.6 // case thickness along the coil axis, cm
+  const roundCase = (stripMat: THREE.Material, side: 1 | -1, stub_cm = 0): THREE.Group => {
+    const g = new THREE.Group()
+    const chrome = new THREE.MeshStandardMaterial({ color: 0xd9dde2, metalness: 1, roughness: 0.2 })
+    const yellow = new THREE.MeshStandardMaterial({ color: 0xf2c230, metalness: 0.05, roughness: 0.5 })
+    const cy = 1.7 + 0.65 * R // coil centre above the reading point; the mouth sits under it, on the blade
+    const cz = side * R // the blade is tangent to the coil
+    const disc = (r: number, h: number, mat: THREE.Material, x: number): void => {
+      const m = cyl(r, r, h, mat, g, 48)
+      m.rotation.z = Math.PI / 2
+      m.position.set(x, cy, cz)
+    }
+    disc(R, T * 0.86, chrome, 0) // chrome shell
+    disc(R + 0.1, T * 0.5, M.black, 0) // rubber grip band round the rim
+    for (const sx of [-1, 1]) {
+      disc(R * 0.86, 0.1, yellow, sx * T * 0.45) // side face
+      disc(R * 0.34, 0.08, M.black, sx * T * 0.5) // hub
+      disc(0.22, 0.06, chrome, sx * T * 0.53) // rivet
+    }
+    box(T * 0.7, 1.0, 0.9, M.black, 0, cy - 0.65 * R, side * 0.25, g) // mouth housing round the blade exit
+    box(T * 0.3, 0.45, 0.9, yellow, 0, cy - 0.65 * R + 0.2, side * 1.1, g).rotation.x = side * 0.5 // lock button
+    box(0.1, R * 0.9, 0.8, M.steel, T * 0.56, cy + R * 0.5, cz, g) // belt clip on one face, clear of the hub
+    box(BLADE_W, cy + stub_cm, 0.05, stripMat, 0, (cy - stub_cm) / 2, 0, g) // blade from the mouth into the coil
+    return g
   }
 
   return {
@@ -548,9 +576,12 @@ export function buildTapeMeasure(kit: Kit): TapeModel {
       root.add(content)
       if (mode === 'rest') {
         // case lying on the tray, hook tab peeking out of the mouth
-        caseBody(content, 6.5, 3.2, 6.0, 0, 1.6, 0)
-        box(BLADE_W, 0.08, 1.2, M.tape, 0, 0.6, 3.6, content)
-        box(BLADE_W, 0.5, 0.12, M.steel, 0, 0.85, 4.2, content)
+        // standing on its rim on the tray, blade flat under the mouth and the hook tab just out of it
+        const c = roundCase(M.tape, 1, 0.6)
+        c.rotation.x = -Math.PI / 2 // canonical -y (blade out) becomes +z, the case side +z becomes up
+        c.position.set(0, 0.13, 2.4) // coil centre about 1 cm behind the origin
+        content.add(c)
+        box(BLADE_W, 0.45, 0.1, M.steel, 0, 0.35, 3.0, content) // hook tab
         return
       }
       const L = Math.max(L_cm, 0.5)
@@ -570,8 +601,7 @@ export function buildTapeMeasure(kit: Kit): TapeModel {
         blade.add(w)
         box(BLADE_W, 0.12, 0.9, M.steel, 0, -L + 0.06, 0.4, blade) // hook tab flat on the table
         box(BLADE_W, 0.7, 0.12, M.steel, 0, -L + 0.35, 0.0, blade)
-        box(BLADE_W, 1.6, 0.05, stripMat, 0, 0.8, 0, blade) // blade above the reading point, into the case
-        caseBody(content, 4.6, 5.0, 2.6, 0, 1.6 + 2.5, 0)
+        content.add(roundCase(stripMat, -1)) // held above the rail, behind the blade
       } else {
         box(L, BLADE_W, 0.05, stripMat, dir * L / 2, 0, 0, blade)
         const w = plane(WINDOW_cm, BLADE_W, winMat)
@@ -579,7 +609,10 @@ export function buildTapeMeasure(kit: Kit): TapeModel {
         blade.add(w)
         box(0.12, BLADE_W, 0.9, M.steel, 0, 0, -0.4, blade)
         box(0.12, 0.7, 0.12, M.steel, 0, 0, 0, blade).rotation.y = 0
-        caseBody(content, 6.0, 6.5, 3.2, dir * (L + 3.0), 0, 3.3)
+        const c = roundCase(stripMat, 1) // in front of the rail face, or above the cart top
+        c.rotation.z = -dir * Math.PI / 2 // canonical -y (toward the hook) becomes -dir·x
+        c.position.set(dir * L, 0, 0)
+        content.add(c)
       }
       void win
     },
