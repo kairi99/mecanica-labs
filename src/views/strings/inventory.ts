@@ -9,6 +9,10 @@ export interface InventoryStrings {
   items: Record<ItemId, ItemText>
   onTable: string
   inBox: string
+  attached: string
+  info: string
+  putAll: string
+  removeAll: string
   add: string
   remove: string
   addAria: string
@@ -64,8 +68,9 @@ export const strings: Strings<InventoryStrings> = {
       caliper: { name: 'Calibrador (pie de rey)', hint: 'Para medir alturas. Elige vernier o digital.' },
       markers: { name: 'Marcadores (cinta)', hint: 'Para señalar las posiciones cada 10 cm.' },
     },
-    onTable: 'En la mesa', inBox: 'Guardado',
-    add: 'Poner en la mesa', remove: 'Guardar', addAria: 'Poner en la mesa: {x}', removeAria: 'Guardar: {x}',
+    onTable: 'En la mesa', inBox: 'En la caja', attached: 'Fijado',
+    info: 'Más información: {x}', putAll: 'Poner todo', removeAll: 'Retirar todo',
+    add: 'Poner', remove: 'Retirar', addAria: 'Poner en la mesa: {x}', removeAria: 'Retirar de la mesa: {x}',
     itemsTitle: 'Materiales',
     jointsTitle: 'Montaje de la pista',
     jointsIntro: 'Sigue la guía: soporte con cremallera en un extremo; receptor y soporte de dos patas en el otro.',
@@ -86,7 +91,7 @@ export const strings: Strings<InventoryStrings> = {
     caliperVariant: 'Tipo de calibrador', vernier: 'Vernier', digital: 'Digital',
     missingTitle: 'Qué falta',
     missingNone: 'El montaje está completo: no falta nada.',
-    blocksRun: 'necesario para soltar el carro',
+    blocksRun: 'necesario para soltar el DigiCart',
     missingItem: 'Poner en la mesa: {x}',
     missingJoint: 'Montar: {x}',
     missingReasons: {
@@ -94,7 +99,7 @@ export const strings: Strings<InventoryStrings> = {
       needsRackClamp: 'primero fija la riel a la pinza', notAttached: 'falta conectarlo',
     },
     screwsInUse: 'Los tornillos están en uso.',
-    summary: '{n} de 11 elementos sobre la mesa',
+    summary: '{n} de 11 sobre la mesa',
   },
   en: {
     title: 'Inventory and assembly',
@@ -116,8 +121,9 @@ export const strings: Strings<InventoryStrings> = {
       caliper: { name: 'Caliper', hint: 'To measure heights. Choose vernier or digital.' },
       markers: { name: 'Markers (tape)', hint: 'To flag the positions every 10 cm.' },
     },
-    onTable: 'On the table', inBox: 'Stored',
-    add: 'Put on the table', remove: 'Put away', addAria: 'Put on the table: {x}', removeAria: 'Put away: {x}',
+    onTable: 'On the table', inBox: 'In the box', attached: 'Fixed',
+    info: 'More information: {x}', putAll: 'Place all', removeAll: 'Remove all',
+    add: 'Place', remove: 'Remove', addAria: 'Put on the table: {x}', removeAria: 'Remove from the table: {x}',
     itemsTitle: 'Materials',
     jointsTitle: 'Track assembly',
     jointsIntro: 'Follow the guide: rack stand at one end; receiver and two-leg stand at the other.',
@@ -138,7 +144,7 @@ export const strings: Strings<InventoryStrings> = {
     caliperVariant: 'Caliper type', vernier: 'Vernier', digital: 'Digital',
     missingTitle: "What's missing",
     missingNone: 'The setup is complete: nothing is missing.',
-    blocksRun: 'needed to release the cart',
+    blocksRun: 'needed to release the DigiCart',
     missingItem: 'Put on the table: {x}',
     missingJoint: 'Assemble: {x}',
     missingReasons: {
@@ -146,6 +152,6 @@ export const strings: Strings<InventoryStrings> = {
       needsRackClamp: 'first fasten the rail to the clamp', notAttached: 'not connected yet',
     },
     screwsInUse: 'The screws are in use.',
-    summary: '{n} of 11 items on the table',
+    summary: '{n} of 11 on the table',
   },
 }

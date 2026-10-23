@@ -62,6 +62,29 @@ export function isTextTarget(t: EventTarget | null): boolean {
   return false
 }
 
+/** Roles whose keyboard behaviour the page must never override (Space / Enter / S / R belong to them). */
+const WIDGET_ROLES = new Set(['button', 'checkbox', 'radio', 'switch', 'tab', 'menuitem', 'menuitemcheckbox', 'menuitemradio', 'option', 'slider', 'link', 'combobox', 'textbox', 'spinbutton'])
+
+/**
+ * True when the keyboard focus sits on something that has its own Space / Enter behaviour: a button, link, summary, checkbox,
+ * radio, range, select, text input, [role=button] and friends. The global stopwatch shortcuts must leave these alone.
+ */
+export function isInteractiveTarget(t: EventTarget | null): boolean {
+  if (isTextTarget(t)) return true
+  const n = t as { tagName?: string; getAttribute?: (k: string) => string | null; isContentEditable?: boolean } | null
+  if (!n || typeof n.tagName !== 'string') return false
+  const tag = n.tagName
+  if (tag === 'BUTTON' || tag === 'A' || tag === 'SUMMARY' || tag === 'INPUT' || tag === 'DETAILS' || tag === 'DIALOG') return true
+  const role = typeof n.getAttribute === 'function' ? n.getAttribute('role') : null
+  return role !== null && WIDGET_ROLES.has(role)
+}
+
+/** True when the target is inside the timing bar (its own controls handle their own Space / Enter). */
+export function inTimingBar(t: EventTarget | null): boolean {
+  const n = t as { closest?: (s: string) => unknown } | null
+  return !!n && typeof n.closest === 'function' && n.closest('[data-timing-bar]') !== null
+}
+
 let uid = 0
 export const nextId = (p: string): string => `${p}-${++uid}`
 

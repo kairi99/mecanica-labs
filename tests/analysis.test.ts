@@ -20,7 +20,7 @@ function table(shift_s: number, n = 10, rows = [1, 2, 3, 4, 5, 6, 7, 8, 9], scat
 }
 
 describe('task 1: mean time with uncertainty', () => {
-  it('mean, s, s/sqrt(n), Type B terms and the quadrature sum', () => {
+  it('mean, s, s/sqrt(n), the fit u (A + resolution) and the combined u_c with the reaction bias', () => {
     const v: (number | null)[][] = Array.from({ length: 10 }, () => Array<number | null>(10).fill(null))
     v[1] = [1.0, 1.2, null, null, null, null, null, null, null, null]
     const m = markStats(v)[1]!
@@ -30,7 +30,9 @@ describe('task 1: mean time with uncertainty', () => {
     expect(m.uA_s).toBeCloseTo(0.1, 12)
     expect(m.uRes_s).toBeCloseTo(0.01 / Math.sqrt(12), 12)
     expect(m.uReact_s).toBeCloseTo(0.1 / Math.sqrt(3), 12)
-    expect(m.u_s).toBeCloseTo(Math.sqrt(0.1 ** 2 + (0.01 / Math.sqrt(12)) ** 2 + (0.1 / Math.sqrt(3)) ** 2), 12)
+    // the reaction bias is a common systematic: NOT part of the per-point (fit) uncertainty
+    expect(m.u_s).toBeCloseTo(Math.sqrt(0.1 ** 2 + (0.01 / Math.sqrt(12)) ** 2), 12)
+    expect(m.uTotal_s).toBeCloseTo(Math.sqrt(0.1 ** 2 + (0.01 / Math.sqrt(12)) ** 2 + (0.1 / Math.sqrt(3)) ** 2), 12)
     expect(markStats(v)[0]!.mean_s).toBe(0)
   })
   it('the Type B reaction term does not shrink with more readings, the Type A term does', () => {
@@ -38,7 +40,22 @@ describe('task 1: mean time with uncertainty', () => {
     const many = markStats(table(0, 10))[5]!
     expect(many.uReact_s).toBe(few.uReact_s)
     expect(many.uA_s).toBeLessThan(few.uA_s)
-    expect(many.u_s!).toBeGreaterThan(many.uReact_s)
+    expect(many.uTotal_s!).toBeGreaterThan(many.uReact_s)
+    expect(many.u_s!).toBeLessThan(many.uReact_s) // with 10 readings the statistical part is below the systematic one
+  })
+  it('the reaction bias does not enter the fit weights: sigma_t of every fit point is the statistical u only', () => {
+    const r = analyse(table(0, 10))
+    const marks = r.marks
+    for (const p of r.fit!.points) if (!p.isOrigin) expect(p.sigmaT_s).toBeCloseTo(marks[p.row]!.u_s!, 12)
+  })
+  it('reaction effect of a +0.1 s lag: a changes by well under 1 %, c1 by about -0.02 m/s, the mean velocity by about -3 %', () => {
+    const re = analyse(table(0, 10)).reaction!
+    expect(re.shift_s).toBe(0.1)
+    expect(Math.abs(re.da_pct)).toBeLessThan(1)
+    expect(re.dc1_mps).toBeLessThan(-0.01)
+    expect(re.dc1_mps).toBeGreaterThan(-0.04)
+    expect(re.dvWhole_pct!).toBeLessThan(-2)
+    expect(re.dvWhole_pct!).toBeGreaterThan(-5)
   })
   it('rounds value and uncertainty to the same decimals, with a decimal comma in Spanish', () => {
     expect(pmText(1.0213, 0.058, 'en')).toBe('1.02 ± 0.06')

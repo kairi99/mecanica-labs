@@ -32,6 +32,7 @@
 </section>
 
 <section id="use"><h2>2. How to use the lab</h2>
+<p>The lab goes in five steps, shown in the bar at the top: 1 Setup, 2 Adjustments and height, 3 Timing and Table 1.1, 4 DigiCart, 5 Analysis. Steps you have met get a check. The stage always stays in view; in step 3 the timing bar sits right under it.</p>
 <ol>
 <li><b>Materials.</b> In the inventory put every part on the table: rail, DigiCart, rack-and-pinion stand and its base, two-leg stand, receiver, screws, level, stopwatch, caliper and marks.</li>
 <li><b>Assembly.</b> Put the rack stand on its base. Clamp one rail end in its clamp: that is the high end and the printed 0 of the scale must be there. At the opposite end go the two-leg stand and the receiver. Use all six screws (two per joint).</li>
@@ -42,7 +43,7 @@
 <li><b>Analysis.</b> The analysis panel computes the tasks of section 1.4 from your table and updates by itself. You answer the questions.</li>
 </ol>
 <p class="note">The DigiCart must never be off the rail: it rolls easily on any surface and can fall off the table.</p>
-<p>The lab's checklist follows these steps and, with its "Show me" button, highlights the part on the stage and opens the panel you need. You can also replay the first-visit tour from that checklist.</p>
+<p>The "Procedure" (the drawer bar above the panel) follows these steps and, with its "Show me" button, highlights the part on the stage and takes you to the step and panel you need. You can also replay the first-visit tour from there.</p>
 </section>
 
 <section id="caliper"><h2>3. The caliper</h2>
@@ -89,6 +90,8 @@
 <p>Round the uncertainty to one or two significant figures (two if the first is 1 or 2) and the value to the same decimal place. Write 1.02 ± 0.06 s, not 1.0213 ± 0.058 s. Keep trailing zeros: 0.030 and 0.03 do not say the same thing.</p>
 <h3>Fitting x(t)</h3>
 <p>Since the times are the noisy quantity, the quadratic fit x = c₀ + c₁t + c₂t² weights each point with an effective uncertainty σ<sub>eff</sub>² = σ<sub>x</sub>² + (dx/dt)²·σ<sub>t</sub>² (the effective-variance method). The acceleration is <em>a</em> = 2c₂. A reduced χ² near 1 means the error bars describe the scatter well.</p>
+<h3>Reaction bias is a systematic</h3>
+<p>Your press delay is about the same at every mark: it is fully correlated. So it is not added, point by point, to the fit uncertainty (which uses only u<sub>A</sub> and the display resolution). It is reported separately: the task 1 table shows u<sub>react</sub> in its own column and the combined u of t̄, and the analysis panel estimates what a constant +0.1 s lag does: <em>a</em> barely changes (≈ −0.3 %), c₁ drops by about −0.02 m/s and the 0–90 cm mean velocity drops ≈ 3 %. A c₁ far from 0 gives this bias away.</p>
 </section>
 
 <section id="errors"><h2>6. Sources of error on an incline</h2>
@@ -108,11 +111,12 @@
 <thead><tr><th>Key</th><th>Action</th></tr></thead>
 <tbody>
 <tr><td><kbd>Space</kbd></td><td>Start or stop the stopwatch (the moment of the press counts)</td></tr>
+<tr><td><kbd>Enter</kbd></td><td>Copy the stopped reading into Table 1.1</td></tr>
 <tr><td><kbd>R</kbd></td><td>Reset the stopwatch</td></tr>
 <tr><td><kbd>S</kbd></td><td>Release the DigiCart</td></tr>
 <tr><td><kbd>Arrows</kbd> / <kbd>+</kbd> <kbd>−</kbd></td><td>With the 3D stage focused: orbit the view and zoom</td></tr>
 <tr><td><kbd>Arrows</kbd>, <kbd>Enter</kbd></td><td>In Table 1.1: move between cells</td></tr>
-<tr><td><kbd>Tab</kbd></td><td>Move through the controls. Everything can be operated with the keyboard</td></tr>
+<tr><td><kbd>Tab</kbd></td><td>Move through the controls. Everything can be operated with the keyboard. The shortcuts do not fire on buttons, checkboxes, lists or text fields: there the keys do their own job</td></tr>
 <tr><td><kbd>Esc</kbd></td><td>Close the first-visit tour or a part card on the stage</td></tr>
 </tbody></table>
 </section>

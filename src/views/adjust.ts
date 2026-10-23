@@ -94,6 +94,17 @@ export const mountAdjust: MountView = (root, ctx): View => {
 
   // ---- markers ----
   const markHead = el('h3', 'sub-title')
+  const markSummary = el('p', 'mark-summary', undefined, { 'aria-live': 'polite' })
+  const markEditBtn = button('', 'btn btn-sm', () => { renderMarks(); markDialog.showModal() })
+  const markSumRow = el('div', 'mark-sum-row')
+  markSumRow.append(markSummary, markEditBtn)
+  const markDialog = el('dialog', 'sheet-dialog')
+  const markDlgHead = el('div', 'sheet-dialog-head')
+  const markDlgTitle = el('h2', 'sheet-dialog-title')
+  const markDoneBtn = button('', 'btn btn-primary', () => markDialog.close())
+  markDlgHead.append(markDlgTitle, markDoneBtn)
+  markDialog.append(markDlgHead)
+  markDialog.addEventListener('click', (e) => { if (e.target === markDialog) markDialog.close() })
   const markNote = el('p', 'muted')
   const markInputId = nextId('mk')
   const markLabel = el('label', 'field-label', undefined, { for: markInputId })
@@ -152,7 +163,7 @@ export const mountAdjust: MountView = (root, ctx): View => {
   c.body.append(
     rackHead, rack.wrap, footHead, foot.wrap,
     levelHead, levelSeg, vialWrap, levelRead, levelHelp,
-    markHead, markNote, markLabel, markRow, nudgeRow, markWhy, markList, markFoot,
+    markHead, markSumRow, markDialog,
     cartHead, cartPhase, cartMarkLabel, cartMarkRow, cartPosLabel, cartPosRow, cartResetBtn, cartNote, cartWhy,
   )
 
@@ -175,6 +186,10 @@ export const mountAdjust: MountView = (root, ctx): View => {
     vialLow.textContent = `${T.lowEnd} ▸`
     levelHelp.textContent = T.levelHelp
     markHead.textContent = T.markTitle
+    markDlgTitle.textContent = T.markTitle
+    markEditBtn.textContent = T.markEdit
+    markEditBtn.setAttribute('aria-label', T.markEditAria)
+    markDoneBtn.textContent = T.markDone
     markNote.textContent = T.markFromA
     markLabel.textContent = `${T.markPos} (${T.markUnit})`
     markInput.setAttribute('aria-label', `${T.markPos} (${T.markUnit})`)
@@ -230,7 +245,19 @@ export const mountAdjust: MountView = (root, ctx): View => {
     markWhy.textContent = canMark ? '' : T.markNeed
     const ev = app.evaluateMarks()
     const marks = app.getMarkers()
+    markSummary.textContent = marks.length === 0 ? T.markSummaryNone : marks.length === 1 ? T.markSummaryOne : fill(T.markSummary, marks.length)
+    markEditBtn.disabled = !canMark
     markClearBtn.hidden = marks.length === 0
+    if (markDialog.open) renderMarks()
+    // cart
+    phaseText()
+    cartSync(ev, marks)
+  }
+
+  function renderMarks(): void {
+    const T = S()
+    const ev = app.evaluateMarks()
+    const marks = app.getMarkers()
     rebuild(markList, () => {
       if (marks.length === 0) { markList.append(el('li', 'muted', T.markNone)); return }
       const order = [...marks].sort((a, b) => ev.orderedRailPos_mm.indexOf(a.railPos_mm) - ev.orderedRailPos_mm.indexOf(b.railPos_mm))
@@ -258,8 +285,11 @@ export const mountAdjust: MountView = (root, ctx): View => {
         markList.append(li)
       })
     })
-    // cart
-    phaseText()
+  }
+
+  function cartSync(ev: ReturnType<typeof app.evaluateMarks>, marks: ReturnType<typeof app.getMarkers>): void {
+    const T = S()
+    const s = app.getState()
     const canCart = s.items.cart && s.geometry !== null
     cartMarkSel.replaceChildren()
     if (marks.length === 0) cartMarkSel.append(el('option', undefined, T.noMarks, { value: '' }))
@@ -272,6 +302,8 @@ export const mountAdjust: MountView = (root, ctx): View => {
     cartMarkSel.disabled = !canCart || marks.length === 0
     cartWhy.textContent = canCart ? '' : T.cartNeed
   }
+
+  markDialog.append(markNote, markLabel, markRow, nudgeRow, markWhy, markList, markFoot)
 
   relabelStatic()
   return {

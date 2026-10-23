@@ -15,6 +15,9 @@ export interface AnalysisStrings {
   t1Title: string
   t1Note: string
   t1OneReading: string
+  reactTitle: string
+  reactBody: string
+  reactNone: string
   colX: string; colN: string; colMean: string; colSd: string; colUA: string; colURes: string; colUReact: string; colU: string
   noData: string
   // tasks 2 to 5
@@ -102,9 +105,12 @@ export const strings: Strings<AnalysisStrings> = {
     fileName: 'analisis-mruv.csv',
     info: 'Más información',
     t1Title: 'Tarea 1 · Tiempo medio de cada posición con su incertidumbre',
-    t1Note: 'u(t̄) = √(u_A² + u_res² + u_reac²). u_A = s/√n (tipo A, dispersión de tus lecturas). u_res = 0,01 s/√12 (tipo B, pantalla digital). u_reac = 0,1 s/√3 (tipo B, supuesto: el sesgo medio entre pulsar iniciar y detener es de ±0,1 s; es común a todas tus lecturas y no se reduce al promediar).',
+    t1Note: 'u(t̄) del ajuste = √(u_A² + u_res²). u_A = s/√n (tipo A, dispersión de tus lecturas). u_res = 0,01 s/√12 (tipo B, pantalla digital). Esta u es la que pesa cada punto en el ajuste y en las velocidades. u_reac = 0,1 s/√3 (tipo B, supuesto: el sesgo medio entre pulsar iniciar y detener es de ±0,1 s) es común a todas las marcas y a todas tus lecturas: es un sistemático, no se reduce al promediar y no se usa como peso por punto. La columna t̄ ± u_c lo incluye: u_c = √(u² + u_reac²).',
     t1OneReading: 'Con una sola lectura no se puede estimar u_A.',
-    colX: 'x (cm)', colN: 'n', colMean: 't̄ ± u (s)', colSd: 's (s)', colUA: 's/√n (s)', colURes: 'u_res (s)', colUReact: 'u_reac (s)', colU: 'u(t̄) (s)',
+    colX: 'x (cm)', colN: 'n', colMean: 't̄ ± u_c (s)', colSd: 's (s)', colUA: 's/√n (s)', colURes: 'u_res (s)', colUReact: 'u_reac (s)', colU: 'u ajuste (s)',
+    reactTitle: 'Sesgo de reacción (sistemático, aparte del ajuste)',
+    reactBody: 'Si tu mano llega {s} s tarde de forma constante, todos los tiempos suben {s} s. Efecto sobre tus resultados: a cambia {a} %, c₁ cambia {c1} m/s y la velocidad media 0–90 cm cambia {v} %. El ajuste con c₁ libre absorbe casi todo en c₁; por eso una c₁ lejos de 0 delata un sesgo de tiempo.',
+    reactNone: 'Hacen falta al menos 3 marcas con 2 lecturas para estimar este efecto.',
     noData: 'sin datos',
     t25Title: 'Tareas 2 a 5 · Velocidad media',
     t2Title: 'Tarea 2 · Todo el recorrido',
@@ -174,9 +180,12 @@ export const strings: Strings<AnalysisStrings> = {
     fileName: 'mruv-analysis.csv',
     info: 'More information',
     t1Title: 'Task 1 · Mean time of each position with its uncertainty',
-    t1Note: 'u(t̄) = √(u_A² + u_res² + u_react²). u_A = s/√n (Type A, the scatter of your readings). u_res = 0.01 s/√12 (Type B, digital display). u_react = 0.1 s/√3 (Type B, assumed: the mean bias between pressing start and stop is within ±0.1 s; it is common to all your readings and does not average down).',
+    t1Note: 'Fit u(t̄) = √(u_A² + u_res²). u_A = s/√n (Type A, the scatter of your readings). u_res = 0.01 s/√12 (Type B, digital display). This u weights every point in the fit and in the velocities. u_react = 0.1 s/√3 (Type B, assumed: the mean bias between pressing start and stop is within ±0.1 s) is common to all marks and all your readings: a systematic, it does not average down and it is not used as a per-point weight. The t̄ ± u_c column includes it: u_c = √(u² + u_react²).',
     t1OneReading: 'With a single reading u_A cannot be estimated.',
-    colX: 'x (cm)', colN: 'n', colMean: 't̄ ± u (s)', colSd: 's (s)', colUA: 's/√n (s)', colURes: 'u_res (s)', colUReact: 'u_react (s)', colU: 'u(t̄) (s)',
+    colX: 'x (cm)', colN: 'n', colMean: 't̄ ± u_c (s)', colSd: 's (s)', colUA: 's/√n (s)', colURes: 'u_res (s)', colUReact: 'u_react (s)', colU: 'fit u (s)',
+    reactTitle: 'Reaction bias (a systematic, separate from the fit)',
+    reactBody: 'If your hand is a constant {s} s late, every time grows by {s} s. Effect on your results: a changes {a} %, c₁ changes {c1} m/s and the mean velocity 0–90 cm changes {v} %. The fit with a free c₁ absorbs most of it in c₁; that is why a c₁ far from 0 gives away a time bias.',
+    reactNone: 'At least 3 marks with 2 readings are needed to estimate this effect.',
     noData: 'no data',
     t25Title: 'Tasks 2 to 5 · Mean velocity',
     t2Title: 'Task 2 · Whole path',
