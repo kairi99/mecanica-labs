@@ -1,16 +1,19 @@
 ---
 paths:
-  - "src/views/**"
-  - "src/styles/**"
-  - "src/pedagogy/**"
-  - "src/main.ts"
+  - "src/core/**"
+  - "src/experiments/*/views/**"
+  - "src/experiments/*/styles/**"
+  - "src/experiments/*/pedagogy/**"
+  - "src/experiments/*/main.ts"
+  - "src/landing/**"
   - "index.html"
+  - "*/index.html"
 ---
 
 # UI design rules
 
 - **Feel:** elegant, simple, calm, Apple-like. Also precise: a lab instrument, not a toy.
-- Use only the design tokens (CSS custom properties) from `src/styles/tokens.css`. No ad-hoc colours, font sizes,
+- Use only the design tokens (CSS custom properties) from `src/core/styles/tokens.css`. No ad-hoc colours, font sizes,
   radii, shadows or durations.
 - One accent colour. Colour never carries meaning alone: add a label, marker shape or text (for example the data
   series for position, velocity and acceleration, and the pass/fail state of a check).

@@ -1,14 +1,16 @@
 ---
 paths:
-  - "src/physics/**"
-  - "src/apparatus/**"
+  - "src/core/physics/**"
+  - "src/core/instruments/**"
+  - "src/experiments/*/physics/**"
+  - "src/experiments/*/apparatus/**"
   - "tests/**"
   - "PARAMETERS.md"
 ---
 
 # Physics model rules
 
-- `src/physics` is pure and DOM-free: no DOM, storage, timers or hidden randomness. Functions take and return numbers
+- `src/core/physics` and `src/experiments/*/physics` are pure and DOM-free: no DOM, storage, timers or hidden randomness. Functions take and return numbers
   or plain data.
 - SI units with the unit in the name (`x_m`, `t_s`, `v_mps`, `a_mps2`, `theta_rad`, `h_m`, `m_kg`). State units in the
   doc comment when a name cannot carry them. Convert cm and degrees only locally inside a function.

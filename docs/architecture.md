@@ -1,6 +1,6 @@
-# Architecture: apparatus layer (`src/apparatus`)
+# Architecture: apparatus layer (`src/experiments/mruv/apparatus`)
 
-Device logic between the pure physics (`src/physics`) and the views (3D scene, 2D panels). It owns **state**, **actions**
+Device logic between the pure physics (`src/core/physics`, `src/experiments/mruv/physics`) and the views (3D scene, 2D panels). It owns **state**, **actions**
 and **events**. Views render this state and call these actions; they never compute physics. No DOM, no timers, no
 `Math.random`. Time is passed in by the caller (ms timestamps, for example `event.timeStamp` or `performance.now()`), so
 tests are deterministic. Randomness is the injected `mulberry32` (seed from the constructor, later from the URL).
@@ -11,7 +11,7 @@ const lab = createApparatus('assembled', { seed: 42 })   // or new Apparatus({ s
 ```
 
 Every action returns `Result`: `{ ok: true, ...data }` or `{ ok: false, reason: Reason, item?: ItemId }`. `reason` and
-all enums are ids; the views translate them through `src/i18n.ts`. Every refusal also emits a `refused` event.
+all enums are ids; the views translate them through their `{ es, en }` strings files. Every refusal also emits a `refused` event.
 
 ## Units and conventions
 
@@ -122,16 +122,54 @@ Derived from state, no text: `setupComplete`, `canRun`, `scaleOk`, `levelledBefo
 real actions (marks A..+900 mm at 200..1100 mm, cart on A, theta within 0.005 deg of 1.30 deg); `preset('empty')` is a bare bench.
 The seed fixes the hidden values; a different seed gives a different table tilt, so the foot offset of the preset changes.
 
-# Shell layout (`src/main.ts`, `src/styles/layout.css`)
+# Shell layout (`src/core/shell/mountShell.ts`, `src/core/styles/layout.css`)
 
 Five lab steps, one panel each: 1 Setup (inventory) · 2 Adjustments and height (adjust, tape measure) · 3 Timing and Table 1.1
 (table, timing notes) · 4 DigiCart (tablet) · 5 Analysis. The header holds the step tracker (done checks come from the
 procedure checklist through `ChecklistHooks.onProgress`); the checklist itself is a drawer bar above the panel. The step is
-remembered (`persist.ts`) and `?step=1..5` deep-links to it. `?view=2d|3d` and `?cam=` choose the stage view.
+remembered (`src/core/persist.ts`) and `?step=1..5` deep-links to it. `?view=2d|3d` and `?cam=` choose the stage view.
 
 * Desktop (>= 1080 px): sticky stage on the left, the active step panel on the right (scrolls on its own).
 * Tablet (820 to 1079 px): stage and timing bar fill the screen, the panel is a bottom sheet (30 % / 60 %, drag or toggle).
 * Phone (< 820 px): sticky stage (46 svh), step menu in the header, timing bar fixed to the bottom in step 3.
-* The timing bar (`views/timingbar.ts`) is the only stopwatch UI: one LCD, mark target, start/stop, release, copy to the table.
-  Global keys (`views/stopwatchkeys.ts`) never fire on buttons, links, checkboxes, ranges, selects or text fields.
-* Statistics: the reaction-time Type B is a common systematic; it is not a per-point fit weight (see `analysis/compute.ts`).
+* The timing bar (`experiments/mruv/views/timingbar.ts`) is the only stopwatch UI: one LCD, mark target, start/stop, release, copy to the table.
+  Global keys (`core/views/stopwatchkeys.ts`) never fire on buttons, links, checkboxes, ranges, selects or text fields.
+* Statistics: the reaction-time Type B is a common systematic; it is not a per-point fit weight (see `experiments/mruv/analysis/compute.ts`).
+
+# Multi-experiment layout
+
+```
+index.html                 landing page (src/landing): experiment picker, ?exp=<id> redirect
+mruv/index.html            MRUV page; mruv/help/ its help pages
+src/core/                  shared code, never imports src/experiments (tests/core/boundary.test.ts)
+  physics/                 noise (mulberry32, CountedRng), roots, statistics, fit, uncertainty, constants, instruments, angles
+  instruments/stopwatch.ts Stopwatch (press timestamps, StopRecord); Apparatus composes it
+  views/                   dom, view contract (ViewContext<A>, MountView<A>), press, numfmt, csv, menu, theme, blade, plots
+  shell/                   mountShell(config), readShellParams(), ShellConfig types
+  pedagogy/                tour, coach gate and toast, checklist panel (experiment injects ids, strings, rules)
+  scene3d/                 framing, menu, materials palette, shared models (rail, stands, base, level, stopwatch, tape measure)
+  styles/                  tokens, app, layout, panels, pedagogy, analysis
+  persist.ts, i18n.ts      storage keys (mecanica:*), migration from the old keys, Lang
+src/experiments/<id>/      experiment.ts (manifest) and everything specific: physics, apparatus, analysis, views, pedagogy, styles, main.ts
+src/experiments/registry.ts  manifests of all experiments (data only); drives the landing page and the Vite inputs
+```
+
+Storage: `mecanica:lang`, `mecanica:theme`, `mecanica:last` are shared; each experiment keeps
+`mecanica:<id>:state|view|step|automark|tour-done`. `migrateKeys()` copies the old `digicart-*` values once and never
+deletes them.
+
+**Add an experiment in 5 steps**
+
+1. Create `src/experiments/<id>/` with `experiment.ts` exporting the manifest (`id`, `slug`, `guide`, `title`, `summary`,
+   `page`, `help`, `status`). Add it to `src/experiments/registry.ts`. Set `status: 'ready'` when the page exists (a `soon`
+   entry is listed on the landing page but not built).
+2. Build the model: `physics/` (pure, uses `src/core/physics`), `apparatus/` (state, events, `on(listener)`; compose
+   `Stopwatch` and `CountedRng` from core) and `analysis/`.
+3. Write the views as `MountView<YourApparatus>` with `{ es, en }` strings and key-parity tests; reuse the core views and
+   the shared 3D models (pass your dimensions in the option objects; defaults are the MRUV values).
+4. Add `<slug>/index.html` (a `#app` div and a script pointing at `src/experiments/<id>/main.ts`) and the help pages
+   `<slug>/help/index.html` and `en.html`; they link back with `../index.html`.
+5. In `main.ts` import the style sheets in cascade order, build the apparatus (migrate old keys with `migrateKeys` if
+   there are any, restore from `createExperimentStore(id)`), and call `mountShell(config)`: store, strings, steps
+   (`stepCount`, `panelStep`, `slots`), `procedure`, `timingBar`, `stage.mount2d` / `stage.load3d`, `refusalText`, `reset`,
+   `save`, `tour`, `coach`, `help`, `landingUrl`. `?lang ?theme ?step ?tour ?view ?teacher` are parsed by the shell.

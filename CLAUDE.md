@@ -9,29 +9,34 @@ Not affiliated with EPN or PHYWE.
 
 Source documents live in `refs/` (gitignored, copyrighted). Use the `mruv-reference` skill instead of the PDF/photos.
 
+The repo is a **multi-experiment app**: a landing page (`index.html`, `src/landing`) lists the experiments; each one is its
+own page and chunk (`mruv/index.html`, `src/experiments/mruv`). Shared code is in `src/core` (no imports from
+`src/experiments`; a test enforces it). Next experiment: "parabolic" (Práctica 2, status `soon` in the registry).
+
 ## Commands
 
 ```bash
 npm install
 npm run dev      # Vite dev server
-npm test         # Vitest (tests/**/*.test.ts)
+npm test         # Vitest (tests/**/*.test.ts: tests/core, tests/mruv)
 npm run build    # tsc && vite build -> dist/
 npm run teacher-key  # regenerates docs/teacher-key.md from the model
 ```
 
 ## Non-negotiable invariants
 
-1. **Pure physics.** `src/physics` is pure and DOM-free (no `document`, `window`, `localStorage`, timers, `Math.random`).
+1. **Pure physics.** `src/core/physics` and `src/experiments/*/physics` are pure and DOM-free (no `document`, `window`, `localStorage`, timers, `Math.random`).
 2. **SI units with the unit in the name:** `x_m`, `t_s`, `v_mps`, `a_mps2`, `theta_rad`, `h_m`, `m_kg`. Convert only
    locally inside a function (cm to m, deg to rad), never across an API.
-3. **Views render state and never compute physics.** Physics lives in `src/physics`, device logic in `src/apparatus`.
+3. **Views render state and never compute physics.** Physics lives in `physics/` (core and per experiment), device logic in
+   `src/experiments/*/apparatus` (generic instruments in `src/core/instruments`).
 4. **Expectation is not noise.** Model functions return the deterministic expected value. Run variability (release
    offset, initial velocity, friction scatter) lives in `variability.ts`; human timing (reaction, resolution) is a
    separate final step. Both use an injected RNG (`mulberry32`).
 5. **Honest model.** Every empirical parameter is in `PARAMETERS.md` with value, unit, source or ASSUMED, and date.
    Never tune a parameter to hide a physical discrepancy. If the data are not an ideal MRUV, say so.
 6. **i18n:** Spanish default (`es` first), English second, `?lang=` override and localStorage. Never hard-code
-   user-facing text in views; use `src/i18n.ts`.
+   user-facing text in views; use the `{ es, en }` strings files next to each view (`Lang` and storage in `src/core/i18n.ts`).
 7. **Mobile first:** must work at 360 px width, touch targets >= 44 px, light and dark themes.
 
 ## Design of the experience
@@ -47,7 +52,7 @@ npm run teacher-key  # regenerates docs/teacher-key.md from the model
 
 ## Style
 
-- Code, comments, commit messages and docs: English. UI strings through the i18n dictionary (Spanish first).
+- Code, comments, commit messages and docs: English. UI strings through the `{ es, en }` strings files (Spanish first).
 - Visual design: elegant, calm, Apple-like, one accent colour, yet a real instrument. See `.claude/rules/design-system.md`.
 - Open-source hygiene: `.claude/rules/open-source.md` (never commit the EPN guide or PHYWE photos).
 

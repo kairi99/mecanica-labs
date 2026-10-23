@@ -6,6 +6,18 @@ Spanish first (English available), mobile first, light and dark themes, keyboard
 
 **Live:** https://kairi99.github.io/digicart-mruv-sim/
 
+## Experiments
+
+The site opens on a **landing page** where students pick an experiment (`?exp=mruv` jumps straight into one). Each
+experiment is its own page and JavaScript chunk.
+
+| Guide | Experiment | Page | Status |
+| --- | --- | --- | --- |
+| Práctica 1 | MRUV: DigiCart on an inclined rail | `mruv/` | ready |
+| Práctica 2 | Projectile motion: a marble and a ping-pong ball leave the table edge | `parabolico/` | coming soon |
+
+The rest of this README describes the MRUV experiment.
+
 ## What it is
 
 Students assemble the setup from an inventory (rail, DigiCart, two stands, base, six screws, level, receiver, stopwatch,
@@ -31,11 +43,11 @@ invent new tasks.
   hidden values (bench tilt) and run variability; `?preset=assembled|empty` starts from a careful
   student's bench or a bare one. `npm run teacher-key` regenerates [docs/teacher-key.md](docs/teacher-key.md) (geometry, model
   acceleration and its breakdown, expected times and velocities, effect of a +0.1 s stop lag, URL flags).
-- The **help pages** (header "?", Spanish `help/index.html`, English `help/en.html`) cover the theory, instruments,
+- The **help pages** (header "?", Spanish `mruv/help/index.html`, English `mruv/help/en.html`) cover the theory, instruments,
   uncertainty conventions and the sources of error of an incline.
 - Development only: `?demo=table` fills Table 1.1 with simulated human readings (never in the published build).
 
-## Physics model (`src/physics`)
+## Physics model (`src/core/physics`, `src/experiments/mruv/physics`)
 
 Pure, DOM-free TypeScript in SI units. Rolling cart with effective mass m + sum(I)/r^2, rolling resistance, bearing drag
 and quadratic air drag at Quito's gravity (9.7717 m/s^2); closed form for the constant-force part and RK4 for the full
@@ -45,11 +57,14 @@ of resolution/sqrt(12), reaction bias). Every empirical parameter is in [PARAMET
 
 ## Architecture
 
-Layers, from the bottom: `src/physics` (pure model) -> `src/apparatus` (device logic, state, events; see
-[docs/architecture.md](docs/architecture.md)) -> `src/analysis` (Table 1.1 to numbers, per task; calls physics) ->
-`src/views` and `src/pedagogy` (rendering, checklist, coach, tour; views never compute physics) -> `src/main.ts`
-(shell). Strings live next to each view as `{ es, en }` pairs with key parity tests. Styles are plain CSS on design tokens
-(`src/styles/tokens.css`). Help pages are separate Vite pages in `help/`.
+Shared code is in `src/core` (physics helpers, instruments, views, the experiment shell, tour and coach mechanisms, 3D
+models, styles); each experiment lives in `src/experiments/<id>` and the landing page in `src/landing`. Inside an
+experiment, from the bottom: `physics` (pure model) -> `apparatus` (device logic, state, events; see
+[docs/architecture.md](docs/architecture.md)) -> `analysis` (Table 1.1 to numbers, per task; calls physics) ->
+`views` and `pedagogy` (rendering, checklist, coach, tour; views never compute physics) -> `main.ts` (hands the pieces to
+the shared shell). Strings live next to each view as `{ es, en }` pairs with key parity tests. Styles are plain CSS on
+design tokens (`src/core/styles/tokens.css`). Help pages are separate Vite pages in `mruv/help/`. See "Multi-experiment
+layout" in [docs/architecture.md](docs/architecture.md) to add an experiment.
 
 ## Develop
 

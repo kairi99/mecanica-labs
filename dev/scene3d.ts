@@ -1,12 +1,12 @@
 // Dev harness for the 3D table scene: an Apparatus, a ViewContext, the scene and buttons that call apparatus actions.
 // Query: ?preset=assembled|empty  &cam=overview|highEnd|lowEnd|lateral|mark|tape (alongRail = lateral)  &markfrom=50  &lang=es|en  &theme=dark|light
 //        &setup=add:rail,add:cart,attach:standBase,attach:rackClamp:E1,rack:25,foot:0.5,place:0,release,wait:1500,tool:markers,tape:clamp
-import '../src/styles/tokens.css'
-import { createApparatus, ITEM_IDS, type ItemId } from '../src/apparatus/index.ts'
-import { loadLang } from '../src/i18n.ts'
-import type { ViewContext } from '../src/views/view.ts'
-import { mountScene3D, webgl2Available, type PresetName } from '../src/views/scene3d/index.ts'
-import { parsePreset } from '../src/views/scene3d/presets.ts'
+import '../src/core/styles/tokens.css'
+import { createApparatus, ITEM_IDS, type ItemId } from '../src/experiments/mruv/apparatus/index.ts'
+import { loadLang } from '../src/core/i18n.ts'
+import type { ViewContext } from '../src/experiments/mruv/views/view.ts'
+import { mountScene3D, webgl2Available, type PresetName } from '../src/experiments/mruv/views/scene3d/index.ts'
+import { parsePreset } from '../src/experiments/mruv/views/scene3d/presets.ts'
 
 const q = new URLSearchParams(location.search)
 const theme = q.get('theme')

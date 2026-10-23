@@ -1,6 +1,6 @@
 # Model parameters
 
-Every empirical parameter of `src/physics`, with value, unit, source and date. **ASSUMED** means: chosen by us from
+Every empirical parameter of `src/core/physics` and `src/experiments/mruv/physics`, with value, unit, source and date. **ASSUMED** means: chosen by us from
 typical values and physical reasoning, not measured and not a PHYWE specification (no reliable PHYWE datasheet was
 found or consulted). None was tuned to hit a target; the resulting a ~ 0.206 m/s^2 is only a consequence of these
 assumed values (it lies between the frictionless 0.2115 and zero, so it is not independent evidence for them).
@@ -79,7 +79,7 @@ Type B convention: digital display, u = resolution/sqrt(12). Analog scale: read 
 Rolling without slipping; rail perfectly straight and rigid; no sag of the 1.2 m rail; no sensor or cable on the
 cart; no Bouguer correction; no air humidity. The mean velocity over the whole path equals v(end)/2 only for ideal MRUV.
 
-## Apparatus (`src/apparatus/constants.ts`)
+## Apparatus (`src/experiments/mruv/apparatus/constants.ts`)
 
 All rows ASSUMED unless a source is given; none is a PHYWE specification. Date of all rows: 2026-10-22, except the tape rows (2026-10-23).
 

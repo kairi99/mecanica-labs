@@ -1,6 +1,6 @@
 ---
 name: physics-reviewer
-description: Experimental-mechanics reviewer for the DigiCart MRUV simulation. Use proactively after any change to src/physics, src/apparatus, tests or PARAMETERS.md. Checks kinematics and dynamics, units, edge cases, measurement-uncertainty treatment, expectation-vs-noise separation and honest documentation of parameters. Read-only.
+description: Experimental-mechanics reviewer for the DigiCart MRUV simulation. Use proactively after any change to src/core/physics, src/experiments/*/physics, src/experiments/*/apparatus, tests or PARAMETERS.md. Checks kinematics and dynamics, units, edge cases, measurement-uncertainty treatment, expectation-vs-noise separation and honest documentation of parameters. Read-only.
 tools: Read, Grep, Glob, Bash
 model: opus
 ---
@@ -24,7 +24,7 @@ files in `refs/` unless a fact is missing from the skill.
    fewer points than parameters, zero or negative sigma.
 6. **Expectation vs noise**: model functions deterministic; randomness only in `variability.ts` and the human-timing
    step with an injected RNG.
-7. **Purity**: no DOM, storage, timers or `Math.random` in `src/physics`.
+7. **Purity**: no DOM, storage, timers or `Math.random` in `src/core/physics` and `src/experiments/*/physics`.
 8. **Honesty**: every empirical parameter appears in `PARAMETERS.md` with value, unit, source or ASSUMED and date;
    flag fudge factors and anything presented as a PHYWE specification without a source.
 9. **Tests** assert physics, not snapshot numbers; tolerances are justified.
