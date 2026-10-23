@@ -1,7 +1,7 @@
 // Public entry of the 3D table scene: mountScene3D(root, ctx, opts) returns a View. It paints its (cheap) overlay immediately
 // and lazy-loads scene.ts, which pulls in three.js as a separate chunk, so the first paint does not wait for it.
 import '../../styles/scene3d.css'
-import type { CaliperTarget } from '../../apparatus/index.ts'
+import type { TapeTarget } from '../../apparatus/index.ts'
 import type { View, ViewContext } from '../view.ts'
 import { strings } from '../strings/scene3d.ts'
 import type { Scene3D, Tool } from './scene.ts'
@@ -11,26 +11,26 @@ import { PRESET_NAMES, parsePreset, type PresetName } from './presets.ts'
 
 export type { PresetName }
 const PRESET_ORDER: readonly PresetName[] = PRESET_NAMES
-const TOOL_ORDER: readonly Tool[] = ['select', 'markers', 'level', 'caliper']
+const TOOL_ORDER: readonly Tool[] = ['select', 'markers', 'level', 'tape']
 
 export interface Scene3DOptions {
   /** The scene cannot start (no WebGL2, lost context): the shell falls back to the 2D side view. */
   onFail?(reason: string): void
   preset?: PresetName
-  /** A part card asks to open the matching 2D panel (e.g. 'stopwatch', 'caliper', 'inventory'). */
+  /** A part card asks to open the matching 2D panel (e.g. 'stopwatch', 'tape', 'inventory'). */
   openPanel?(panel: string): void
-  /** The student chose a caliper target in the scene (click on a support or a rail position). */
-  onCaliperTarget?(target: CaliperTarget): void
+  /** The student chose a tape measure target in the scene (click on a support or a rail position). */
+  onTapeTarget?(target: TapeTarget): void
 }
 
 export type Scene3DView = View & {
   setVisible(visible: boolean): void
   setPreset(name: PresetName): void
-  /** Scene tool: 'select' (default), 'markers' (click the rail to stick a mark), 'level', 'caliper' (choose what to measure). */
+  /** Scene tool: 'select' (default), 'markers' (click the rail to stick a mark), 'level', 'tape' (choose what to measure). */
   setTool?(tool: Tool): void
-  /** Caliper target shown in the scene (null: the caliper rests on the table). */
-  setCaliperTarget?(target: CaliperTarget | null): void
-  getCaliperTarget?(): CaliperTarget | null
+  /** Tape measure target shown in the scene (null: the tape measure rests on the tray). */
+  setTapeTarget?(target: TapeTarget | null): void
+  getTapeTarget?(): TapeTarget | null
   /** The 'mark' view frames +-12 cm around this mark (cm from A, perpendicular to the rail) and follows changes. */
   setMarkTarget(markFromA_cm: number): void
 }
@@ -101,7 +101,7 @@ export function mountScene3D(root: HTMLElement, ctx: ViewContext, opts: Scene3DO
   let current: PresetName = initial
   let tool: Tool = 'select'
   let pendingFocus: string[] | null = null
-  let pendingTarget: CaliperTarget | null | undefined
+  let pendingTarget: TapeTarget | null | undefined
   let cardInfo: CardInfo | null = null
   let pendingMark: number | null = null
 
@@ -195,13 +195,13 @@ export function mountScene3D(root: HTMLElement, ctx: ViewContext, opts: Scene3DO
         onCard: showCard,
         onFail: (r) => opts.onFail?.(r),
         onStatus: (t) => { status.textContent = t },
-        onCaliperTarget: opts.onCaliperTarget,
+        onTapeTarget: opts.onTapeTarget,
         openPanel: opts.openPanel,
       })
       status.textContent = ''
       if (pendingMark !== null) scene.setMarkTarget(pendingMark)
       if (pendingFocus) scene.focus(pendingFocus)
-      if (pendingTarget !== undefined) scene.setCaliperTarget(pendingTarget)
+      if (pendingTarget !== undefined) scene.setTapeTarget(pendingTarget)
       if (current !== initial) scene.setPreset(current)
       if (tool !== 'select') scene.setTool(tool)
     } catch (err) {
@@ -221,8 +221,8 @@ export function mountScene3D(root: HTMLElement, ctx: ViewContext, opts: Scene3DO
     setPreset: choose,
     setMarkTarget(m) { pendingMark = m; scene?.setMarkTarget(m) },
     setTool,
-    setCaliperTarget(t) { pendingTarget = t; scene?.setCaliperTarget(t) },
-    getCaliperTarget: () => scene?.getCaliperTarget() ?? (pendingTarget ?? null),
+    setTapeTarget(t) { pendingTarget = t; scene?.setTapeTarget(t) },
+    getTapeTarget: () => scene?.getTapeTarget() ?? (pendingTarget ?? null),
     destroy() {
       destroyed = true
       toolMenu.destroy(); viewMenu.destroy()

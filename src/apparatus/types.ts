@@ -3,7 +3,7 @@ import type { MarksEvaluation } from './markers.ts'
 import type { RailPose, Vec3 } from './geometry.ts'
 
 export const ITEM_IDS = [
-  'rail', 'cart', 'rackStand', 'standBase', 'twoLegStand', 'receiver', 'screws', 'level', 'stopwatch', 'caliper', 'markers',
+  'rail', 'cart', 'rackStand', 'standBase', 'twoLegStand', 'receiver', 'screws', 'level', 'stopwatch', 'tape', 'markers',
 ] as const
 export type ItemId = (typeof ITEM_IDS)[number]
 
@@ -12,7 +12,6 @@ export const JOINT_IDS = ['standBase', 'rackClamp', 'twoLegStand', 'receiver'] a
 export type JointId = (typeof JOINT_IDS)[number]
 /** Rail ends as printed: the scale 0 mm is at E1 and 1200 mm at E2. */
 export type RailEnd = 'E1' | 'E2'
-export type CaliperVariant = 'vernier' | 'digital'
 export type LevelPlacement = 'rail' | 'table' | null
 export type PresetId = 'empty' | 'assembled'
 
@@ -23,7 +22,7 @@ export type Reason =
   | 'levelNeedsRail'
   | 'railNotAssembled' | 'noRail' | 'noCart' | 'cartOffRail' | 'cartNotAtStart' | 'cartMoving' | 'noStartPosition'
   | 'noReceiver' | 'railNotSupported' | 'cartNotPlaced'
-  | 'notDigital' | 'jawsNotClosed' | 'notMeasurable'
+  | 'notMeasurable'
   | 'outOfRail' | 'duplicateMark' | 'tooManyMarks' | 'unknownMark'
   | 'stopwatchRunning' | 'noStopwatchReading' | 'badCell'
   | 'empty' | 'notANumber' | 'negative' | 'tooLarge' | 'tooManyDecimals'
@@ -46,10 +45,11 @@ export interface MissingEntry {
 }
 
 // ---- Events ------------------------------------------------------------------------------------------------------
-export type CaliperTarget =
+export type TapeTarget =
   | { kind: 'railHeight'; at: 'clamp' | 'twoLeg' | { railPos_mm: number } }
   | { kind: 'cartLength' }
-  | { kind: 'frontReferenceOffset' }
+  /** Separation d of the two supports, measured along the rail. */
+  | { kind: 'supportSeparation' }
 
 export type ApparatusEventBody =
   | { type: 'itemAdded'; item: ItemId }
@@ -59,10 +59,7 @@ export type ApparatusEventBody =
   | { type: 'levelPlaced'; placement: LevelPlacement }
   | { type: 'leveled'; bubble_mm: number }
   | { type: 'heightSet'; which: 'rack' | 'foot'; value_mm: number }
-  | { type: 'caliperVariant'; variant: CaliperVariant }
-  | { type: 'caliperJaws'; closed: boolean }
-  | { type: 'caliperZeroed' }
-  | { type: 'measuredHeight'; target: CaliperTarget; value_m: number }
+  | { type: 'measuredHeight'; target: TapeTarget; value_m: number }
   | { type: 'markPlaced'; markId: string; railPos_mm: number }
   | { type: 'markMoved'; markId: string; railPos_mm: number }
   | { type: 'markRemoved'; markId: string }
@@ -112,14 +109,13 @@ export interface LevelReading {
   centered: boolean
 }
 
-export interface CaliperReading {
-  variant: CaliperVariant
-  /** True length being measured, m (what the jaws open to). */
+export interface TapeReading {
+  /** True length being measured, m (where the blade edge meets the object). The student reads it off the blade. */
   trueLength_m: number
-  /** What the instrument shows: digital display (quantised, with zero error unless zeroed). null for vernier. */
-  display_m: number | null
-  /** Vernier scale geometry for the view to draw (always provided; the student reads it). */
-  vernier: import('./geometry.ts').VernierGeometry
+  /** Blade geometry for the view to draw (the student reads it; no numeric value is shown to the student). */
+  tape: import('./geometry.ts').TapeGeometry
+  /** Class II maximum permissible error of the tape at this length, m. Reported, not applied (see PARAMETERS.md). */
+  mpe_m: number
 }
 
 export interface CartStatus {
@@ -217,7 +213,7 @@ export interface ProcedureSummary {
   /** theta - 1.30 deg, rad. */
   angleError_rad: number | null
   angleOk: boolean
-  heightsMeasured: { clamp: boolean; twoLeg: boolean }
+  heightsMeasured: { clamp: boolean; twoLeg: boolean; separation: boolean }
   marks: MarksEvaluation
   marksOk: boolean
   cart: { onRail: boolean; atZero: boolean }
@@ -239,7 +235,6 @@ export interface ApparatusState {
   /** Two-leg screw foot offset, mm. */
   foot_mm: number
   level: { placement: LevelPlacement }
-  caliper: { variant: CaliperVariant; jawsClosed: boolean; zeroed: boolean }
   markers: MarkerState[]
   cart: { placed: boolean; startRailPos_mm: number | null; released: boolean; runId: number | null }
   stopwatch: StopwatchState
@@ -250,15 +245,14 @@ export interface ApparatusSnapshot {
   version: 1
   seed: number
   runRngDraws: number
-  hidden: { tableTilt_rad: number; digitalZeroError_m: number }
+  hidden: { tableTilt_rad: number }
   items: ItemId[]
   joints: { standBase: boolean; rackClamp: RailEnd | null; twoLegStand: boolean; receiver: boolean }
   rack_mm: number
   foot_mm: number
   levelPlacement: LevelPlacement
   levelledAtBase: boolean
-  caliper: { variant: CaliperVariant; jawsClosed: boolean; zeroed: boolean }
-  measured: { clamp: boolean; twoLeg: boolean }
+  measured: { clamp: boolean; twoLeg: boolean; separation: boolean }
   markers: MarkerState[]
   nextMarkerId: number
   cart: { placed: boolean; startRailPos_mm: number | null; released: boolean; runId: number | null }

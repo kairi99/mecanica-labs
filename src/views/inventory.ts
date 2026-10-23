@@ -6,7 +6,7 @@ import { reasonText } from './reasons.ts'
 import { strings } from './strings/inventory.ts'
 
 /** Items shown in the guide's order. */
-const ORDER: ItemId[] = ['rail', 'cart', 'rackStand', 'standBase', 'twoLegStand', 'screws', 'level', 'receiver', 'stopwatch', 'caliper', 'markers']
+const ORDER: ItemId[] = ['rail', 'cart', 'rackStand', 'standBase', 'twoLegStand', 'screws', 'level', 'receiver', 'stopwatch', 'tape', 'markers']
 
 type Block = { reason: Reason; item?: ItemId } | null
 
@@ -43,7 +43,7 @@ const ICONS: Record<ItemId, string[]> = {
   level: ['M3 9h18v6H3z', 'M10 12h4'],
   receiver: ['M4 7h8v11H4z', 'M17 14a3.5 3.5 0 1 0 0-.1'],
   stopwatch: ['M12 21a7 7 0 1 0 0-.1', 'M12 14v-4M10 3h4'],
-  caliper: ['M3 8h18', 'M3 8v11M7 8v7', 'M12 8v4h3'],
+  tape: ['M4 8h16v10H4z', 'M4 12h6M7 12v3M20 11h2v4h-2'],
   markers: ['M12 20a8 8 0 1 0 0-.1', 'M12 14a2 2 0 1 0 0-.1'],
 }
 function itemIcon(id: ItemId): SVGElement {
@@ -120,16 +120,6 @@ export const mountInventory: MountView = (root, ctx): View => {
     li.append(hint)
     if (id === 'screws' && on) li.append(el('p', 'inv-hint', fill(T.screws, { n: s.screwsAvailable })))
     if (lock) li.append(el('p', 'why', T.screwsInUse))
-    if (id === 'caliper' && on) {
-      const seg = el('div', 'seg', undefined, { role: 'group', 'aria-label': T.caliperVariant })
-      for (const v of ['vernier', 'digital'] as const) {
-        const sb = button(T[v], `seg-btn${s.caliper.variant === v ? ' active' : ''}`, () => act(app.setCaliperVariant(v)))
-        sb.setAttribute('aria-pressed', String(s.caliper.variant === v))
-        sb.dataset.k = `cal-${v}`
-        seg.append(sb)
-      }
-      li.append(seg)
-    }
     return li
   }
   function jointRow(joint: JointId, s: ApparatusState, suggested: boolean): HTMLElement {

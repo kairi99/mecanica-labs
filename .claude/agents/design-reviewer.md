@@ -15,8 +15,8 @@ Read `.claude/rules/design-system.md` and `src/styles/tokens.css`.
 1. **Token discipline**: grep changed files for raw hex/rgb, px font sizes, ad-hoc durations/easings, stray z-index. Each is a finding.
 2. **Hierarchy and restraint**: is the experiment (3D rail with the cart, the x-t chart, Table 1.1) the hero? Too many
    borders, boxes, colours or weights? Exactly one accent colour?
-3. **Instruments**: stopwatch, caliper (vernier and digital) and rail scale are legible and operable by touch; the
-   vernier alignment is readable; digits do not jump layout.
+3. **Instruments**: stopwatch, tape measure (analog blade) and rail scale are legible and operable by touch; the
+   blade graduations and numerals are readable at every magnification; digits do not jump layout.
 4. **Assembly flow**: inventory is clear, drag or tap-to-place both work, wrong parts are possible but feedback is
    calm, the 1.30 degree check is discoverable.
 5. **Charts**: series distinguished by more than colour (marker shape, label), error bars visible, axes with units.

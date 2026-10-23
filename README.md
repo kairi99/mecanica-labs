@@ -9,8 +9,8 @@ Spanish first (English available), mobile first, light and dark themes, keyboard
 ## What it is
 
 Students assemble the setup from an inventory (rail, DigiCart, two stands, base, six screws, level, receiver, stopwatch,
-caliper, marks), level the rail, set the 1.30 degree incline by measuring heights with a virtual caliper (analog vernier
-or digital), release the cart, time it with a stopwatch driven by **their own key presses** (so their reaction time is in
+tape measure, marks), level the rail, set the 1.30 degree incline by measuring heights with a virtual tape measure (analog flexómetro,
+read by eye in millimetres), release the cart, time it with a stopwatch driven by **their own key presses** (so their reaction time is in
 every reading), fill Table 1.1 (10 timings at each 10 cm mark, 0 to 90 cm) and do the guide's analysis tasks 1 to 10.
 The 3D table (three.js) has a 2D side view fallback. The guide is the spine: the app explains and checks, it does not
 invent new tasks.
@@ -28,7 +28,7 @@ invent new tasks.
   answers the guide's questions (tasks 5, 6 tangent, 9, 10); students do. Results export as CSV.
 - **Teacher notes.** `?analysis=0` hides the analysis panel (for a graded run without it). `?teacher` shows the target
   height difference in the checklist and the model's expected acceleration in the comparison block. `?seed=N` fixes the
-  hidden values (bench tilt, caliper zero error) and run variability; `?preset=assembled|empty` starts from a careful
+  hidden values (bench tilt) and run variability; `?preset=assembled|empty` starts from a careful
   student's bench or a bare one. `npm run teacher-key` regenerates [docs/teacher-key.md](docs/teacher-key.md) (geometry, model
   acceleration and its breakdown, expected times and velocities, effect of a +0.1 s stop lag, URL flags).
 - The **help pages** (header "?", Spanish `help/index.html`, English `help/en.html`) cover the theory, instruments,

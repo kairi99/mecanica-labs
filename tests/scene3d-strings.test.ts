@@ -14,7 +14,7 @@ describe('scene3d strings', () => {
     }
   })
   it('every part the scene tags has a name and a description', () => {
-    for (const id of ['rail', 'cart', 'rackStand', 'standBase', 'twoLegStand', 'receiver', 'screws', 'level', 'stopwatch', 'caliper', 'markers', 'rackKnob', 'foot', 'tape', 'pulley', 'ghost']) {
+    for (const id of ['rail', 'cart', 'rackStand', 'standBase', 'twoLegStand', 'receiver', 'screws', 'level', 'stopwatch', 'tapeMeasure', 'markers', 'rackKnob', 'foot', 'tape', 'pulley', 'ghost']) {
       expect((strings.es.parts as Record<string, { name: string }>)[id]?.name, id).toBeTruthy()
       expect((strings.en.parts as Record<string, { info: string }>)[id]?.info, id).toBeTruthy()
     }
@@ -33,11 +33,11 @@ describe('scene3d strings', () => {
       expect(t, t).not.toMatch(/\bel riel\b|\bdel riel\b|\bal riel\b/i) // the EPN guide says "la riel"
     }
     expect(strings.es.presets.lowEnd).toBe('Extremo bajo')
-    expect(strings.es.presets.caliper).toBe('Pie de rey')
-    expect(strings.es.tools.caliper).toBe('Pie de rey')
+    expect(strings.es.presets.tape).toBe('Flexómetro')
+    expect(strings.es.tools.tape).toBe('Flexómetro')
     expect(strings.es.parts.cart.name).toBe('DigiCart')
     expect(strings.es.resetCart).toContain('DigiCart')
-    expect(Object.keys(strings.es.presets)).toEqual(['overview', 'highEnd', 'lowEnd', 'lateral', 'mark', 'caliper'])
+    expect(Object.keys(strings.es.presets)).toEqual(['overview', 'highEnd', 'lowEnd', 'lateral', 'mark', 'tape'])
     expect('release' in strings.es).toBe(false) // release lives in the shell's timing bar
   })
 })

@@ -4,9 +4,9 @@
 // Scene units: 1 unit = 1 cm, y up, same axes as the apparatus world frame (x down-slope, z toward the viewer).
 import {
   CART_LENGTH_m, FOOT_RANGE_mm, FOOT_STEP_mm, RACK_BASE_HEIGHT_m, RACK_MAX_mm, RACK_MIN_mm, RAIL_LENGTH_m,
-  RAIL_SCALE_MAX_mm, RECEIVER_STOP_FROM_END_m, TWO_LEG_BASE_HEIGHT_m, CART_FRONT_REFERENCE_OFFSET_m,
+  RAIL_SCALE_MAX_mm, RECEIVER_STOP_FROM_END_m, TWO_LEG_BASE_HEIGHT_m,
   downSlope_m, railPointAt, railPos_mm,
-  type ApparatusState, type CaliperTarget, type ItemId, type MarksEvaluation, type RailGeometry, type RailPose, type Vec3,
+  type ApparatusState, type TapeTarget, type ItemId, type MarksEvaluation, type RailGeometry, type RailPose, type Vec3,
 } from '../../apparatus/index.ts'
 
 export const CM_PER_M = 100
@@ -50,7 +50,7 @@ export function markerLabels(markers: readonly { id: string; railPos_mm: number 
 // ---- Staging area (unattached items rest on the table) -----------------------------------------------------------
 export interface Slot { x: number; z: number; rotY: number }
 /** Resting places in cm (table frame). The loose rail is placed by the apparatus (z = 25 cm, front row). */
-export const STAGING: Record<Exclude<ItemId, 'rail'> | 'caliperRest', Slot> = {
+export const STAGING: Record<Exclude<ItemId, 'rail'> | 'tapeRest', Slot> = {
   cart: { x: 24, z: 38, rotY: 0 },
   twoLegStand: { x: 56, z: 38, rotY: 0 },
   receiver: { x: 84, z: 37, rotY: 0 },
@@ -58,8 +58,8 @@ export const STAGING: Record<Exclude<ItemId, 'rail'> | 'caliperRest', Slot> = {
   standBase: { x: 62, z: -33, rotY: 0 },
   // small props share one tray near the low end of the bench
   stopwatch: { x: 96, z: -26, rotY: 0.3 },
-  caliper: { x: 112, z: -34, rotY: 0 },
-  caliperRest: { x: 112, z: -34, rotY: 0 },
+  tape: { x: 112, z: -34, rotY: 0 },
+  tapeRest: { x: 112, z: -34, rotY: 0 },
   level: { x: 119, z: -19, rotY: -0.03 },
   markers: { x: 128, z: -30, rotY: 0 },
   screws: { x: 130, z: -20, rotY: 0 },
@@ -130,20 +130,20 @@ export const rackWheelStep_mm = (deltaY: number): number => (deltaY < 0 ? 1 : -1
 /** One wheel notch on the foot: +-1 step, 5 steps with shift. */
 export const footWheelStep_mm = (deltaY: number, shift: boolean): number => (deltaY < 0 ? 1 : -1) * FOOT_STEP_mm * (shift ? 5 : 1)
 
-// ---- Caliper (visual only: the reading itself comes from apparatus.caliperMeasure) --------------------------------------
-/** Jaw opening (m) the caliper model shows for a target, from the same geometry the apparatus uses; null when not drawable. */
-export function caliperOpening_m(t: CaliperTarget, geo: RailGeometry | null): number | null {
+// ---- Tape measure (visual only: the reading itself comes from apparatus.tapeMeasure) --------------------------------------
+/** Length (m) the tape measure model shows for a target, from the same geometry the apparatus uses; null when not drawable. */
+export function tapeLength_m(t: TapeTarget, geo: RailGeometry | null): number | null {
   if (t.kind === 'cartLength') return CART_LENGTH_m
-  if (t.kind === 'frontReferenceOffset') return CART_FRONT_REFERENCE_OFFSET_m
   if (!geo) return null
+  if (t.kind === 'supportSeparation') return geo.supportedBothEnds ? geo.separation_m : null
   if (t.at === 'clamp') return geo.clampHeight_m
   if (t.at === 'twoLeg') return geo.supportedBothEnds ? geo.twoLegHeight_m : null
   const p = t.at.railPos_mm
   if (!Number.isFinite(p) || p < 0 || p > RAIL_SCALE_MAX_mm) return null
   return railPointAt(geo.pose, downSlope_m(p, geo.scaleZeroAtHighEnd!)).y_m
 }
-/** Local x (cm from the high end, along the rail) where the depth rod of the caliper stands for a rail-height target. */
-export function caliperRailX_cm(t: Extract<CaliperTarget, { kind: 'railHeight' }>, geo: Pick<RailGeometry, 'scaleZeroAtHighEnd'> | null): number {
+/** Local x (cm from the high end, along the rail) where the vertical blade of the tape stands for a rail-height target. */
+export function tapeRailX_cm(t: Extract<TapeTarget, { kind: 'railHeight' }>, geo: Pick<RailGeometry, 'scaleZeroAtHighEnd'> | null): number {
   if (t.at === 'clamp') return SUPPORT_FROM_END_cm + 3.4
   if (t.at === 'twoLeg') return RAIL.length - SUPPORT_FROM_END_cm - 2.6
   return railLocalX_cm(t.at.railPos_mm, geo?.scaleZeroAtHighEnd ?? true)

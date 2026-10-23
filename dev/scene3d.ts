@@ -1,6 +1,6 @@
 // Dev harness for the 3D table scene: an Apparatus, a ViewContext, the scene and buttons that call apparatus actions.
-// Query: ?preset=assembled|empty  &cam=overview|highEnd|lowEnd|lateral|mark|caliper (alongRail = lateral)  &markfrom=50  &lang=es|en  &theme=dark|light
-//        &setup=add:rail,add:cart,attach:standBase,attach:rackClamp:E1,rack:25,foot:0.5,place:0,release,wait:1500,tool:markers,caliper:clamp
+// Query: ?preset=assembled|empty  &cam=overview|highEnd|lowEnd|lateral|mark|tape (alongRail = lateral)  &markfrom=50  &lang=es|en  &theme=dark|light
+//        &setup=add:rail,add:cart,attach:standBase,attach:rackClamp:E1,rack:25,foot:0.5,place:0,release,wait:1500,tool:markers,tape:clamp
 import '../src/styles/tokens.css'
 import { createApparatus, ITEM_IDS, type ItemId } from '../src/apparatus/index.ts'
 import { loadLang } from '../src/i18n.ts'
@@ -27,7 +27,7 @@ const view = mountScene3D(root, ctx, {
   preset: parsePreset(q.get('cam')) ?? 'overview',
   onFail: (r) => log(`onFail ${r}`),
   openPanel: (p) => log(`openPanel ${p}`),
-  onCaliperTarget: (t) => log(`caliper target ${JSON.stringify(t)}`),
+  onTapeTarget: (t) => log(`tape target ${JSON.stringify(t)}`),
 })
 if (q.get('markfrom')) view.setMarkTarget(Number(q.get('markfrom')))
 const fitRoot = (): void => { root.style.height = `${Math.max(300, innerHeight - root.getBoundingClientRect().top - 40)}px` }
@@ -62,11 +62,10 @@ btn('release', () => a.releaseCart(performance.now()))
 btn('reset cart', () => a.resetCart())
 btn('level rail', () => a.placeLevel('rail'))
 btn('level table', () => a.placeLevel('table'))
-btn('caliper variant', () => a.setCaliperVariant(a.getState().caliper.variant === 'vernier' ? 'digital' : 'vernier'))
 btn('stopwatch', () => a.stopwatchStartStop(performance.now()))
 btn('preset assembled', () => { a.preset('assembled') })
 btn('preset empty', () => { a.preset('empty') })
-for (const p of ['overview', 'highEnd', 'lowEnd', 'lateral', 'mark', 'caliper'] as const) btn(p, () => view.setPreset(p))
+for (const p of ['overview', 'highEnd', 'lowEnd', 'lateral', 'mark', 'tape'] as const) btn(p, () => view.setPreset(p))
 for (const m of [0, 10, 50, 90]) btn(`mark ${m}`, () => view.setMarkTarget(m))
 
 // scripted setup from the URL (used by the screenshot checks)
@@ -85,10 +84,8 @@ for (const s of steps) {
       case 'mark': a.placeMarker(Number(x)); break
       case 'release': a.releaseCart(performance.now()); break
       case 'level': a.placeLevel(x as 'rail' | 'table'); break
-      case 'digital': a.setCaliperVariant('digital'); break
-      case 'tool': view.setTool?.(x as 'select' | 'markers' | 'level' | 'caliper'); break
-      case 'caliper': view.setCaliperTarget?.(x === 'twoLeg' || x === 'clamp' ? { kind: 'railHeight', at: x } : x === 'cart' ? { kind: 'cartLength' } : { kind: 'railHeight', at: { railPos_mm: Number(x) } }); break
-      case 'jaws': a.setCaliperJaws(false); break
+      case 'tool': view.setTool?.(x as 'select' | 'markers' | 'level' | 'tape'); break
+      case 'tape': view.setTapeTarget?.(x === 'twoLeg' || x === 'clamp' ? { kind: 'railHeight', at: x } : x === 'cart' ? { kind: 'cartLength' } : x === 'd' ? { kind: 'supportSeparation' } : { kind: 'railHeight', at: { railPos_mm: Number(x) } }); break
       default: break
     }
   }
@@ -109,7 +106,7 @@ for (const s of acts) {
   setTimeout(() => {
     const dbg = (window as unknown as { __scene3d?: Dbg }).__scene3d
     const p0 = dbg?.screen(name ?? '')
-    if (op === 'tool') { view.setTool?.(name as 'select' | 'markers' | 'level' | 'caliper'); return }
+    if (op === 'tool') { view.setTool?.(name as 'select' | 'markers' | 'level' | 'tape'); return }
     if (op === 'cam') { view.setPreset(name as PresetName); return }
     if (!p0) { log(`no screen for ${name}`); return }
     if (op === 'tap') { ev('pointerdown', p0.x, p0.y); ev('pointerup', p0.x, p0.y) }

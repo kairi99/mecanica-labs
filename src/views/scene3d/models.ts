@@ -4,7 +4,7 @@
 // Models are shaped after the real equipment in our own simplified way; no logos or brand text.
 import * as THREE from 'three'
 import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js'
-import { CART_FRONT_REFERENCE_OFFSET_m, CART_LENGTH_m, type CaliperVariant, type VernierGeometry } from '../../apparatus/index.ts'
+import { CART_LENGTH_m } from '../../apparatus/index.ts'
 import type { Materials } from './materials.ts'
 import { RAIL, SUPPORT_FROM_END_cm, railLocalX_cm } from './units.ts'
 
@@ -173,13 +173,11 @@ export function buildCart(kit: Kit): CartModel {
   lab.rotation.x = -Math.PI / 2
   lab.position.set(-CART.length / 2, CART.bodyBottom + CART.bodyHeight + 0.003, 0)
   root.add(lab)
-  // front sensor window and the engraved front reference line on both sides
+  // front sensor window
   const win = plane(1.9, 1.0, M.black)
   win.rotation.y = Math.PI / 2
   win.position.set(0.004, CART.bodyBottom + 1.4, 0)
   root.add(win)
-  const refX = -CART_FRONT_REFERENCE_OFFSET_m * 100
-  for (const sz of [1, -1]) box(0.06, CART.bodyHeight - 0.5, 0.02, M.black, refX, CART.bodyBottom + CART.bodyHeight / 2, sz * (CART.width / 2 + 0.005), root)
   // wheels in the two rail grooves
   const wheels: THREE.Group[] = []
   for (const wx of [-2.0, -CART.length + 2.0]) for (const sz of [1, -1]) {
@@ -482,114 +480,108 @@ export function buildTapeRoll(kit: Kit): THREE.Group {
   return g
 }
 
-// ------------------------------------------------------------------------------------------------------------------ caliper
-export type CaliperMode = 'depth' | 'jaws' | 'rest'
-export interface CaliperModel {
+// ------------------------------------------------------------------------------------------------------------------ tape measure
+/**
+ * 'down': hook (zero) on the table, blade rising to the reading point at the origin (rail top edge), case above (rail heights).
+ * 'right' / 'left': blade runs along +x / -x from the hook, case at the far end (support separation, cart length).
+ * 'rest': case only, with the hook tab peeking out (lying on the tray).
+ */
+export type TapeMode = 'down' | 'right' | 'left' | 'rest'
+export interface TapeModel {
   root: THREE.Group
-  /** Rebuild for a variant, mode, opening (cm) and the digital display text. */
-  set(variant: CaliperVariant, mode: CaliperMode, opening_cm: number, display: string, vernier: VernierGeometry | null): void
+  /** Rebuild for a mode and the blade length (cm) between the hook and the reading point. */
+  set(mode: TapeMode, length_cm: number): void
 }
-export function buildCaliper(kit: Kit): CaliperModel {
+const BLADE_W = 1.9
+const WINDOW_cm = 4
+const WINDOW_PX_PER_cm = 140
+export function buildTapeMeasure(kit: Kit): TapeModel {
   const { M } = kit
   const root = new THREE.Group()
-  tag(root, 'caliper')
+  tag(root, 'tapeMeasure')
   let content = new THREE.Group()
   root.add(content)
   let cacheKey = ''
-  const BEAM = 22
-  let mainTex: THREE.CanvasTexture | null = null
-  let vernTex: THREE.CanvasTexture | null = null
-  const getMain = (): THREE.CanvasTexture => mainTex ??= canvasTexture(kit, 2200, 64, (c) => {
-    // main scale along the beam: 10 px per mm, drawn rotated later by the plane (u along the beam)
-    c.fillStyle = '#e4e7ec'; c.fillRect(0, 0, 2200, 64)
-    c.fillStyle = '#111'; c.strokeStyle = '#111'; c.font = `700 20px ${FONT}`; c.textAlign = 'center'; c.textBaseline = 'top'
-    for (let mm = 0; mm <= 220; mm++) {
-      const x = mm * 10
-      const len = mm % 10 === 0 ? 30 : mm % 5 === 0 ? 22 : 14
-      c.lineWidth = mm % 10 === 0 ? 2 : 1
-      c.beginPath(); c.moveTo(x, 64); c.lineTo(x, 64 - len); c.stroke()
-      if (mm % 10 === 0 && mm > 0) c.fillText(String(mm / 10), x, 2)
-    }
-  })
-  const getVern = (): THREE.CanvasTexture => vernTex ??= canvasTexture(kit, 200, 64, (c) => {
-    c.clearRect(0, 0, 200, 64)
-    c.fillStyle = 'rgba(255,255,255,0.35)'; c.fillRect(0, 0, 200, 64)
-    c.strokeStyle = '#a00'; c.fillStyle = '#a00'; c.font = `700 18px ${FONT}`; c.textAlign = 'center'; c.textBaseline = 'top'
-    for (let i = 0; i <= 20; i++) {
-      const x = i * 9.5 + 2 // 0.95 mm per division at 10 px/mm
-      c.lineWidth = i % 5 === 0 ? 2 : 1
-      c.beginPath(); c.moveTo(x, 64); c.lineTo(x, 64 - (i % 5 === 0 ? 30 : 18)); c.stroke()
-      if (i % 5 === 0) c.fillText(String(i / 2), x, 2)
-    }
-  })
-  const lcdCanvas = document.createElement('canvas')
-  lcdCanvas.width = 192; lcdCanvas.height = 64
-  const lcdTex = new THREE.CanvasTexture(lcdCanvas)
-  lcdTex.colorSpace = THREE.SRGBColorSpace
-  kit.textures.push(lcdTex)
-  const drawLcd = (text: string): void => {
-    const c = lcdCanvas.getContext('2d')!
-    c.fillStyle = '#c7d3c1'; c.fillRect(0, 0, 192, 64)
-    c.fillStyle = '#1b231b'; c.font = `600 40px ui-monospace, monospace`; c.textAlign = 'right'; c.textBaseline = 'middle'
-    c.fillText(text, 170, 34)
-    c.font = `600 16px ${FONT}`; c.fillText('mm', 188, 52)
-    lcdTex.needsUpdate = true
+  let windowTex: THREE.CanvasTexture | null = null
+
+  /** Graduations of the last WINDOW_cm before the reading point at s = L: 1 mm ticks, numerals every cm. Drawn along the long axis. */
+  const makeWindow = (L_cm: number, vertical: boolean, flip: boolean): THREE.CanvasTexture => {
+    windowTex?.dispose()
+    const long = WINDOW_cm * WINDOW_PX_PER_cm
+    const short = BLADE_W * WINDOW_PX_PER_cm
+    const s0 = L_cm - WINDOW_cm
+    windowTex = canvasTexture(kit, vertical ? short : long, vertical ? long : short, (c) => {
+      c.fillStyle = '#f2c230'; c.fillRect(0, 0, c.canvas.width, c.canvas.height)
+      c.strokeStyle = '#1b1608'; c.fillStyle = '#1b1608'; c.font = `700 26px ${FONT}`; c.textAlign = 'center'; c.textBaseline = 'middle'
+      for (let mm = Math.ceil(s0 * 10); mm <= Math.floor(L_cm * 10); mm++) {
+        if (mm < 0) continue
+        const q = (mm / 10 - s0) * WINDOW_PX_PER_cm
+        const p = flip ? long - q : q
+        const len = mm % 10 === 0 ? 46 : mm % 5 === 0 ? 34 : 22
+        c.lineWidth = mm % 10 === 0 ? 3 : 1.5
+        c.beginPath()
+        if (vertical) { c.moveTo(0, p); c.lineTo(len, p) } else { c.moveTo(p, 0); c.lineTo(p, len) }
+        c.stroke()
+        if (mm % 10 === 0) {
+          if (vertical) c.fillText(String(mm / 10), 78, p)
+          else c.fillText(String(mm / 10), p, 74)
+        }
+      }
+    })
+    return windowTex
   }
-  const mainMat = (): THREE.MeshStandardMaterial => new THREE.MeshStandardMaterial({ map: getMain(), roughness: 0.4, metalness: 0.2 })
+
+  const caseBody = (parent: THREE.Object3D, w: number, h: number, d: number, x: number, y: number, z: number): void => {
+    rbox(w, h, d, 0.5, M.red, x, y, z, parent)
+    box(w * 0.32, 0.12, d * 0.5, M.steel, x + w * 0.12, y + h / 2 + 0.04, z, parent) // lock button
+  }
 
   return {
     root,
-    set(variant, mode, L, display, vernier) {
-      const key = `${variant}|${mode}|${L.toFixed(4)}|${display}|${vernier?.coincidentDivision ?? ''}`
+    set(mode, L_cm) {
+      const key = `${mode}|${L_cm.toFixed(3)}`
       if (key === cacheKey) return
       cacheKey = key
       root.remove(content)
-      content.traverse((o) => { const m = o as THREE.Mesh; if (m.isMesh) { m.geometry.dispose(); const mt = m.material as THREE.Material; if (mt !== M.alu && mt !== M.aluDark && mt !== M.black && mt !== M.steel) mt.dispose() } })
+      content.traverse((o) => { const m = o as THREE.Mesh; if (m.isMesh) { m.geometry.dispose(); const mt = m.material as THREE.Material; if (!Object.values(M).includes(mt as never)) mt.dispose() } })
       content = new THREE.Group()
       root.add(content)
-      // beam along +y; the scale face looks toward +z; scale zero at y = 0
-      box(2.6, BEAM, 0.35, M.alu, 0, BEAM / 2, 0, content)
-      const scale = plane(BEAM, 1.2, mainMat())
-      scale.rotation.z = Math.PI / 2
-      scale.rotation.y = 0
-      // plane u (x) runs along the beam: after rotation.z = +90 deg, +x -> +y; texture orientation: ticks hang from the bottom of the strip toward -x
-      scale.position.set(-0.55, BEAM / 2, 0.19)
-      scale.scale.set(1, 1, 1)
-      content.add(scale)
-      // sliding head at y >= L (its lower edge is the index)
-      const headH = variant === 'digital' ? 6.4 : 5.0
-      const y0 = L + (variant === 'vernier' ? 2.0 : 0)
-      const headLen = headH - (variant === 'vernier' ? 2.0 : 0)
-      rbox(3.1, headLen, 1.0, 0.2, M.aluDark, 0, y0 + headLen / 2, 0.15, content)
-      if (variant === 'vernier') {
-        // transparent bevel carrying the 20-division vernier, in front of the main scale
-        const v = plane(2.0, 1.2, new THREE.MeshBasicMaterial({ map: getVern(), transparent: true, depthWrite: false }))
-        v.rotation.z = Math.PI / 2
-        v.position.set(-0.55, L + 1.0 + 0.01, 0.22)
-        v.scale.set(1, 1, 1)
-        content.add(v)
-        box(0.05, 2.0, 0.01, M.red, 0.15, L + 1.0, 0.215, content)
+      if (mode === 'rest') {
+        // case lying on the tray, hook tab peeking out of the mouth
+        caseBody(content, 6.5, 3.2, 6.0, 0, 1.6, 0)
+        box(BLADE_W, 0.08, 1.2, M.tape, 0, 0.6, 3.6, content)
+        box(BLADE_W, 0.5, 0.12, M.steel, 0, 0.85, 4.2, content)
+        return
+      }
+      const L = Math.max(L_cm, 0.5)
+      const vertical = mode === 'down'
+      const dir = mode === 'left' ? -1 : 1
+      const blade = new THREE.Group()
+      content.add(blade)
+      const stripMat = new THREE.MeshStandardMaterial({ color: 0xf2c230, roughness: 0.45, metalness: 0.35 })
+      const winMat = new THREE.MeshStandardMaterial({ map: makeWindow(L, vertical, vertical || mode === 'left'), roughness: 0.45, metalness: 0.35 })
+      const win = Math.min(WINDOW_cm, L)
+      if (vertical) {
+        // blade is a thin strip in the xy plane, face toward +z: the hook (zero) rests on the table at y = -L and the
+        // blade rises to the reading point at the rail top edge (origin), then on into the case held above the rail
+        box(BLADE_W, L, 0.05, stripMat, 0, -L / 2, 0, blade)
+        const w = plane(BLADE_W, WINDOW_cm, winMat)
+        w.position.set(0, -WINDOW_cm / 2, 0.03)
+        blade.add(w)
+        box(BLADE_W, 0.12, 0.9, M.steel, 0, -L + 0.06, 0.4, blade) // hook tab flat on the table
+        box(BLADE_W, 0.7, 0.12, M.steel, 0, -L + 0.35, 0.0, blade)
+        box(BLADE_W, 1.6, 0.05, stripMat, 0, 0.8, 0, blade) // blade above the reading point, into the case
+        caseBody(content, 4.6, 5.0, 2.6, 0, 1.6 + 2.5, 0)
       } else {
-        drawLcd(display)
-        const lcd = plane(2.7, 0.9, new THREE.MeshStandardMaterial({ map: lcdTex, roughness: 0.3 }))
-        lcd.position.set(0, L + 4.7, 0.66)
-        content.add(lcd)
-        cyl(0.5, 0.5, 0.35, M.black, content).position.set(0.9, L + 1.6, 0.7)
+        box(L, BLADE_W, 0.05, stripMat, dir * L / 2, 0, 0, blade)
+        const w = plane(WINDOW_cm, BLADE_W, winMat)
+        w.position.set(dir * (L - WINDOW_cm / 2), 0, 0.03)
+        blade.add(w)
+        box(0.12, BLADE_W, 0.9, M.steel, 0, 0, -0.4, blade)
+        box(0.12, 0.7, 0.12, M.steel, 0, 0, 0, blade).rotation.y = 0
+        caseBody(content, 6.0, 6.5, 3.2, dir * (L + 3.0), 0, 3.3)
       }
-      if (mode === 'depth') {
-        // depth rod from the head down to the table, beside the beam; the beam foot rests on the rail
-        box(0.3, L + 5, 0.3, M.steel, 0.85, L / 2 + 0.2, 1.1, content)
-        box(0.3, 0.3, 1.3, M.steel, 0.85, L + 0.3, 0.55, content)
-        box(0.6, 0.1, 0.6, M.steel, 0.85, -0.05, 1.1, content)
-        // the rod hangs to y = -L
-        const rod = box(0.3, L, 0.3, M.steel, 0.85, -L / 2, 1.1, content)
-        void rod
-        box(2.8, 0.3, 1.2, M.alu, 0, 0.0, 0.1, content)
-      } else if (mode === 'jaws') {
-        // jaws point down (+x of the beam after the root is turned): fixed jaw at 0, sliding jaw at L
-        box(3.4, 0.4, 0.8, M.alu, 2.0, -0.2, 0.1, content)
-        box(3.4, 0.4, 0.8, M.alu, 2.0, L + 0.2, 0.1, content)
-      }
+      void win
     },
   }
 }

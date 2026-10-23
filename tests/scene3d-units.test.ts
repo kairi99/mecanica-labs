@@ -1,9 +1,9 @@
 import { describe, expect, it } from 'vitest'
 import {
-  CART_LENGTH_m, RAIL_LENGTH_m, createApparatus, type CaliperTarget,
+  CART_LENGTH_m, RAIL_LENGTH_m, createApparatus, type TapeTarget,
 } from '../src/apparatus/index.ts'
 import {
-  LEVEL_ON_TABLE, STAGING, TABLE, caliperOpening_m, cartFrontValid, cartGhostFront_mm, clampCartFront, clampHeight_cm, footFromDrag_mm,
+  LEVEL_ON_TABLE, STAGING, TABLE, tapeLength_m, cartFrontValid, cartGhostFront_mm, clampCartFront, clampHeight_cm, footFromDrag_mm,
   footWheelStep_mm, ghostsFor, markerLabel, markerLabels, onRailFootprint, rackFromHeight_mm, rackWheelStep_mm, railLocalX_cm,
   railPosFromLocalX_mm, toScene, twoLegHeight_cm,
 } from '../src/views/scene3d/units.ts'
@@ -154,24 +154,24 @@ describe('drag maths', () => {
   })
 })
 
-describe('caliper opening drawn in the scene equals what the apparatus measures', () => {
+describe('tape length drawn in the scene equals what the apparatus measures', () => {
   it('for every kind of target', () => {
     const a = createApparatus('assembled', { seed: 42 })
     const geo = a.getState().geometry
-    const targets: CaliperTarget[] = [
+    const targets: TapeTarget[] = [
       { kind: 'railHeight', at: 'clamp' }, { kind: 'railHeight', at: 'twoLeg' }, { kind: 'railHeight', at: { railPos_mm: 400 } },
-      { kind: 'cartLength' }, { kind: 'frontReferenceOffset' },
+      { kind: 'cartLength' }, { kind: 'supportSeparation' },
     ]
     for (const t of targets) {
-      const r = a.caliperMeasure(t)
+      const r = a.tapeMeasure(t)
       expect(r.ok).toBe(true)
-      if (r.ok) expect(caliperOpening_m(t, geo)).toBeCloseTo(r.reading.trueLength_m, 9)
+      if (r.ok) expect(tapeLength_m(t, geo)).toBeCloseTo(r.reading.trueLength_m, 9)
     }
   })
   it('a rail position outside the rail is not drawable', () => {
     const a = createApparatus('assembled', { seed: 42 })
-    expect(caliperOpening_m({ kind: 'railHeight', at: { railPos_mm: 1300 } }, a.getState().geometry)).toBeNull()
-    expect(caliperOpening_m({ kind: 'railHeight', at: 'clamp' }, null)).toBeNull()
+    expect(tapeLength_m({ kind: 'railHeight', at: { railPos_mm: 1300 } }, a.getState().geometry)).toBeNull()
+    expect(tapeLength_m({ kind: 'railHeight', at: 'clamp' }, null)).toBeNull()
   })
 })
 

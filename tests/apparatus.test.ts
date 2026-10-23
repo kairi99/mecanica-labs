@@ -1,15 +1,15 @@
 import { describe, expect, it } from 'vitest'
 import {
-  Apparatus, ITEM_IDS, createApparatus, evaluateMarks, vernierGeometry, bubbleOffset_mm, parseTimeInput,
+  Apparatus, ITEM_IDS, createApparatus, evaluateMarks, tapeGeometry, bubbleOffset_mm, parseTimeInput,
   RACK_BASE_HEIGHT_m, SUPPORT_SEPARATION_m, type ItemId,
 } from '../src/apparatus/index.ts'
 import {
-  DEFAULT_CART, DEFAULT_VARIABILITY, crossingTime_s, deg2rad, inclineAngle_rad, mulberry32, rad2deg, sampleRun,
+  DEFAULT_CART, DEFAULT_VARIABILITY, TAPE_DIVISION_m, tapeMaxPermissibleError_m, typeBAnalog, crossingTime_s, deg2rad, inclineAngle_rad, mulberry32, rad2deg, sampleRun,
 } from '../src/physics/index.ts'
 
 /** Bench with every item on the table but nothing attached; table tilt fixed so tests are not seed dependent. */
 function loose(tilt_deg = 0.1, seed = 7): Apparatus {
-  const a = new Apparatus({ seed, tableTilt_rad: deg2rad(tilt_deg), digitalZeroError_m: 0.00003 })
+  const a = new Apparatus({ seed, tableTilt_rad: deg2rad(tilt_deg) })
   for (const i of ITEM_IDS) a.addItem(i)
   return a
 }
@@ -77,7 +77,7 @@ describe('assembly rules', () => {
     a.attach('twoLegStand'); a.attach('receiver')
     expect(a.missing()).toEqual([])
   })
-  it('missing() marks level/stopwatch/caliper/markers as non-blocking', () => {
+  it('missing() marks level/stopwatch/tape/markers as non-blocking', () => {
     const a = new Apparatus()
     const lv = a.missing().find((m) => m.id === 'level')!
     expect(lv.blocksRun).toBe(false)
@@ -174,7 +174,7 @@ describe('geometry', () => {
       expect(a.missing()).toEqual([])
       const p = a.procedure()
       expect(p.angleOk && p.levelledBeforeRaise && p.scaleOk && p.marksOk && p.cart.atZero && p.setupComplete).toBe(true)
-      expect(p.heightsMeasured).toEqual({ clamp: true, twoLeg: true })
+      expect(p.heightsMeasured).toEqual({ clamp: true, twoLeg: true, separation: true })
       expect(a.eventLog().some((e) => e.type === 'refused')).toBe(false)
     }
   })
@@ -224,66 +224,91 @@ describe('level (nivelador)', () => {
   })
 })
 
-describe('caliper', () => {
-  it('vernier: returns the true length and the scale geometry (1 mm main, 20 divisions, 0.05 mm)', () => {
+describe('tape measure', () => {
+  it('returns the true length and the blade geometry: 1 mm graduation, the careful reading is the nearest division', () => {
     const a = mounted()
     a.setRackHeight_mm(25)
-    const r = a.caliperMeasure({ kind: 'railHeight', at: 'clamp' })
+    const r = a.tapeMeasure({ kind: 'railHeight', at: 'clamp' })
     expect(r.ok).toBe(true)
     if (!r.ok) return
     expect(r.reading.trueLength_m).toBeCloseTo(0.085, 12)
-    expect(r.reading.display_m).toBeNull()
-    const v = vernierGeometry(0.08537)
-    expect(v.mainScaleReading_mm).toBe(85)
-    expect(v.coincidentDivision).toBe(7) // 0.37 mm / 0.05 = 7.4 -> 7
-    expect(v.idealReading_m).toBeCloseTo(0.08535, 12)
-    expect(v.leastCount_mm).toBeCloseTo(0.05, 12)
+    expect(r.reading.tape.division_mm).toBe(1)
+    const v = tapeGeometry(0.08537)
+    expect(v.edge_mm).toBeCloseTo(85.37, 9)
+    expect(v.idealReading_m).toBeCloseTo(0.085, 12) // 85.37 mm -> 85 mm
+    expect(tapeGeometry(0.0858).idealReading_m).toBeCloseTo(0.086, 12)
   })
-  it('digital: display = quantize(true + zero error, 0.01 mm); the zero button (jaws closed) removes the error', () => {
+  it('reports the class II tolerance 0.3 mm + 0.2 mm/m without applying it to the geometry', () => {
+    expect(tapeMaxPermissibleError_m(0)).toBeCloseTo(0.0003, 12)
+    expect(tapeMaxPermissibleError_m(1.1)).toBeCloseTo(0.00052, 12)
     const a = mounted()
-    a.setCaliperVariant('digital')
-    a.setRackHeight_mm(25)
-    expect(reasonOf(a.caliperZero())).toBe('jawsNotClosed')
-    a.setCaliperJaws(true)
-    expect(a.caliperClosedDisplay_m()).toBeCloseTo(0.00003, 9)
-    a.setCaliperJaws(false)
-    const before = a.caliperMeasure({ kind: 'railHeight', at: 'clamp' })
-    if (!before.ok) throw new Error('measure failed')
-    expect(before.reading.display_m).toBeCloseTo(0.08503, 9)
-    a.setCaliperJaws(true)
-    expect(a.caliperZero().ok).toBe(true)
-    expect(a.caliperClosedDisplay_m()).toBe(0)
-    const after = a.caliperMeasure({ kind: 'railHeight', at: 'clamp' })
-    if (!after.ok) throw new Error('measure failed')
-    expect(after.reading.display_m).toBeCloseTo(0.085, 9)
-    expect(a.getState().caliper).toEqual({ variant: 'digital', jawsClosed: false, zeroed: true })
+    const r = a.tapeMeasure({ kind: 'supportSeparation' })
+    if (!r.ok) throw new Error('measure failed')
+    expect(r.reading.mpe_m).toBeCloseTo(0.0003 + 0.0002 * SUPPORT_SEPARATION_m, 12)
+    expect(r.reading.trueLength_m).toBe(SUPPORT_SEPARATION_m)
   })
-  it('zero is refused on the vernier; seeded zero error stays within +-0.05 mm', () => {
-    const a = new Apparatus({ seed: 5 })
-    a.addItem('caliper'); a.setCaliperJaws(true)
-    expect(reasonOf(a.caliperZero())).toBe('notDigital')
-    for (let s = 1; s < 50; s++) expect(Math.abs(new Apparatus({ seed: s }).hiddenTruth().digitalZeroError_m)).toBeLessThanOrEqual(0.00005)
+  it('Type B uncertainty of the analog reading: d = 1 mm gives u = (d/2)/sqrt(3) = 0.289 mm', () => {
+    expect(typeBAnalog(TAPE_DIVISION_m)).toBeCloseTo(0.0005 / Math.sqrt(3), 12)
   })
-  it('range 0..150 mm: a high rack exceeds it; a rail-scale point interpolates the height; bad point refused', () => {
+  it('a rail-scale point interpolates the height; a point outside the rail is refused', () => {
     const a = mounted('E1', 0)
     a.setRackHeight_mm(25)
     const g = a.geometry()!
-    const mid = a.caliperMeasure({ kind: 'railHeight', at: { railPos_mm: 600 } })
+    const mid = a.tapeMeasure({ kind: 'railHeight', at: { railPos_mm: 600 } })
     if (!mid.ok) throw new Error('measure failed')
     expect(mid.reading.trueLength_m).toBeCloseTo(g.pose.highEnd.y_m + (g.pose.lowEnd.y_m - g.pose.highEnd.y_m) / 2, 9)
-    expect(reasonOf(a.caliperMeasure({ kind: 'railHeight', at: { railPos_mm: 1300 } }))).toBe('outOfRail')
-    a.setRackHeight_mm(100) // 160 mm
-    expect(reasonOf(a.caliperMeasure({ kind: 'railHeight', at: 'clamp' }))).toBe('outOfRange')
+    expect(reasonOf(a.tapeMeasure({ kind: 'railHeight', at: { railPos_mm: 1300 } }))).toBe('outOfRail')
   })
-  it('measures the cart length (item needed) and the front reference offset', () => {
+  it('the support separation d is measurable along the rail once both supports hold it, and with the tape on the table', () => {
     const a = loose()
-    const l = a.caliperMeasure({ kind: 'cartLength' })
+    expect(reasonOf(a.tapeMeasure({ kind: 'supportSeparation' }))).toBe('railNotAssembled')
+    a.attach('standBase'); a.attach('rackClamp', { railEnd: 'E1' })
+    expect(reasonOf(a.tapeMeasure({ kind: 'supportSeparation' }))).toBe('notMeasurable')
+    a.attach('twoLegStand')
+    const d = a.tapeMeasure({ kind: 'supportSeparation' })
+    expect(d.ok).toBe(true)
+    if (d.ok) expect(d.reading.trueLength_m).toBeCloseTo(1.1, 12)
+    expect(a.procedure().heightsMeasured.separation).toBe(true)
+    a.removeItem('tape')
+    expect(reasonOf(a.tapeMeasure({ kind: 'supportSeparation' }))).toBe('itemNotOnTable')
+  })
+  it('refuses heights without the rail or before it is assembled; the two-leg height needs the second support', () => {
+    const a = new Apparatus()
+    a.addItem('tape')
+    expect(reasonOf(a.tapeMeasure({ kind: 'railHeight', at: 'clamp' }))).toBe('noRail')
+    a.addItem('rail')
+    expect(reasonOf(a.tapeMeasure({ kind: 'railHeight', at: 'clamp' }))).toBe('railNotAssembled')
+  })
+  it('measures the cart length (cart needed); the front reference offset is no longer a target', () => {
+    const a = loose()
+    const l = a.tapeMeasure({ kind: 'cartLength' })
     if (!l.ok) throw new Error('fail')
     expect(l.reading.trueLength_m).toBeGreaterThan(0.09)
-    const f = a.caliperMeasure({ kind: 'frontReferenceOffset' })
-    expect(f.ok).toBe(true)
     a.removeItem('cart')
-    expect(reasonOf(a.caliperMeasure({ kind: 'cartLength' }))).toBe('itemNotOnTable')
+    expect(reasonOf(a.tapeMeasure({ kind: 'cartLength' }))).toBe('itemNotOnTable')
+  })
+  it('a save from the caliper era (item and state of the old instrument, zero error) still loads', () => {
+    const a = createApparatus('assembled', { seed: 3 })
+    const old = JSON.parse(JSON.stringify(a.snapshot())) as Record<string, unknown>
+    old.items = (old.items as string[]).map((i) => (i === 'tape' ? 'caliper' : i))
+    old.caliper = { variant: 'digital', jawsClosed: true, zeroed: true }
+    old.hidden = { ...(old.hidden as object) }
+    old.measured = { clamp: true, twoLeg: true }
+    const b = new Apparatus()
+    expect(b.load(old as unknown as ReturnType<Apparatus['snapshot']>).ok).toBe(true)
+    expect(b.hasItem('tape')).toBe(true)
+    expect(b.procedure().heightsMeasured).toEqual({ clamp: true, twoLeg: true, separation: false })
+    expect(b.tapeMeasure({ kind: 'railHeight', at: 'clamp' }).ok).toBe(true)
+    expect(Object.keys(b.snapshot())).not.toContain('caliper')
+    expect(b.hiddenTruth()).not.toHaveProperty('digitalZeroError_m')
+  })
+  it('a save with an unknown item id drops it instead of failing', () => {
+    const a = createApparatus('empty')
+    const old = JSON.parse(JSON.stringify(a.snapshot())) as Record<string, unknown>
+    old.items = ['rail', 'vernierKnob']
+    const b = new Apparatus()
+    expect(b.load(old as unknown as ReturnType<Apparatus['snapshot']>).ok).toBe(true)
+    expect(b.hasItem('rail')).toBe(true)
   })
 })
 

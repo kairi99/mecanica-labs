@@ -1,11 +1,11 @@
-// Pure geometry of the rail, level and caliper. World frame and conventions: docs/architecture.md.
+// Pure geometry of the rail, level and tape measure. World frame and conventions: docs/architecture.md.
 //   x_m: horizontal, from the rack stand toward the two-leg stand / receiver (down-slope direction)
 //   y_m: up, normal to the table top (table frame)   z_m: across the bench, toward the viewer
 //   origin: on the table top, directly under the rack-stand clamp point
-import { rad2deg } from '../physics/index.ts'
+import { quantize, rad2deg, TAPE_DIVISION_m } from '../physics/index.ts'
 import {
-  CALIPER_RANGE_m, LEVEL_BUBBLE_MAX_mm, LEVEL_SENSITIVITY_mm_per_deg, RAIL_LENGTH_m, RAIL_SCALE_MAX_mm,
-  RECEIVER_STOP_FROM_END_m, SUPPORT_FROM_END_m, SUPPORT_SEPARATION_m, VERNIER_DIVISIONS, VERNIER_MAIN_DIVISION_mm,
+  LEVEL_BUBBLE_MAX_mm, LEVEL_SENSITIVITY_mm_per_deg, RAIL_LENGTH_m, RAIL_SCALE_MAX_mm,
+  RECEIVER_STOP_FROM_END_m, SUPPORT_FROM_END_m, SUPPORT_SEPARATION_m, TAPE_RANGE_m,
 } from './constants.ts'
 
 export interface Vec3 { x_m: number; y_m: number; z_m: number }
@@ -78,29 +78,17 @@ export function bubbleOffset_mm(tilt_rad: number): number {
   return Math.max(-LEVEL_BUBBLE_MAX_mm, Math.min(LEVEL_BUBBLE_MAX_mm, raw))
 }
 
-/** Geometry the view draws for a vernier caliper reading a length L (m): 1 mm main scale, 20 divisions = 0.05 mm. */
-export interface VernierGeometry {
-  mainDivision_mm: number
-  vernierDivisions: number
-  leastCount_mm: number
-  /** Main-scale mm mark just left of the vernier zero. */
-  mainScaleReading_mm: number
-  /** Index (0..20) of the vernier line that best coincides with a main-scale line. */
-  coincidentDivision: number
-  /** What a correct student reads, m: main + coincident x least count. */
+/** What the view draws for a tape measure showing a length L (m): 1 mm graduation, numbers every cm. */
+export interface TapeGeometry {
+  division_mm: number
+  /** Where the measured edge falls on the blade, mm (the true length, not quantised: the student estimates between ticks). */
+  edge_mm: number
+  /** What a careful student reads to the nearest division, m. */
   idealReading_m: number
-  /** The jaw opening itself (the vernier zero position), m. */
-  jawOpening_m: number
 }
-export function vernierGeometry(length_m: number): VernierGeometry {
-  const lc = VERNIER_MAIN_DIVISION_mm / VERNIER_DIVISIONS
-  const L_mm = length_m * 1000
-  const main = Math.floor(L_mm + 1e-9)
-  const n = Math.min(VERNIER_DIVISIONS, Math.round((L_mm - main) / lc))
-  return {
-    mainDivision_mm: VERNIER_MAIN_DIVISION_mm, vernierDivisions: VERNIER_DIVISIONS, leastCount_mm: lc,
-    mainScaleReading_mm: main, coincidentDivision: n, idealReading_m: (main + n * lc) / 1000, jawOpening_m: length_m,
-  }
+export function tapeGeometry(length_m: number): TapeGeometry {
+  const edge_mm = length_m * 1000
+  return { division_mm: TAPE_DIVISION_m * 1000, edge_mm, idealReading_m: quantize(length_m, TAPE_DIVISION_m) }
 }
 
-export const inCaliperRange = (length_m: number): boolean => length_m >= 0 && length_m <= CALIPER_RANGE_m
+export const inTapeRange = (length_m: number): boolean => length_m >= 0 && length_m <= TAPE_RANGE_m

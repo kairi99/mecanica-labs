@@ -129,7 +129,7 @@ describe('overview framing and the parts tray', () => {
     }
   })
   it('small props rest inside one tray near the low end, not in the corners of the table', () => {
-    for (const k of ['stopwatch', 'caliper', 'level', 'markers', 'screws'] as const) {
+    for (const k of ['stopwatch', 'tape', 'level', 'markers', 'screws'] as const) {
       const s = STAGING[k]
       expect(Math.abs(s.x - TRAY.x), k).toBeLessThan(TRAY.width / 2)
       expect(Math.abs(s.z - TRAY.z), k).toBeLessThan(TRAY.depth / 2)
@@ -144,6 +144,6 @@ describe('preset names', () => {
     expect(parsePreset('mark')).toBe('mark')
     expect(parsePreset('bogus')).toBeNull()
     expect(parsePreset(null)).toBeNull()
-    expect(PRESET_NAMES).toEqual(['overview', 'highEnd', 'lowEnd', 'lateral', 'mark', 'caliper'])
+    expect(PRESET_NAMES).toEqual(['overview', 'highEnd', 'lowEnd', 'lateral', 'mark', 'tape'])
   })
 })

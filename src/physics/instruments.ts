@@ -4,13 +4,22 @@
 export const STOPWATCH_RESOLUTION_s = 0.01
 /** Rail scale division, m (millimetre scale on the aluminium rail). */
 export const RAIL_DIVISION_m = 0.001
-/** Vernier caliper least count, m (0.05 mm analog vernier). */
-export const VERNIER_LEAST_COUNT_m = 0.00005
-/** Digital caliper resolution, m (0.01 mm). */
-export const DIGITAL_CALIPER_RESOLUTION_m = 0.00001
+/** Class II tape: MPE = a + b L, a = 0.3 mm, b = 0.2 mm/m (MID 2014/32/EU, Annex MI-008). */
+export const TAPE_MPE_OFFSET_m = 0.0003
+export const TAPE_MPE_PER_m = 0.0002
+/** Tape measure (flexometro) division, m (steel blade graduated in millimetres, read by eye). */
+export const TAPE_DIVISION_m = 0.001
 
 /** A value as displayed by an instrument with the given resolution (rounded to the nearest step). */
 export function quantize(value: number, resolution: number): number {
   if (!(resolution > 0)) return value
   return Math.round(value / resolution) * resolution
+}
+
+/**
+ * Maximum permissible error of a class II steel tape measure for a measured length L (m): 0.3 mm + 0.2 mm per metre
+ * (MID 2014/32/EU, Annex MI-008, class II). A documented systematic of the instrument, not a random reading error.
+ */
+export function tapeMaxPermissibleError_m(length_m: number): number {
+  return TAPE_MPE_OFFSET_m + TAPE_MPE_PER_m * length_m
 }

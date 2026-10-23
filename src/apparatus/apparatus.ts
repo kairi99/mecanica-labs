@@ -1,19 +1,19 @@
-// Device logic of the DigiCart MRUV bench: inventory and assembly, geometry, level, caliper, tape marks, cart runs,
+// Device logic of the DigiCart MRUV bench: inventory and assembly, geometry, level, tape measure, tape marks, cart runs,
 // stopwatch, Table 1.1, DigiCart record, procedure summary, snapshot. DOM-free, timer-free, no Math.random.
 // Time is always passed in (ms timestamps from the caller). Physics only from ../physics. Public API: docs/architecture.md.
 import {
-  DEFAULT_CART, DEFAULT_VARIABILITY, DIGITAL_CALIPER_RESOLUTION_m, STOPWATCH_RESOLUTION_s, deg2rad, inclineAngle_rad, mulberry32, quantize,
+  DEFAULT_CART, DEFAULT_VARIABILITY, STOPWATCH_RESOLUTION_s, deg2rad, inclineAngle_rad, mulberry32, tapeMaxPermissibleError_m,
   sampleRun, crossingTime_s, THETA_GUIDE_rad, type CartParams, type VariabilityConfig,
 } from '../physics/index.ts'
 import {
-  ANGLE_TOLERANCE_rad, CART_AT_A_TOL_mm, CART_FRONT_REFERENCE_OFFSET_m, CART_LENGTH_m, DIGICART_RESOLUTION_m,
-  DIGICART_SAMPLE_RATE_Hz, DIGITAL_ZERO_ERROR_MAX_m, FOOT_RANGE_mm, FOOT_STEP_mm,
+  ANGLE_TOLERANCE_rad, CART_AT_A_TOL_mm, CART_LENGTH_m, DIGICART_RESOLUTION_m,
+  DIGICART_SAMPLE_RATE_Hz, FOOT_RANGE_mm, FOOT_STEP_mm,
   LEVEL_BUBBLE_MAX_mm, LEVEL_CENTERED_TOL_mm, MARK_MAX_COUNT, MARK_SNAP_mm, RACK_BASE_HEIGHT_m, RACK_MAX_mm, RACK_MIN_mm,
   RAIL_LENGTH_m, RAIL_SCALE_MAX_mm, RECEIVER_STOP_FROM_END_m, SCREWS_PER_JOINT, SCREWS_TOTAL, SUPPORT_SEPARATION_m,
   TABLE_COLS, TABLE_POSITIONS_cm, TABLE_TILT_MAX_deg, TABLE_ROWS, TWO_LEG_BASE_HEIGHT_m,
 } from './constants.ts'
 import {
-  bubbleOffset_mm, downSlope_m, inCaliperRange, looseRailPose, railPointAt, railPos_mm, railPose, vernierGeometry,
+  bubbleOffset_mm, downSlope_m, inTapeRange, looseRailPose, railPointAt, railPos_mm, railPose, tapeGeometry,
   type RailPose,
 } from './geometry.ts'
 import { evaluateMarks, type MarksEvaluation } from './markers.ts'
@@ -21,22 +21,21 @@ import { buildTrajectory, digicartSamples, trajectoryAt, type Trajectory } from 
 import { parseTimeInput } from './table.ts'
 import {
   ITEM_IDS,
-  type ApparatusEvent, type ApparatusEventBody, type ApparatusSnapshot, type ApparatusState, type CanRun, type CaliperReading,
-  type CaliperTarget, type CaliperVariant, type CartPose, type CartStatus, type CrossingRecord, type DigicartRecord, type Failure,
+  type ApparatusEvent, type ApparatusEventBody, type ApparatusSnapshot, type ApparatusState, type CanRun,
+  type TapeReading, type TapeTarget, type CartPose, type CartStatus, type CrossingRecord, type DigicartRecord, type Failure,
   type ItemId, type JointId, type LevelPlacement, type LevelReading, type MarkerState, type MissingEntry, type PresetId,
   type ProcedureSummary, type RailEnd, type RailGeometry, type Reason, type Result, type RunBlock, type RunRecord,
   type StopRecord, type TableCell, type TableData,
 } from './types.ts'
 
 export interface ApparatusOptions {
-  /** Seeds the hidden table tilt, the digital caliper zero error and the run variability. Default 1. */
+  /** Seeds the hidden table tilt, and the run variability. Default 1. */
   seed?: number
   variability?: VariabilityConfig
   /** Cart physics (theta_rad is replaced by the rail's true incline at each release). */
   cart?: CartParams
   /** Override the hidden values (tests, teacher mode). */
   tableTilt_rad?: number
-  digitalZeroError_m?: number
 }
 
 const MAX_EVENTS = 5000
@@ -65,7 +64,7 @@ export class Apparatus {
   private readonly seed: number
   private readonly variability: VariabilityConfig
   private readonly cartParams: CartParams
-  private hidden: { tableTilt_rad: number; digitalZeroError_m: number }
+  private hidden: { tableTilt_rad: number }
   private runRng: CountedRng
   private listeners: ((e: ApparatusEvent) => void)[] = []
 
@@ -77,8 +76,7 @@ export class Apparatus {
   private foot_mm = 0
   private levelPlacement: LevelPlacement = null
   private levelledAtBase = false
-  private caliper = { variant: 'vernier' as CaliperVariant, jawsClosed: false, zeroed: false }
-  private measured = { clamp: false, twoLeg: false }
+  private measured = { clamp: false, twoLeg: false, separation: false }
   private markers: MarkerState[] = []
   private nextMarkerId = 1
   private cart = { placed: false, startRailPos_mm: null as number | null, released: false, runId: null as number | null }
@@ -95,7 +93,6 @@ export class Apparatus {
     const h = mulberry32(this.seed ^ 0x5bd1e995)
     this.hidden = {
       tableTilt_rad: opts.tableTilt_rad ?? deg2rad((h() * 2 - 1) * TABLE_TILT_MAX_deg),
-      digitalZeroError_m: opts.digitalZeroError_m ?? (h() * 2 - 1) * DIGITAL_ZERO_ERROR_MAX_m,
     }
     this.runRng = new CountedRng(this.seed)
   }
@@ -218,7 +215,7 @@ export class Apparatus {
     const out: MissingEntry[] = []
     const blocking: Record<ItemId, boolean> = {
       rail: true, cart: true, rackStand: true, standBase: true, twoLegStand: true, receiver: true, screws: true,
-      level: false, stopwatch: false, caliper: false, markers: false,
+      level: false, stopwatch: false, tape: false, markers: false,
     }
     for (const id of ITEM_IDS) if (!this.items.has(id)) out.push({ kind: 'item', id, reason: 'notOnTable', blocksRun: blocking[id] })
     const has = (...ids: ItemId[]): boolean => ids.every((i) => this.items.has(i))
@@ -315,73 +312,43 @@ export class Apparatus {
     }
   }
 
-  // ---- caliper -----------------------------------------------------------------------------------------------------
-  setCaliperVariant(v: CaliperVariant): Result {
-    if (!this.items.has('caliper')) return this.refuse('caliperVariant', 'itemNotOnTable', 'caliper')
-    this.caliper.variant = v
-    this.emit({ type: 'caliperVariant', variant: v })
-    return { ok: true }
-  }
-  setCaliperJaws(closed: boolean): Result {
-    if (!this.items.has('caliper')) return this.refuse('caliperJaws', 'itemNotOnTable', 'caliper')
-    this.caliper.jawsClosed = closed
-    this.emit({ type: 'caliperJaws', closed })
-    return { ok: true }
-  }
-  /** Zero button of the digital caliper: needs the jaws closed. Removes the seeded zero error. */
-  caliperZero(): Result {
-    if (!this.items.has('caliper')) return this.refuse('caliperZero', 'itemNotOnTable', 'caliper')
-    if (this.caliper.variant !== 'digital') return this.refuse('caliperZero', 'notDigital')
-    if (!this.caliper.jawsClosed) return this.refuse('caliperZero', 'jawsNotClosed')
-    this.caliper.zeroed = true
-    this.emit({ type: 'caliperZeroed' })
-    return { ok: true }
-  }
-  /** Digital display with the jaws closed, m (the zero error, or 0 after zeroing). Vernier: 0. */
-  caliperClosedDisplay_m(): number {
-    if (this.caliper.variant !== 'digital') return 0
-    return this.digitalDisplay(0)
-  }
-  private digitalDisplay(trueLength_m: number): number {
-    const raw = trueLength_m + (this.caliper.zeroed ? 0 : this.hidden.digitalZeroError_m)
-    return Math.round(quantize(raw, DIGITAL_CALIPER_RESOLUTION_m) * 1e6) / 1e6
-  }
+  // ---- tape measure ------------------------------------------------------------------------------------------------
   /**
-   * Measure with the depth rod / jaws. Targets: rail top-surface height above the table at a support or at any rail-scale
-   * position, the cart length, the front reference offset. The jaws open (jawsClosed = false). Range 0..150 mm.
+   * Hold the tape against a length. Targets: rail top-surface height above the table at a support or at any rail-scale
+   * position, the cart length, the separation d of the supports along the rail. Returns the geometry of the blade for
+   * the view to draw; the student reads it (1 mm graduation) and enters the number. The class II tolerance of the tape
+   * is reported as `mpe_m`, not applied to the reading. Range 0..3 m.
    */
-  caliperMeasure(target: CaliperTarget): Result<{ reading: CaliperReading }> {
-    if (!this.items.has('caliper')) return this.refuse('caliperMeasure', 'itemNotOnTable', 'caliper')
+  tapeMeasure(target: TapeTarget): Result<{ reading: TapeReading }> {
+    if (!this.items.has('tape')) return this.refuse('tapeMeasure', 'itemNotOnTable', 'tape')
     let L: number
     if (target.kind === 'railHeight') {
       const geo = this.geometry()
-      if (!geo) return this.refuse('caliperMeasure', this.items.has('rail') ? 'railNotAssembled' : 'noRail')
+      if (!geo) return this.refuse('tapeMeasure', this.items.has('rail') ? 'railNotAssembled' : 'noRail')
       if (target.at === 'clamp') L = geo.clampHeight_m
       else if (target.at === 'twoLeg') {
-        if (!geo.supportedBothEnds) return this.refuse('caliperMeasure', 'notMeasurable')
+        if (!geo.supportedBothEnds) return this.refuse('tapeMeasure', 'notMeasurable')
         L = geo.twoLegHeight_m
       } else {
         const pos = target.at.railPos_mm
-        if (!Number.isFinite(pos) || pos < 0 || pos > RAIL_SCALE_MAX_mm) return this.refuse('caliperMeasure', 'outOfRail')
+        if (!Number.isFinite(pos) || pos < 0 || pos > RAIL_SCALE_MAX_mm) return this.refuse('tapeMeasure', 'outOfRail')
         L = railPointAt(geo.pose, downSlope_m(pos, geo.scaleZeroAtHighEnd!)).y_m
       }
     } else if (target.kind === 'cartLength') {
-      if (!this.items.has('cart')) return this.refuse('caliperMeasure', 'itemNotOnTable', 'cart')
+      if (!this.items.has('cart')) return this.refuse('tapeMeasure', 'itemNotOnTable', 'cart')
       L = CART_LENGTH_m
     } else {
-      if (!this.items.has('cart')) return this.refuse('caliperMeasure', 'itemNotOnTable', 'cart')
-      L = CART_FRONT_REFERENCE_OFFSET_m
+      const geo = this.geometry()
+      if (!geo) return this.refuse('tapeMeasure', this.items.has('rail') ? 'railNotAssembled' : 'noRail')
+      if (!geo.supportedBothEnds) return this.refuse('tapeMeasure', 'notMeasurable')
+      L = geo.separation_m
     }
-    if (!inCaliperRange(L)) return this.refuse('caliperMeasure', 'outOfRange')
-    this.caliper.jawsClosed = false
+    if (!inTapeRange(L)) return this.refuse('tapeMeasure', 'outOfRange')
     if (target.kind === 'railHeight') {
       if (target.at === 'clamp') this.measured.clamp = true
       else if (target.at === 'twoLeg') this.measured.twoLeg = true
-    }
-    const reading: CaliperReading = {
-      variant: this.caliper.variant, trueLength_m: L, vernier: vernierGeometry(L),
-      display_m: this.caliper.variant === 'digital' ? this.digitalDisplay(L) : null,
-    }
+    } else if (target.kind === 'supportSeparation') this.measured.separation = true
+    const reading: TapeReading = { trueLength_m: L, tape: tapeGeometry(L), mpe_m: tapeMaxPermissibleError_m(L) }
     this.emit({ type: 'measuredHeight', target, value_m: L })
     return { ok: true, reading }
   }
@@ -713,7 +680,7 @@ export class Apparatus {
     const items = Object.fromEntries(ITEM_IDS.map((i) => [i, this.items.has(i)])) as Record<ItemId, boolean>
     return {
       items, joints: { ...this.joints }, screwsUsed: this.screwsUsed(), screwsAvailable: this.screwsAvailable(),
-      rack_mm: this.rack_mm, foot_mm: this.foot_mm, level: { placement: this.levelPlacement }, caliper: { ...this.caliper },
+      rack_mm: this.rack_mm, foot_mm: this.foot_mm, level: { placement: this.levelPlacement },
       markers: this.getMarkers(), cart: { ...this.cart },
       stopwatch: { running: this.stopwatch.running, linkStartToRelease: this.stopwatch.linkStartToRelease },
       geometry: this.geometry(),
@@ -722,7 +689,7 @@ export class Apparatus {
   /**
    * Hidden truth for teacher mode and tests ONLY: views of the student experience must not show it.
    */
-  hiddenTruth(): { tableTilt_rad: number; digitalZeroError_m: number; theta_rad: number | null } {
+  hiddenTruth(): { tableTilt_rad: number; theta_rad: number | null } {
     return { ...this.hidden, theta_rad: this.geometry()?.theta_rad ?? null }
   }
 
@@ -731,7 +698,7 @@ export class Apparatus {
     return structuredClone({
       version: 1 as const, seed: this.seed, runRngDraws: this.runRng.draws, hidden: this.hidden, items: [...this.items],
       joints: this.joints, rack_mm: this.rack_mm, foot_mm: this.foot_mm, levelPlacement: this.levelPlacement,
-      levelledAtBase: this.levelledAtBase, caliper: this.caliper, measured: this.measured, markers: this.markers,
+      levelledAtBase: this.levelledAtBase, measured: this.measured, markers: this.markers,
       nextMarkerId: this.nextMarkerId, cart: this.cart, runs: this.runs, stopwatch: this.stopwatch, stops: this.stops,
       table: this.table, events: this.events,
     })
@@ -740,13 +707,15 @@ export class Apparatus {
   load(s: ApparatusSnapshot): Result {
     if (!s || s.version !== 1) return this.refuse('load', 'badSnapshot')
     const c = structuredClone(s)
-    this.hidden = c.hidden
+    this.hidden = { tableTilt_rad: c.hidden.tableTilt_rad } // older saves also carry a retired zero error: dropped
     this.runRng = new CountedRng(c.seed, c.runRngDraws)
-    this.items = new Set(c.items)
+    // Older saves list the retired instrument as 'caliper' (now the tape measure) and carry its state: map the id, ignore the state.
+    const saved = (c.items as string[]).map((i) => (i === 'caliper' ? 'tape' : i))
+    this.items = new Set(saved.filter((i): i is ItemId => (ITEM_IDS as readonly string[]).includes(i)))
     this.joints = c.joints
     this.rack_mm = c.rack_mm; this.foot_mm = c.foot_mm
     this.levelPlacement = c.levelPlacement; this.levelledAtBase = c.levelledAtBase
-    this.caliper = c.caliper; this.measured = c.measured
+    this.measured = { ...c.measured, separation: c.measured.separation ?? false }
     this.markers = c.markers; this.nextMarkerId = c.nextMarkerId
     this.cart = c.cart; this.runs = c.runs; this.trajectories.clear()
     this.stopwatch = c.stopwatch; this.stops = c.stops; this.table = c.table
@@ -762,8 +731,7 @@ export class Apparatus {
     this.joints = { standBase: false, rackClamp: null, twoLegStand: false, receiver: false }
     this.rack_mm = 0; this.foot_mm = 0
     this.levelPlacement = null; this.levelledAtBase = false
-    this.caliper = { variant: 'vernier', jawsClosed: false, zeroed: false }
-    this.measured = { clamp: false, twoLeg: false }
+    this.measured = { clamp: false, twoLeg: false, separation: false }
     this.markers = []; this.nextMarkerId = 1
     this.cart = { placed: false, startRailPos_mm: null, released: false, runId: null }
     this.runs = []; this.trajectories.clear()
@@ -773,7 +741,7 @@ export class Apparatus {
    * URL-like setup. 'empty': nothing on the table. 'assembled': a careful student's bench, built through the real
    * actions (so the event log and procedure flags are genuine): all items, rail E1 in the clamp (scale 0 at the top),
    * levelled with the foot at rack 0, rack raised, foot trimmed to 1.30 deg, marks at 200..1100 mm every 100 mm, both
-   * support heights measured with the vernier, cart on mark A (200 mm).
+   * support heights measured with the tape, cart on mark A (200 mm).
    */
   preset(name: PresetId): Result {
     if (name !== 'empty' && name !== 'assembled') return this.refuse('preset', 'unknownPreset')
@@ -794,8 +762,9 @@ export class Apparatus {
     this.setFoot_mm(R - 1000 * d * Math.sin(THETA_GUIDE_rad - tilt)) // trim: asin((R - f)/d) + tilt = 1.30 deg
     this.placeLevel('table')
     for (let i = 0; i < 10; i++) this.placeMarker(200 + 100 * i)
-    this.caliperMeasure({ kind: 'railHeight', at: 'clamp' })
-    this.caliperMeasure({ kind: 'railHeight', at: 'twoLeg' })
+    this.tapeMeasure({ kind: 'railHeight', at: 'clamp' })
+    this.tapeMeasure({ kind: 'railHeight', at: 'twoLeg' })
+    this.tapeMeasure({ kind: 'supportSeparation' })
     this.placeCart(200)
   }
 }

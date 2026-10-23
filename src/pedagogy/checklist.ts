@@ -12,7 +12,7 @@ export type StepId = (typeof STEP_IDS)[number]
 export type StepStatus = 'ok' | 'pending' | 'na'
 
 /** Which UI panel (data-panel id) a "show me" opens. */
-export type PanelId = 'inventory' | 'adjust' | 'caliper' | 'stopwatch' | 'table'
+export type PanelId = 'inventory' | 'adjust' | 'tape' | 'stopwatch' | 'table'
 
 export interface StepDetail {
   /** Key in the strings `detail` table. */
@@ -70,7 +70,7 @@ export function buildChecklist(app: Apparatus, opts: ChecklistOptions = {}): Che
   add({ id: 'screws', status: st.screwsUsed >= SCREWS_TOTAL ? 'ok' : 'pending', detail: { key: 'count', params: { n: st.screwsUsed, total: SCREWS_TOTAL } }, focus: ['screws'], panel: 'inventory' })
   add({ id: 'levelled', status: p.levelledBeforeRaise ? 'ok' : p.setupComplete ? 'pending' : 'na', detail: null, focus: ['level', 'foot'], panel: 'adjust' })
 
-  // Incline: the student's own route is the caliper heights and dh = d sin(theta); the numbers are shown only to teachers.
+  // Incline: the student's own route is the tape-measure heights and dh = d sin(theta); the numbers are shown only to teachers.
   const hc = lastHeight(app, 'clamp'), ht = lastHeight(app, 'twoLeg')
   let angleDetail: StepDetail | null = null
   if (hc !== null && ht !== null) angleDetail = { key: 'measured', params: { dh_mm: Math.round((hc - ht) * 10000) / 10 } }
@@ -85,7 +85,7 @@ export function buildChecklist(app: Apparatus, opts: ChecklistOptions = {}): Che
   }
   add({
     id: 'angle', status: p.theta_rad === null ? 'na' : p.angleOk ? 'ok' : 'pending',
-    detail: angleDetail ?? { key: 'formula', params: {} }, focus: ['rackKnob', 'foot'], panel: geo ? 'caliper' : 'adjust',
+    detail: angleDetail ?? { key: 'formula', params: {} }, focus: ['rackKnob', 'foot'], panel: geo ? 'tape' : 'adjust',
   })
 
   add({ id: 'marks', status: p.marksOk ? 'ok' : 'pending', detail: { key: 'marks', params: { n: p.marks.count, ab: Math.round(p.marks.ab_mm / 10) } }, focus: ['markers', 'rail'], panel: 'adjust' })

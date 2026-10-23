@@ -5,29 +5,28 @@ import * as THREE from 'three'
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js'
 import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js'
 import {
-  SCREWS_PER_JOINT, SCREWS_TOTAL, railPose, type Apparatus, type CaliperTarget, type CaliperVariant,
+  SCREWS_PER_JOINT, SCREWS_TOTAL, railPose, type Apparatus, type TapeTarget,
 } from '../../apparatus/index.ts'
 import type { ViewContext } from '../view.ts'
 import { strings } from '../strings/scene3d.ts'
 import { createMaterials, createOutlineMaterial } from './materials.ts'
 import {
-  CART, ROD_Z, buildBase, buildCaliper, buildCart, buildLevel, buildRackStand, buildRail, buildReceiver, buildStopwatch, buildTapeRoll,
-  buildTwoLeg, box, rbox, tapeFlag, TAPE_FLAG, screwHead, screwPile, tag, type Kit,
+  CART, ROD_Z, buildBase, buildTapeMeasure, buildCart, buildLevel, buildRackStand, buildRail, buildReceiver, buildStopwatch, buildTapeRoll,
+  buildTwoLeg, type TapeMode, box, rbox, tapeFlag, TAPE_FLAG, screwHead, screwPile, tag, type Kit,
 } from './models.ts'
 import {
-  LATERAL_MM, LEVEL_ON_TABLE, MARK_HALF_cm, overviewPoints, RAIL, STAGING, SUPPORT_FROM_END_cm, TABLE, TRAY, VIEW_ANGLES, caliperOpening_m,
-  caliperRailX_cm, cartGhostFront_mm, clampHeight_cm, ghostsFor, markLocalX_cm, markerLabels, railLocalToWorld, railLocalX_cm, railSpanPoints,
+  LATERAL_MM, LEVEL_ON_TABLE, MARK_HALF_cm, overviewPoints, RAIL, STAGING, SUPPORT_FROM_END_cm, TABLE, TRAY, VIEW_ANGLES, tapeLength_m,
+  tapeRailX_cm, cartGhostFront_mm, clampHeight_cm, ghostsFor, markLocalX_cm, markerLabels, railLocalToWorld, railLocalX_cm, railSpanPoints,
   toScene, twoLegHeight_cm, type GhostId, type Slot,
 } from './units.ts'
 import { boxCorners, fitView, type Vec } from './framing.ts'
 import { PRESET_NAMES, type PresetName } from './presets.ts'
 import { createInteraction, type Interaction } from './interaction.ts'
 import type { CardInfo } from './types.ts'
-import { vernierGeometry } from '../../apparatus/index.ts'
 
 export { PRESET_NAMES }
 export type { PresetName }
-export type Tool = 'select' | 'markers' | 'level' | 'caliper'
+export type Tool = 'select' | 'markers' | 'level' | 'tape'
 
 interface PresetDef {
   target: [number, number, number]
@@ -50,7 +49,7 @@ export interface SceneOptions {
   onCard(card: CardInfo | null): void
   onFail(reason: string): void
   onStatus(text: string): void
-  onCaliperTarget?(t: CaliperTarget): void
+  onTapeTarget?(t: TapeTarget): void
   openPanel?(panel: string): void
 }
 
@@ -63,8 +62,8 @@ export interface Scene3D {
   currentPreset(): PresetName | null
   setTool(t: Tool): void
   getTool(): Tool
-  setCaliperTarget(t: CaliperTarget | null): void
-  getCaliperTarget(): CaliperTarget | null
+  setTapeTarget(t: TapeTarget | null): void
+  getTapeTarget(): TapeTarget | null
   focus(targets: string[] | null): void
   relabel(): void
   destroy(): void
@@ -151,7 +150,7 @@ export function createScene(container: HTMLElement, ctx: ViewContext, opts: Scen
   table.receiveShadow = true
   tag(table, 'table')
   scene.add(table)
-  // one parts tray near the low end holds the small props (stopwatch, caliper, tape roll, level, screws)
+  // one parts tray near the low end holds the small props (stopwatch, tape measure, masking tape roll, level, screws)
   const tray = rbox(TRAY.width, TRAY.height, TRAY.depth, 0.2, M.tray, TRAY.x, TRAY.height / 2 - 0.02, TRAY.z)
   tray.castShadow = false
   scene.add(tray)
@@ -162,9 +161,10 @@ export function createScene(container: HTMLElement, ctx: ViewContext, opts: Scen
   const requestRender = (): void => { needsRender = true }
 
   // ---------- camera presets ----------
-  let caliperTarget: CaliperTarget | null = null
-  let caliperMode: 'depth' | 'jaws' | 'rest' = 'rest'
-  let caliperFocusKey = ''
+  let tapeTarget: TapeTarget | null = null
+  let tapeMode: TapeMode = 'rest'
+  let tapeFocusKey = ''
+  let tapeReadingLocal: [number, number, number] = [0, 0, 0]
   let markFromA_cm = 0
   const railGeoNow = (): { zeroHigh: boolean; high: [number, number, number]; tilt: number } => {
     const pose = a.railPoseNow()
@@ -188,17 +188,20 @@ export function createScene(container: HTMLElement, ctx: ViewContext, opts: Scen
       const x = markX()
       return fromFit(worldPts(railSpanPoints(x - MARK_HALF_cm, x + MARK_HALF_cm)), VIEW_ANGLES.mark.azimuth, VIEW_ANGLES.mark.elevation, 0.04)
     }
-    if (name === 'caliper') {
-      caliper.root.updateWorldMatrix(true, true)
-      const bb = new THREE.Box3().setFromObject(caliper.root)
-      if (caliperMode === 'rest') {
-        // close-up of the vernier / LCD head of the caliper lying on the tray
-        const head = caliper.root.localToWorld(new THREE.Vector3(0, 9, 0))
-        const pts = boxCorners([head.x - 8, head.y - 1, head.z - 5], [head.x + 8, head.y + 1, head.z + 5])
-        return fromFit(pts, 0, 52, 0.05)
+    if (name === 'tape') {
+      if (tapeMode === 'rest') {
+        // the tape measure lying on the tray
+        tapeMeasure.root.updateWorldMatrix(true, true)
+        const bb = new THREE.Box3().setFromObject(tapeMeasure.root)
+        return fromFit(boxCorners([bb.min.x - 2, bb.min.y, bb.min.z - 2], [bb.max.x + 2, bb.max.y, bb.max.z + 2]), 25, 35, 0.15)
       }
-      const pts = boxCorners([bb.min.x - 2, bb.min.y, bb.min.z - 2], [bb.max.x + 2, bb.max.y, bb.max.z + 2])
-      return fromFit(pts, caliperMode === 'depth' ? 14 : -20, caliperMode === 'depth' ? 12 : 28, 0.06)
+      // close-up of the reading point: where the blade meets the rail top edge (heights), the far end of the blade (d) or the cart rear
+      tapeMeasure.root.updateWorldMatrix(true, true)
+      const at = tapeMeasure.root.localToWorld(new THREE.Vector3(...tapeReadingLocal))
+      const pts = tapeMode === 'down'
+        ? boxCorners([at.x - 6, at.y - 6, at.z - 3], [at.x + 6, at.y + 2, at.z + 3])
+        : boxCorners([at.x - 6, at.y - 1.5, at.z - 3], [at.x + 6, at.y + 6, at.z + 3])
+      return fromFit(pts, tapeMode === 'down' ? 8 : 0, tapeMode === 'down' ? 8 : tapeMode === 'left' ? 45 : 14, 0.04)
     }
     const p = END_PRESETS[name]
     const tan = Math.tan((FOV * Math.PI) / 360)
@@ -241,9 +244,9 @@ export function createScene(container: HTMLElement, ctx: ViewContext, opts: Scen
   const receiver = buildReceiver(kit)
   const level = buildLevel(kit)
   const stopwatch = buildStopwatch(kit)
-  const caliper = buildCaliper(kit)
+  const tapeMeasure = buildTapeMeasure(kit)
   const tapeRoll = buildTapeRoll(kit)
-  scene.add(base, rack.root, twoLeg.root, receiver, level.root, stopwatch.root, tapeRoll, caliper.root)
+  scene.add(base, rack.root, twoLeg.root, receiver, level.root, stopwatch.root, tapeRoll, tapeMeasure.root)
   const pile = new THREE.Group()
   scene.add(pile)
   tag(pile, 'screws')
@@ -319,9 +322,6 @@ export function createScene(container: HTMLElement, ctx: ViewContext, opts: Scen
   let outlineRoots: THREE.Object3D[] = []
   let focusIds: string[] | null = null
   let dirty = true
-
-  const hostCaliperMode = (): { parent: THREE.Object3D; mode: 'depth' | 'jaws' | 'rest' } => ({ parent: scene, mode: 'rest' })
-  void hostCaliperMode
 
   const syncTapes = (zeroHigh: boolean): void => {
     for (const c of [...rail.tapes.children]) rail.tapes.remove(c)
@@ -413,36 +413,44 @@ export function createScene(container: HTMLElement, ctx: ViewContext, opts: Scen
     place(pile, slotPos(STAGING.screws, TRAY.height), 0, 0)
     void SCREWS_PER_JOINT
 
-    // caliper: at the target when a measurable target is chosen, else resting on the table
-    caliper.root.visible = it.caliper
-    if (it.caliper) {
-      const variant: CaliperVariant = st.caliper.variant
-      const L = caliperTarget ? caliperOpening_m(caliperTarget, geo) : null
-      const lcd = st.caliper.jawsClosed ? (a.caliperClosedDisplay_m() * 1000).toFixed(2) : '- - -'
-      if (caliperTarget && L !== null && (caliperTarget.kind === 'railHeight' ? it.rail : it.cart)) {
-        const open_cm = st.caliper.jawsClosed ? 0 : L * 100
-        const vern = vernierGeometry(open_cm / 100)
-        if (caliperTarget.kind === 'railHeight') {
-          caliperMode = 'depth'; caliper.set(variant, 'depth', open_cm, lcd, vern)
-          if (caliper.root.parent !== rail.root) { caliper.root.removeFromParent(); rail.root.add(caliper.root) }
-          caliper.root.position.set(caliperRailX_cm(caliperTarget, geo), 0, 0.7)
-          caliper.root.rotation.set(0, 0, 0)
-          placed.delete(caliper.root)
-          if (open_cm === 0) caliper.root.position.y = 0
+    // tape measure: against the chosen target when it can be drawn, else resting on the tray
+    tapeMeasure.root.visible = it.tape
+    if (it.tape) {
+      const L = tapeTarget ? tapeLength_m(tapeTarget, geo) : null
+      const drawable = tapeTarget !== null && L !== null && (tapeTarget.kind === 'cartLength' ? it.cart : it.rail)
+      if (drawable && tapeTarget && L !== null) {
+        const L_cm = L * 100
+        if (tapeTarget.kind === 'railHeight') {
+          // hook on the table under the measured point, blade up to the rail top edge: the reading point
+          tapeMode = 'down'; tapeMeasure.set('down', L_cm)
+          if (tapeMeasure.root.parent !== scene) { tapeMeasure.root.removeFromParent(); scene.add(tapeMeasure.root) }
+          const top = railLocalToWorld(toScene(pose.highEnd), tilt, [tapeRailX_cm(tapeTarget, geo), 0, RAIL.halfW + 0.2])
+          tapeMeasure.root.position.set(top[0], top[1], top[2])
+          tapeMeasure.root.rotation.set(0, 0, 0)
+          tapeReadingLocal = [0, 0, 0]
+        } else if (tapeTarget.kind === 'supportSeparation') {
+          // blade laid along the front face of the rail from the clamp support to the two-leg support
+          tapeMode = 'right'; tapeMeasure.set('right', L_cm)
+          if (tapeMeasure.root.parent !== rail.root) { tapeMeasure.root.removeFromParent(); rail.root.add(tapeMeasure.root) }
+          tapeMeasure.root.position.set(SUPPORT_FROM_END_cm, -RAIL.height / 2, RAIL.halfW + 0.2)
+          tapeMeasure.root.rotation.set(0, 0, 0)
+          tapeReadingLocal = [L_cm, 0, 0]
         } else {
-          caliperMode = 'jaws'; caliper.set(variant, 'jaws', open_cm, lcd, vern)
-          if (caliper.root.parent !== cart.root) { caliper.root.removeFromParent(); cart.root.add(caliper.root) }
-          const xRear = caliperTarget.kind === 'cartLength' ? -CART.length : -0.35
-          caliper.root.position.set(xRear, CART.bodyBottom + CART.bodyHeight + 2.6, 0)
-          caliper.root.rotation.set(0, 0, -Math.PI / 2)
-          placed.delete(caliper.root)
+          // blade laid along the cart top from the front face to the rear
+          tapeMode = 'left'; tapeMeasure.set('left', L_cm)
+          if (tapeMeasure.root.parent !== cart.root) { tapeMeasure.root.removeFromParent(); cart.root.add(tapeMeasure.root) }
+          tapeMeasure.root.position.set(0, CART.bodyBottom + CART.bodyHeight + 0.1, 0)
+          tapeMeasure.root.rotation.set(-Math.PI / 2, 0, 0)
+          tapeReadingLocal = [-L_cm, 0, 0]
         }
+        placed.delete(tapeMeasure.root)
       } else {
-        caliperMode = 'rest'; caliper.set(variant, 'rest', 6, lcd, vernierGeometry(0.06))
-        if (caliper.root.parent !== scene) { caliper.root.removeFromParent(); scene.add(caliper.root) }
-        placed.delete(caliper.root)
-        caliper.root.rotation.set(-Math.PI / 2, 0, -Math.PI / 2)
-        caliper.root.position.set(STAGING.caliper.x - 6, TRAY.height + 0.5, STAGING.caliper.z)
+        tapeMode = 'rest'; tapeMeasure.set('rest', 6)
+        if (tapeMeasure.root.parent !== scene) { tapeMeasure.root.removeFromParent(); scene.add(tapeMeasure.root) }
+        placed.delete(tapeMeasure.root)
+        tapeMeasure.root.rotation.set(0, 0, 0)
+        tapeMeasure.root.position.set(STAGING.tape.x, TRAY.height, STAGING.tape.z)
+        tapeReadingLocal = [0, 1.6, 4]
       }
     }
 
@@ -555,7 +563,7 @@ export function createScene(container: HTMLElement, ctx: ViewContext, opts: Scen
       case 'receiver': return receiver
       case 'level': return level.root
       case 'stopwatch': return stopwatch.root
-      case 'caliper': return caliper.root
+      case 'tapeMeasure': return tapeMeasure.root
       case 'markers': return tapeRoll
       case 'screws': return pile
       default: return null
@@ -595,7 +603,7 @@ export function createScene(container: HTMLElement, ctx: ViewContext, opts: Scen
 
   // ---------- interaction ----------
   const pickables = (): THREE.Object3D[] => [
-    table, rail.root, cart.root, base, rack.root, twoLeg.root, receiver, level.root, stopwatch.root, caliper.root, tapeRoll, pile,
+    table, rail.root, cart.root, base, rack.root, twoLeg.root, receiver, level.root, stopwatch.root, tapeMeasure.root, tapeRoll, pile,
     gStand, gClamp, gTwoLeg.root, gReceiver, gCartM.root,
   ]
   const interaction: Interaction = createInteraction({
@@ -605,7 +613,7 @@ export function createScene(container: HTMLElement, ctx: ViewContext, opts: Scen
     rackKnob: rack.knob,
     markerPreview, setLevelX: (x) => { levelX = Math.min(RAIL.length - 8, Math.max(8, x)) },
     getTool: () => tool,
-    setCaliperTarget: (t) => setCaliperTarget(t),
+    setTapeTarget: (t) => setTapeTarget(t),
     onCard: opts.onCard,
     onStatus: opts.onStatus,
     outline: { hover: hoverMat },
@@ -615,16 +623,16 @@ export function createScene(container: HTMLElement, ctx: ViewContext, opts: Scen
     openPanel: opts.openPanel,
   })
 
-  // ---------- tools and caliper target ----------
+  // ---------- tools and tape target ----------
   let tool: Tool = 'select'
-  const setCaliperTarget = (t: CaliperTarget | null): void => {
-    caliperTarget = t
+  const setTapeTarget = (t: TapeTarget | null): void => {
+    tapeTarget = t
     dirty = true
-    if (t && opts.onCaliperTarget) opts.onCaliperTarget(t)
+    if (t && opts.onTapeTarget) opts.onTapeTarget(t)
   }
   const unsub = a.on((e) => {
     dirty = true
-    if (e.type === 'measuredHeight') { caliperTarget = e.target }
+    if (e.type === 'measuredHeight') { tapeTarget = e.target }
     if (e.type === 'presetApplied' || e.type === 'loaded') { markerPreview.clear() }
   })
 
@@ -681,9 +689,9 @@ export function createScene(container: HTMLElement, ctx: ViewContext, opts: Scen
       const now = performance.now()
       if (dirty) {
         dirty = false; apply()
-        if (preset === 'caliper') {
-          const key = `${caliperMode}|${JSON.stringify(caliperTarget)}`
-          if (key !== caliperFocusKey) { caliperFocusKey = key; setPreset('caliper') }
+        if (preset === 'tape') {
+          const key = `${tapeMode}|${JSON.stringify(tapeTarget)}`
+          if (key !== tapeFocusKey) { tapeFocusKey = key; setPreset('tape') }
         } else if (preset === 'mark' || preset === 'lateral') {
           // the framing follows the rail (rack height, which end is up) and the marks
           const pz = poseFor(preset)
@@ -714,7 +722,7 @@ export function createScene(container: HTMLElement, ctx: ViewContext, opts: Scen
     },
     setVisible(v) { visible = v; if (v) { resize(); dirty = true; requestRender() } },
     setPreset: (n) => {
-      if (n === 'caliper') caliperFocusKey = `${caliperMode}|${JSON.stringify(caliperTarget)}`
+      if (n === 'tape') tapeFocusKey = `${tapeMode}|${JSON.stringify(tapeTarget)}`
       followKey = ''
       setPreset(n)
     },
@@ -726,8 +734,8 @@ export function createScene(container: HTMLElement, ctx: ViewContext, opts: Scen
     currentPreset: () => preset,
     setTool(t) { tool = t; interaction.setTool(t) },
     getTool: () => tool,
-    setCaliperTarget,
-    getCaliperTarget: () => caliperTarget,
+    setTapeTarget,
+    getTapeTarget: () => tapeTarget,
     focus(list) { focusIds = list && list.length ? list : null; dirty = true },
     relabel() {
       canvas.setAttribute('aria-label', S().canvasLabel)

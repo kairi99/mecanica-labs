@@ -16,7 +16,7 @@ all enums are ids; the views translate them through `src/i18n.ts`. Every refusal
 ## Units and conventions
 
 * SI with the unit in the name (`x_m`, `t_s`, `v_mps`, `theta_rad`, `*_ms` for caller timestamps). Exceptions carried by
-  the name: `*_mm` for the rail scale, rack reading, foot and caliper-friendly quantities; `*_cm` for the table positions.
+  the name: `*_mm` for the rail scale, rack reading, foot and tape-measure quantities; `*_cm` for the table positions.
 * **Rail scale** `railPos_mm`: the printed scale, 0..1200 mm, 0 at rail end `E1`, 1200 at `E2`. The student chooses which
   end goes into the rack-stand clamp (`attach('rackClamp', { railEnd })`). That end is the **top** of the slope.
   `geometry().scaleZeroAtHighEnd` is true for `E1`; the guide wants this (0 at the top); `procedure().scaleOk` flags it.
@@ -39,7 +39,7 @@ all enums are ids; the views translate them through `src/i18n.ts`. Every refusal
 | Assembly | `attach(joint, { railEnd? })`, `detach(joint)`, `missing()`, `canRun()` |
 | Geometry | `geometry()`, `looseRail()`, `railPoseNow()`, `setRackHeight_mm(n)`, `setFoot_mm(x)` |
 | Level | `placeLevel('rail' \| 'table' \| null)`, `levelReading()` |
-| Caliper | `setCaliperVariant`, `setCaliperJaws(closed)`, `caliperZero()`, `caliperClosedDisplay_m()`, `caliperMeasure(target)` |
+| Tape measure | `tapeMeasure(target)` |
 | Markers | `placeMarker(pos)`, `moveMarker(id, pos)`, `removeMarker(id)`, `clearMarkers()`, `getMarkers()`, `evaluateMarks()` |
 | Cart | `placeCart(frontPos_mm)`, `resetCart()`, `releaseCart(t_ms)`, `cartState(t_ms)`, `cartPose(t_ms)`, `getRuns()`, `getRun(id)` |
 | Stopwatch | `stopwatchStartStop(t_ms, { markTarget? })`, `stopwatchReset()`, `stopwatchDisplay_s(t_ms)`, `setLinkStartToRelease(on)`, `stopLog()` |
@@ -48,12 +48,12 @@ all enums are ids; the views translate them through `src/i18n.ts`. Every refusal
 | Procedure | `procedure()` |
 | Persistence | `snapshot()`, `load(snapshot)`, `reset()`, `preset('empty' \| 'assembled')`, `hiddenTruth()` (teacher/tests only) |
 
-Free helpers (pure): `railPose`, `railPointAt`, `downSlope_m`, `railPos_mm`, `bubbleOffset_mm`, `vernierGeometry`, `evaluateMarks`,
+Free helpers (pure): `railPose`, `railPointAt`, `downSlope_m`, `railPos_mm`, `bubbleOffset_mm`, `tapeGeometry`, `evaluateMarks`,
 `parseTimeInput`, `buildTrajectory`, `digicartSamples`; constants in `constants.ts`.
 
 ### Items, joints, attachment points
 
-Items: `rail, cart, rackStand, standBase, twoLegStand, receiver, screws, level, stopwatch, caliper, markers`.
+Items: `rail, cart, rackStand, standBase, twoLegStand, receiver, screws, level, stopwatch, tape, markers`.
 Joints: `standBase` (rack stand on its base, no screws), `rackClamp` (a rail end in the clamp; needs `standBase`; 2 screws),
 `twoLegStand` and `receiver` (the opposite end; need `rackClamp` first; 2 screws each). Three rail joints use all 6 screws.
 Detaching or removing something undoes what hangs on it (events `detached`). Removing the rail also removes the cart
@@ -66,14 +66,14 @@ out on the bench by your own slots; the loose rail is `looseRail()` (z = 0.25 m,
 ### State shape
 
 `getState()` returns `ApparatusState`: `items` (booleans), `joints`, `screwsUsed`, `screwsAvailable`, `rack_mm`, `foot_mm`,
-`level.placement`, `caliper {variant, jawsClosed, zeroed}`, `markers [{id, railPos_mm}]`, `cart {placed, startRailPos_mm,
+`level.placement`, `markers [{id, railPos_mm}]`, `cart {placed, startRailPos_mm,
 released, runId}`, `stopwatch {running, linkStartToRelease}`, `geometry` (`RailGeometry` or `null` until the clamp is
 fastened: `supportedBothEnds`, `scaleZeroAtHighEnd`, `clampHeight_m`, `twoLegHeight_m`, `railAngle_rad`, `theta_rad`, `pose`).
 Time-dependent values come from methods that take `t_ms`: `cartState(t_ms)` (`phase` `unplaced | atStart | rolling |
 stopped | stuck`, `frontRailPos_mm`, `rearRailPos_mm`, `s_m`, `v_mps`, `t_s`, `runId`), `stopwatchDisplay_s(t_ms)`.
 The views redraw on `on(listener)` events and per frame with their own clock for the cart and the stopwatch.
 
-The hidden table tilt and the digital zero error exist only inside; `hiddenTruth()` reveals them for teacher mode and tests.
+The hidden table tilt exists only inside; `hiddenTruth()` reveals them for teacher mode and tests.
 
 ### Level, heights, angle
 
@@ -82,13 +82,15 @@ it shows the true incline, on the table only the table tilt. The intended workfl
 rack reads 0 mm (sets the `leveled` event and `procedure().levelledBeforeRaise`), then raise the rack (about 25 mm) and
 trim with the foot. `sin(theta_rail) = (h_clamp - h_twoLeg) / d`, `theta = theta_rail + tableTilt` (`physics/incline.ts`).
 
-### Caliper
+### Tape measure
 
-`caliperMeasure(target)`; targets: `{kind:'railHeight', at:'clamp' | 'twoLeg' | {railPos_mm}}`, `{kind:'cartLength'}`,
-`{kind:'frontReferenceOffset'}`. Returns `reading {variant, trueLength_m, display_m, vernier}`. Vernier: `display_m` is null;
-draw `vernier` (`mainScaleReading_mm`, `coincidentDivision` of 20, `leastCount_mm` 0.05) and let the student read. Digital:
-`display_m = quantize(true + zeroError unless zeroed, 0.01 mm)`; `setCaliperJaws(true)` then `caliperZero()`. Range 0..150 mm
-(`outOfRange`; a rack above 90 mm leaves it).
+`tapeMeasure(target)`; targets: `{kind:'railHeight', at:'clamp' | 'twoLeg' | {railPos_mm}}`, `{kind:'cartLength'}`,
+`{kind:'supportSeparation'}` (the distance d of the two supports along the rail, needs both supports). Returns
+`reading {trueLength_m, tape, mpe_m}`. The tape is analog: no number is shown to the student. `tape` (`TapeGeometry`:
+`division_mm` 1, `edge_mm`, `idealReading_m`) is what the view draws on the blade; the student reads the mm graduation.
+`mpe_m` is the class II tolerance 0.3 mm + 0.2 mm/m x L (MID 2014/32/EU, MI-008), reported and not applied (see
+`PARAMETERS.md`). Type B uncertainty of one reading: `typeBAnalog(0.001)` = 0.29 mm. Range 0..3 m. `procedure().heightsMeasured`
+has `clamp`, `twoLeg` and `separation`. Older snapshots (item `caliper`, a `caliper` state, a zero error) still load: the item becomes `tape` and the rest is ignored.
 
 ### Runs and records
 
@@ -103,7 +105,7 @@ the receiver end stop (printed position `stopRailPos_mm`). A flat or uphill rail
 ### Events
 
 `ApparatusEvent = { seq, t_ms | null, type, ... }`: `itemAdded, itemRemoved, attached, detached, levelPlaced, leveled, heightSet,
-caliperVariant, caliperJaws, caliperZeroed, measuredHeight, markPlaced, markMoved, markRemoved, cartPlaced, cartReset, released,
+measuredHeight, markPlaced, markMoved, markRemoved, cartPlaced, cartReset, released,
 stopwatchStart, stopwatchStop, stopwatchReset, recorded, cellCleared, tableCleared, linkStartToRelease, refused, presetApplied, loaded`.
 Payloads: see `types.ts`.
 
@@ -122,7 +124,7 @@ The seed fixes the hidden values; a different seed gives a different table tilt,
 
 # Shell layout (`src/main.ts`, `src/styles/layout.css`)
 
-Five lab steps, one panel each: 1 Setup (inventory) · 2 Adjustments and height (adjust, caliper) · 3 Timing and Table 1.1
+Five lab steps, one panel each: 1 Setup (inventory) · 2 Adjustments and height (adjust, tape measure) · 3 Timing and Table 1.1
 (table, timing notes) · 4 DigiCart (tablet) · 5 Analysis. The header holds the step tracker (done checks come from the
 procedure checklist through `ChecklistHooks.onProgress`); the checklist itself is a drawer bar above the panel. The step is
 remembered (`persist.ts`) and `?step=1..5` deep-links to it. `?view=2d|3d` and `?cam=` choose the stage view.

@@ -22,17 +22,17 @@ export function sem(xs: readonly number[]): number {
 /**
  * CONVENTION (Type B, rectangular distribution). A reading known only to the instrument resolution r lies uniformly
  * within +-r/2 of the shown value, so the standard uncertainty is (r/2)/sqrt(3) = r / sqrt(12) (GUM 4.3.7).
- * Digital display (stopwatch, digital caliper): r is the last displayed digit.
+ * Digital display (stopwatch): r is the last displayed digit.
  */
 export function typeBDigital(resolution: number): number {
   return resolution / Math.sqrt(12)
 }
 
 /**
- * CONVENTION. Analog scale (ruler, vernier caliper): the observer reads to the nearest division d, so the true value
+ * CONVENTION. Analog scale (ruler, tape measure): the observer reads to the nearest division d, so the true value
  * lies within a half-width a = d/2 (rectangular) and u = a / sqrt(3) = d / sqrt(12). Numerically equal to
- * typeBDigital(d); both are kept so the analysis panel can show the reasoning that matches the instrument. For a
- * vernier, d is its least count. NOTE: the commonly taught "maximum error" d/2 is the HALF-WIDTH a, not the standard
+ * typeBDigital(d); both are kept so the analysis panel can show the reasoning that matches the instrument. For the
+ * tape measure, d = 1 mm. NOTE: the commonly taught "maximum error" d/2 is the HALF-WIDTH a, not the standard
  * uncertainty u (u = a/sqrt(3) = 0.29 d).
  */
 export function typeBAnalog(smallestDivision: number): number {

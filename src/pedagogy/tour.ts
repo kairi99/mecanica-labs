@@ -6,7 +6,7 @@ import { fmt, store } from './dom.ts'
 import { strings } from './strings/tour.ts'
 
 export const TOUR_KEY = 'digicart-mruv-tour-done'
-export const TOUR_STEP_IDS = ['steps', 'stage', 'inventory', 'adjust', 'caliper', 'stopwatch', 'table', 'tablet', 'analysis'] as const
+export const TOUR_STEP_IDS = ['steps', 'stage', 'inventory', 'adjust', 'tape', 'stopwatch', 'table', 'tablet', 'analysis'] as const
 export type TourStepId = (typeof TOUR_STEP_IDS)[number]
 /** A comma list: the first match that is on screen wins (the step tracker on wide screens, the step menu button on phones). */
 export const TOUR_SELECTORS: Record<TourStepId, string> = {
@@ -14,7 +14,7 @@ export const TOUR_SELECTORS: Record<TourStepId, string> = {
   stage: '[data-region="stage"]',
   inventory: '[data-panel="inventory"]',
   adjust: '[data-panel="adjust"]',
-  caliper: '[data-panel="caliper"]',
+  tape: '[data-panel="tape"]',
   stopwatch: '[data-timing-bar]',
   table: '[data-panel="table"]',
   tablet: '[data-panel="tablet"]',

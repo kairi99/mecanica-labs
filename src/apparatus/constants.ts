@@ -41,16 +41,10 @@ export const LEVEL_CENTERED_TOL_mm = 0.5
 // ---- Cart --------------------------------------------------------------------------------------------------------
 /** Cart length (front to rear), m. ASSUMED. Whole cart must lie on the rail. */
 export const CART_LENGTH_m = 0.0984
-/** Distance from the cart front face to the engraved front reference line on its side, m. ASSUMED (measurable item). */
-export const CART_FRONT_REFERENCE_OFFSET_m = 0.0035
 
-// ---- Caliper -----------------------------------------------------------------------------------------------------
-export const CALIPER_RANGE_m = 0.15
-/** Vernier geometry: main scale division 1 mm; vernier has 20 divisions spanning 19 mm, least count 0.05 mm. */
-export const VERNIER_MAIN_DIVISION_mm = 1
-export const VERNIER_DIVISIONS = 20
-/** Digital caliper zero error: uniform in +- this, m (0.05 mm). ASSUMED. Removed by the zero button. */
-export const DIGITAL_ZERO_ERROR_MAX_m = 0.00005
+// ---- Tape measure (flexometro) -----------------------------------------------------------------------------------
+/** Blade length of the tape measure, m. ASSUMED typical 3 m workshop tape. */
+export const TAPE_RANGE_m = 3
 
 // ---- Markers (tape marks) ----------------------------------------------------------------------------------------
 export const MARK_SNAP_mm = 0.5

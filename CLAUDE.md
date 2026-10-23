@@ -3,7 +3,7 @@
 Browser-based, physics-driven, **educational** simulation of the Newtonian-mechanics lab "Práctica 1: MRUV" of the
 Escuela Politécnica Nacional (Quito): a PHYWE DigiCart rolling down an inclined metal rail at 1.30°. The student
 **assembles the setup from an inventory**, releases the cart, times it with a **virtual stopwatch driven by the
-student's own presses**, measures the stand height with a **virtual caliper** (analog vernier and digital), fills
+student's own presses**, measures the stand heights and their separation with a **virtual tape measure** (flexómetro, analog), fills
 Table 1.1 and does the guide's analysis tasks. Public and **open source** (MIT code, CC BY 4.0 content). Spanish first.
 Not affiliated with EPN or PHYWE.
 
@@ -42,7 +42,7 @@ npm run teacher-key  # regenerates docs/teacher-key.md from the model
   stopwatch. Wrong choices are possible and physically meaningful (angle not 1.30°, AB too short, cart off the track).
 - Stopwatch: the student presses start/stop; the app only adds the true event times from the model plus human
   reaction and the display resolution.
-- Calipers and rail scale: readings are quantised and carry Type B uncertainty (convention in `statistics.ts`).
+- Tape measure and rail scale (analog) and stopwatch (digital): readings are quantised and carry Type B uncertainty (convention in `statistics.ts`).
 - DigiCart reference data (mass, wheels) are ASSUMED unless a reliable PHYWE value is found; label them so.
 
 ## Style

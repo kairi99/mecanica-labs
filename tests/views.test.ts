@@ -9,7 +9,7 @@ import { handleStopwatchKey } from '../src/views/stopwatchkeys.ts'
 import { strings as invStrings } from '../src/views/strings/inventory.ts'
 import { strings as adjustStrings } from '../src/views/strings/adjust.ts'
 import { strings as stopwatchStrings } from '../src/views/strings/stopwatch.ts'
-import { strings as caliperStrings } from '../src/views/strings/caliper.ts'
+import { strings as tapeStrings } from '../src/views/strings/tape.ts'
 import { strings as tableStrings } from '../src/views/strings/table.ts'
 import { strings as tabletStrings } from '../src/views/strings/tablet.ts'
 import { strings as checklistStrings } from '../src/pedagogy/strings/checklist.ts'
@@ -96,7 +96,7 @@ describe('strings key parity ES/EN', () => {
     return [path]
   }
   const files = {
-    reasons: reasonStrings, inventory: invStrings, adjust: adjustStrings, stopwatch: stopwatchStrings, caliper: caliperStrings,
+    reasons: reasonStrings, inventory: invStrings, adjust: adjustStrings, stopwatch: stopwatchStrings, tape: tapeStrings,
     table: tableStrings, tablet: tabletStrings, checklist: checklistStrings, coach: coachStrings, tour: tourStrings, analysis: analysisStrings, side2d: side2dStrings, shell: shellStrings,
   }
   for (const [name, s] of Object.entries(files)) {
@@ -107,6 +107,17 @@ describe('strings key parity ES/EN', () => {
       expect(empties(s.en)).toBe(0)
     })
   }
+})
+
+describe('tape measure wording', () => {
+  it('names the instrument Flexómetro / Tape measure and never mentions the retired caliper', () => {
+    expect(tapeStrings.es.title).toBe('Flexómetro')
+    expect(tapeStrings.en.title).toBe('Tape measure')
+    expect(invStrings.es.items.tape.name).toBe('Flexómetro (cinta métrica)')
+    expect(invStrings.en.items.tape.name).toBe('Tape measure')
+    const all = JSON.stringify([tapeStrings, invStrings, reasonStrings, checklistStrings, coachStrings, tourStrings])
+    expect(all).not.toMatch(/calibrador|pie de rey|vernier|nonio|caliper|mordaza|jaw/i)
+  })
 })
 
 describe('stopwatch keys use event.timeStamp', () => {

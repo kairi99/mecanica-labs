@@ -52,8 +52,9 @@ part). Air drag at v = 0.6 m/s is ~0.3 % of the driving force and lengthens t(0.
 |---|---|---|
 | Stopwatch resolution | 0.01 s | ASSUMED typical digital stopwatch. Human reaction time is added by the apparatus layer (phase 2), not here. |
 | Rail scale division | 1 mm | From the photos: millimetre scale. ASSUMED 1 mm. |
-| Vernier least count | 0.05 mm | ASSUMED typical analog caliper. |
-| Digital caliper resolution | 0.01 mm | ASSUMED typical. |
+| Tape measure division (`TAPE_DIVISION_m`) | 1 mm | Steel blade graduated in mm, numbers every cm; standard for a workshop tape. Analog, read by eye: Type B u = (d/2)/sqrt(3) = 0.29 mm. |
+
+**Tape measure tolerance: reported, not applied.** The class II maximum permissible error is a bound on the tape's systematic error, not a measured error of this tape. The model keeps the tape ideal (a reading is the true length quantised by the student's own reading of the 1 mm blade) and only reports the bound next to the reading (`TapeReading.mpe_m`, `tapeMaxPermissibleError_m`). Reason: the bound (0.3-0.5 mm) is no larger than the student's reading half-width (0.5 mm), a seeded hidden scale error would be invisible next to it and would only shift Delta h by a few tenths of a mm; stating it is the honest minimum. The teacher key gives its effect on the incline.
 
 Type B convention: digital display, u = resolution/sqrt(12). Analog scale: read to the nearest division d, half-width a = d/2, u = a/sqrt(3) = d/sqrt(12) (same number). The commonly taught "maximum error" d/2 is the half-width a, not the standard uncertainty u.
 
@@ -80,7 +81,7 @@ cart; no Bouguer correction; no air humidity. The mean velocity over the whole p
 
 ## Apparatus (`src/apparatus/constants.ts`)
 
-All rows ASSUMED unless a source is given; none is a PHYWE specification. Date of all rows: 2026-10-22.
+All rows ASSUMED unless a source is given; none is a PHYWE specification. Date of all rows: 2026-10-22, except the tape rows (2026-10-23).
 
 | Parameter | Value | Unit | Source |
 |---|---|---|---|
@@ -95,10 +96,8 @@ All rows ASSUMED unless a source is given; none is a PHYWE specification. Date o
 | Receiver end stop from low rail end | 0.040 | m | ASSUMED. Cart front stops there (no bounce). |
 | Level sensitivity | 20 (2 per 0.1 deg) | mm/deg | ASSUMED. Saturates at +-6 mm (0.3 deg); centred when |offset| <= 0.5 mm (|tilt| <= 0.025 deg). |
 | Cart length | 0.0984 | m | ASSUMED. |
-| Cart front reference offset | 0.0035 | m | ASSUMED (measurable item only). |
-| Caliper range | 0..150 | mm | ASSUMED typical. |
-| Vernier | main 1 mm, 20 divisions | - | ASSUMED; least count 0.05 mm (physics/instruments.ts). |
-| Digital caliper zero error | uniform +-0.05 | mm | ASSUMED, seeded; removed by the zero button with the jaws closed. Display quantised 0.01 mm. |
+| Tape measure range (`TAPE_RANGE_m`) | 3 | m | ASSUMED typical workshop tape; every measurable length (heights ~0.06-0.2 m, cart 0.098 m, d 1.10 m) is far inside it. |
+| Tape accuracy, EU class II: maximum permissible error | +-(0.3 + 0.2 L/m) | mm | Directive 2014/32/EU (MID), Annex MI-008 (measuring tapes), class II. At L = 0.1 m: +-0.32 mm; at d = 1.10 m: +-0.52 mm. Date 2026-10-23. |
 | Mark snap / max marks | 0.5 / 30 | mm / - | ASSUMED. |
 | Mark check tolerance (spacing, position vs A + 100 i) | 2 | mm | ASSUMED (tape placement). AB >= 900 mm - 2 mm. |
 | Target angle / tolerance | 1.30 / 0.05 | deg | Guide angle; tolerance ASSUMED (pedagogical). |

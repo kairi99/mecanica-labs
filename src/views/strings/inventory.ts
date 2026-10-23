@@ -34,9 +34,6 @@ export interface InventoryStrings {
   undoReceiver: string
   highEndIs: string
   screws: string
-  caliperVariant: string
-  vernier: string
-  digital: string
   missingTitle: string
   missingNone: string
   blocksRun: string
@@ -53,7 +50,7 @@ export const strings: Strings<InventoryStrings> = {
     genericItem: 'el elemento',
     itemShort: {
       rail: 'la riel', cart: 'el DigiCart', rackStand: 'el soporte con cremallera', standBase: 'la base metálica', twoLegStand: 'el soporte de dos patas',
-      screws: 'los tornillos', level: 'el nivelador', receiver: 'el receptor del DigiCart', stopwatch: 'el cronómetro', caliper: 'el calibrador', markers: 'los marcadores',
+      screws: 'los tornillos', level: 'el nivelador', receiver: 'el receptor del DigiCart', stopwatch: 'el cronómetro', tape: 'el flexómetro', markers: 'los marcadores',
     },
     items: {
       rail: { name: 'Riel metálica de 1,2 m', hint: 'Con escala en milímetros; sus extremos son E1 (0 mm) y E2 (1200 mm).' },
@@ -65,7 +62,7 @@ export const strings: Strings<InventoryStrings> = {
       level: { name: 'Nivelador', hint: 'Burbuja para comprobar que la riel está horizontal.' },
       receiver: { name: 'Receptor del DigiCart con polea', hint: 'Va en el extremo bajo y detiene el carro.' },
       stopwatch: { name: 'Cronómetro', hint: 'Digital de mano; lo controlas tú.' },
-      caliper: { name: 'Calibrador (pie de rey)', hint: 'Para medir alturas. Elige vernier o digital.' },
+      tape: { name: 'Flexómetro (cinta métrica)', hint: 'Para medir las alturas de la riel y la distancia entre soportes. Lo lees tú, en milímetros.' },
       markers: { name: 'Marcadores (cinta)', hint: 'Para señalar las posiciones cada 10 cm.' },
     },
     onTable: 'En la mesa', inBox: 'En la caja', attached: 'Fijado',
@@ -88,7 +85,6 @@ export const strings: Strings<InventoryStrings> = {
     attachReceiver: 'Fijar al extremo bajo', undoReceiver: 'Soltar el receptor',
     highEndIs: 'Extremo alto: {x}',
     screws: 'Tornillos libres: {n} de 6',
-    caliperVariant: 'Tipo de calibrador', vernier: 'Vernier', digital: 'Digital',
     missingTitle: 'Qué falta',
     missingNone: 'El montaje está completo: no falta nada.',
     blocksRun: 'necesario para soltar el DigiCart',
@@ -106,7 +102,7 @@ export const strings: Strings<InventoryStrings> = {
     genericItem: 'the item',
     itemShort: {
       rail: 'the rail', cart: 'the DigiCart', rackStand: 'the rack stand', standBase: 'the stand base', twoLegStand: 'the two-leg stand',
-      screws: 'the screws', level: 'the level', receiver: 'the DigiCart receiver', stopwatch: 'the stopwatch', caliper: 'the caliper', markers: 'the markers',
+      screws: 'the screws', level: 'the level', receiver: 'the DigiCart receiver', stopwatch: 'the stopwatch', tape: 'the tape measure', markers: 'the markers',
     },
     items: {
       rail: { name: '1.2 m metal rail', hint: 'With a millimetre scale; its ends are E1 (0 mm) and E2 (1200 mm).' },
@@ -118,7 +114,7 @@ export const strings: Strings<InventoryStrings> = {
       level: { name: 'Level', hint: 'A bubble to check that the rail is horizontal.' },
       receiver: { name: 'DigiCart receiver with pulley', hint: 'Goes at the low end and stops the cart.' },
       stopwatch: { name: 'Stopwatch', hint: 'Handheld digital; you control it.' },
-      caliper: { name: 'Caliper', hint: 'To measure heights. Choose vernier or digital.' },
+      tape: { name: 'Tape measure', hint: 'To measure the rail heights and the distance between the supports. You read it yourself, in millimetres.' },
       markers: { name: 'Markers (tape)', hint: 'To flag the positions every 10 cm.' },
     },
     onTable: 'On the table', inBox: 'In the box', attached: 'Fixed',
@@ -141,7 +137,6 @@ export const strings: Strings<InventoryStrings> = {
     attachReceiver: 'Fasten to the low end', undoReceiver: 'Release the receiver',
     highEndIs: 'High end: {x}',
     screws: 'Free screws: {n} of 6',
-    caliperVariant: 'Caliper type', vernier: 'Vernier', digital: 'Digital',
     missingTitle: "What's missing",
     missingNone: 'The setup is complete: nothing is missing.',
     blocksRun: 'needed to release the DigiCart',

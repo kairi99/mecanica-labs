@@ -4,6 +4,7 @@ import { ANGLE_TARGET_deg, ANGLE_TOLERANCE_deg, SUPPORT_SEPARATION_m, TABLE_TILT
 import {
   DEFAULT_CART, G_QUITO_mps2, THETA_GUIDE_rad, acceleration_mps2, breakawayAngle_rad, constantAcceleration_mps2, crossingTime_s, deg2rad,
   effectiveMass_kg, heightDifferenceForAngle_m, idealAcceleration_mps2, inertiaRatio, rad2deg, reactionBiasTypeB_s, stateAt,
+  TAPE_DIVISION_m, tapeMaxPermissibleError_m, typeBAnalog,
 } from '../physics/index.ts'
 import { TABLE_POSITIONS_CM, analyse, compare } from '../analysis/compute.ts'
 import { comparisonInput } from '../analysis/fromApparatus.ts'
@@ -57,6 +58,7 @@ export function teacherKey(): string {
     `- Guide incline: ${f(ANGLE_TARGET_deg, 2)} deg (tolerance accepted by the lab: +-${f(ANGLE_TOLERANCE_deg, 2)} deg).`,
     `- Support separation d = ${f(d, 3)} m (clamp point to two-leg point, measured along the rail).`,
     `- Height difference for 1.30 deg: dh = d sin(theta) = **${f(dh * 1000, 2)} mm** (${f(dhLo * 1000, 2)} to ${f(dhHi * 1000, 2)} mm for the tolerance).`,
+    `- Tape measure (flexometro, analog, ${f(TAPE_DIVISION_m * 1000, 0)} mm division): each reading has Type B u = (d/2)/sqrt(3) = **${f(typeBAnalog(TAPE_DIVISION_m) * 1000, 2)} mm**; the height difference of two readings has u = ${f(Math.SQRT2 * typeBAnalog(TAPE_DIVISION_m) * 1000, 2)} mm, i.e. ${f(rad2deg(Math.SQRT2 * typeBAnalog(TAPE_DIVISION_m) / d), 3)} deg on the incline (tolerance +-${f(ANGLE_TOLERANCE_deg, 2)} deg). Class II tape MPE (MID 2014/32/EU, MI-008): +-${f(tapeMaxPermissibleError_m(0.1) * 1000, 2)} mm at 0.1 m, +-${f(tapeMaxPermissibleError_m(d) * 1000, 2)} mm at d = ${f(d, 2)} m; reported to the student, not applied to the readings.`,
     `- Hidden bench tilt: uniform in +-${f(TABLE_TILT_MAX_deg, 2)} deg, worth up to +-${f(tiltDh * 1000, 1)} mm of dh. The student levels first, so the incline they create is the *change* of the height difference from the levelled state.`,
     '- Rack reading: with both stands at the same base height the rack reads about dh when the bench is level (for a tilted bench: d(sin tilt + sin(theta - tilt)) with the foot at 0, then trimmed with the foot). The preset `assembled` builds exactly this.',
     '- Marks: every 100 mm from A (0 cm) to 900 mm; AB >= 90 cm; cart front on the 0 cm mark.',
@@ -134,7 +136,7 @@ export function teacherKey(): string {
     '|---|---|',
     '| `?teacher` | Shows the target dh in the checklist and the model\'s expected a in the analysis comparison block. |',
     '| `?analysis=0` | Hides the analysis panel (the region stays in the DOM, hidden). |',
-    '| `?seed=N` | Fixes the hidden values (bench tilt, caliper zero error) and the run variability. |',
+    '| `?seed=N` | Fixes the hidden values (bench tilt) and the run variability. |',
     '| `?preset=assembled` or `?preset=empty` | Starts from a careful student\'s bench or a bare one (ignores saved progress). |',
     '| `?tour=0` or `?tour=1` | Never or always start the first-visit tour. |',
     '| `?lang=es` or `?lang=en` | Language. |',

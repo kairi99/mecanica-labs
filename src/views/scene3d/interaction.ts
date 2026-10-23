@@ -7,7 +7,7 @@
 // still press (a tap) on it selects, uses the active tool or opens the part card.
 import * as THREE from 'three'
 import type { OrbitControls } from 'three/addons/controls/OrbitControls.js'
-import type { Apparatus, CaliperTarget, Reason, Result } from '../../apparatus/index.ts'
+import type { Apparatus, TapeTarget, Reason, Result } from '../../apparatus/index.ts'
 import type { ViewContext } from '../view.ts'
 import type { strings } from '../strings/scene3d.ts'
 import { CART, ROD_Z } from './models.ts'
@@ -19,7 +19,7 @@ import { FOOT_STEP_mm, railPos_mm } from '../../apparatus/index.ts'
 import type { CardInfo } from './types.ts'
 
 type Strs = typeof strings.es
-type Tool = 'select' | 'markers' | 'level' | 'caliper'
+type Tool = 'select' | 'markers' | 'level' | 'tape'
 type Handle = 'rack' | 'foot' | 'marker' | 'cart'
 
 interface Pick {
@@ -47,7 +47,7 @@ export interface InteractionDeps {
   markerPreview: Map<string, number>
   setLevelX(x_cm: number): void
   getTool(): Tool
-  setCaliperTarget(t: CaliperTarget): void
+  setTapeTarget(t: TapeTarget): void
   onCard(card: CardInfo | null): void
   onStatus(text: string): void
   outline: { hover: THREE.Material }
@@ -66,7 +66,7 @@ export interface Interaction {
 }
 
 const MOVE_PX = 5, TAP_MS = 500
-const PANEL_OF: Record<string, string> = { cart: 'digicart', stopwatch: 'stopwatch', caliper: 'caliper', level: 'level' }
+const PANEL_OF: Record<string, string> = { cart: 'digicart', stopwatch: 'stopwatch', tapeMeasure: 'tape', level: 'level' }
 
 export function createInteraction(d: InteractionDeps): Interaction {
   const { container, canvas, camera, controls, a } = d
@@ -359,22 +359,20 @@ export function createInteraction(d: InteractionDeps): Interaction {
       if (onRail && p.point) { d.setLevelX(d.rail.localX(p.point).x); act(a.placeLevel('rail')); return }
       if (p.partId === 'table') { act(a.placeLevel('table')); return }
     }
-    if (tool === 'caliper') {
-      const t = caliperTargetFor(p)
-      if (t) { d.setCaliperTarget(t); d.changed(); announce(S.measureHere); return }
+    if (tool === 'tape') {
+      const t = tapeTargetFor(p)
+      if (t) { d.setTapeTarget(t); d.changed(); announce(S.measureHere); return }
     }
     void e
     d.onCard(cardFor(p))
   }
-  const caliperTargetFor = (p: Pick): CaliperTarget | null => {
+  const tapeTargetFor = (p: Pick): TapeTarget | null => {
     const id = p.partId
     if (id === 'rackStand' || id === 'rackKnob' || id === 'standBase') return { kind: 'railHeight', at: 'clamp' }
     if (id === 'twoLegStand' || id === 'foot') return { kind: 'railHeight', at: 'twoLeg' }
     if (id === 'rail' && p.point) return { kind: 'railHeight', at: { railPos_mm: Math.round(railPosFromLocalX_mm(d.rail.localX(p.point).x, zeroHigh())) } }
-    if (id === 'cart' && p.point) {
-      const lx = d.cart.root.worldToLocal(p.point.clone()).x
-      return { kind: lx > -2 ? 'frontReferenceOffset' : 'cartLength' }
-    }
+    if (id === 'cart') return { kind: 'cartLength' }
+    if (id === 'receiver') return { kind: 'supportSeparation' }
     return null
   }
 

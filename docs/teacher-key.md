@@ -9,6 +9,7 @@ All cart parameters are **ASSUMED** (see PARAMETERS.md); none is a PHYWE specifi
 - Guide incline: 1.30 deg (tolerance accepted by the lab: +-0.05 deg).
 - Support separation d = 1.100 m (clamp point to two-leg point, measured along the rail).
 - Height difference for 1.30 deg: dh = d sin(theta) = **24.96 mm** (24.00 to 25.92 mm for the tolerance).
+- Tape measure (flexometro, analog, 1 mm division): each reading has Type B u = (d/2)/sqrt(3) = **0.29 mm**; the height difference of two readings has u = 0.41 mm, i.e. 0.021 deg on the incline (tolerance +-0.05 deg). Class II tape MPE (MID 2014/32/EU, MI-008): +-0.32 mm at 0.1 m, +-0.52 mm at d = 1.10 m; reported to the student, not applied to the readings.
 - Hidden bench tilt: uniform in +-0.15 deg, worth up to +-2.9 mm of dh. The student levels first, so the incline they create is the *change* of the height difference from the levelled state.
 - Rack reading: with both stands at the same base height the rack reads about dh when the bench is level (for a tilted bench: d(sin tilt + sin(theta - tilt)) with the foot at 0, then trimmed with the foot). The preset `assembled` builds exactly this.
 - Marks: every 100 mm from A (0 cm) to 900 mm; AB >= 90 cm; cart front on the 0 cm mark.
@@ -80,7 +81,7 @@ Preset `assembled` (seed 1), 90 simulated readings (start press 0.20 s late, sto
 |---|---|
 | `?teacher` | Shows the target dh in the checklist and the model's expected a in the analysis comparison block. |
 | `?analysis=0` | Hides the analysis panel (the region stays in the DOM, hidden). |
-| `?seed=N` | Fixes the hidden values (bench tilt, caliper zero error) and the run variability. |
+| `?seed=N` | Fixes the hidden values (bench tilt) and the run variability. |
 | `?preset=assembled` or `?preset=empty` | Starts from a careful student's bench or a bare one (ignores saved progress). |
 | `?tour=0` or `?tour=1` | Never or always start the first-visit tour. |
 | `?lang=es` or `?lang=en` | Language. |

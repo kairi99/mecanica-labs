@@ -19,7 +19,7 @@ paths:
 - Light and dark themes both work: `prefers-color-scheme` plus the manual toggle. The 3D stage may stay dark in both.
 - Mobile first: works at 360 px width, touch targets >= 44 px, no hover-only affordances. Canvas is sized with
   `devicePixelRatio`.
-- Accessibility: WCAG AA contrast, full keyboard operation (assembly, stopwatch, caliper), ARIA labels from the i18n
+- Accessibility: WCAG AA contrast, full keyboard operation (assembly, stopwatch, tape measure), ARIA labels from the i18n
   dictionary, never colour alone.
 - All user-facing text comes from the i18n dictionary (es default, en).
 - Views render state; they do not compute physics.

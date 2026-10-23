@@ -19,7 +19,7 @@ import { mountInventory } from './views/inventory.ts'
 import { mountAdjust } from './views/adjust.ts'
 import { mountStopwatch } from './views/stopwatch.ts'
 import { mountTimingBar } from './views/timingbar.ts'
-import { mountCaliper } from './views/caliper.ts'
+import { mountTape } from './views/tape.ts'
 import { mountTable } from './views/table.ts'
 import { mountTablet } from './views/tablet.ts'
 import { mountAnalysis } from './views/analysis.ts'
@@ -40,7 +40,7 @@ import {
 const params = new URLSearchParams(location.search)
 
 /** Camera presets agreed with the 3D scene: 'alongRail' is gone, 'lateral' and 'mark' are new. */
-const PRESETS = ['overview', 'highEnd', 'lowEnd', 'lateral', 'mark', 'caliper'] as const
+const PRESETS = ['overview', 'highEnd', 'lowEnd', 'lateral', 'mark', 'tape'] as const
 const camParam = params.get('cam')
 type Cam = (typeof PRESETS)[number]
 const cam: Cam | undefined = (PRESETS as readonly string[]).includes(camParam ?? '') ? (camParam as Cam) : undefined
@@ -236,8 +236,8 @@ rootEl.append(header, main, newDialog)
 
 // ---- steps ---------------------------------------------------------------------------------------------------------------
 /** Which lab step holds each panel (data-panel). */
-const PANEL_STEP: Record<string, number> = { inventory: 1, adjust: 2, caliper: 2, table: 3, stopwatch: 3, tablet: 4, analysis: 5, stage: 0, procedure: 0 }
-const TOUR_STEP: Partial<Record<TourStepId, number>> = { inventory: 1, adjust: 2, caliper: 2, stopwatch: 3, table: 3, tablet: 4, analysis: 5 }
+const PANEL_STEP: Record<string, number> = { inventory: 1, adjust: 2, tape: 2, table: 3, stopwatch: 3, tablet: 4, analysis: 5, stage: 0, procedure: 0 }
+const TOUR_STEP: Partial<Record<TourStepId, number>> = { inventory: 1, adjust: 2, tape: 2, stopwatch: 3, table: 3, tablet: 4, analysis: 5 }
 
 const trackerBtns: HTMLButtonElement[] = []
 const trackerMarks: HTMLElement[] = []
@@ -303,7 +303,7 @@ const mounts: Array<{ mount: MountView; host: HTMLElement; id: string }> = []
 const slot = (id: string, step: number, mount: MountView): void => { mounts.push({ mount, host: panes[step - 1]!, id }) }
 slot('inventory', 1, mountInventory)
 slot('adjust', 2, mountAdjust)
-slot('caliper', 2, mountCaliper)
+slot('tape', 2, mountTape)
 slot('table', 3, mountTable)
 slot('stopwatch', 3, mountStopwatch({ autoMark: { get: () => autoMark, set: (on) => { autoMark = on; saveAutoMark(on) } } }))
 slot('tablet', 4, mountTablet)

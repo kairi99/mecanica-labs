@@ -86,7 +86,7 @@ describe('procedure checklist is reachable by scripted actions from an empty ben
   it('every step has text, a "show me" target and a known panel', () => {
     for (const s of buildChecklist(createApparatus('assembled'))) {
       expect(checklistStrings.es.steps[s.id].why.length).toBeGreaterThan(10)
-      expect(['inventory', 'adjust', 'caliper', 'stopwatch', 'table']).toContain(s.panel)
+      expect(['inventory', 'adjust', 'tape', 'stopwatch', 'table']).toContain(s.panel)
       if (s.detail) expect(checklistStrings.en.detail[s.detail.key]).toBeTruthy()
     }
   })
