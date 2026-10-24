@@ -1,4 +1,4 @@
-// Manifest of the projectile-motion experiment (data only: see ../manifest.ts). Not built yet: status 'soon'.
+// Manifest of the projectile-motion experiment (data only: see ../manifest.ts). Status 'ready': page parabolico/index.html.
 import type { ExperimentManifest } from '../manifest.ts'
 
 export const manifest: ExperimentManifest = {
@@ -12,5 +12,5 @@ export const manifest: ExperimentManifest = {
   },
   page: 'parabolico/index.html',
   help: { es: 'parabolico/help/index.html', en: 'parabolico/help/en.html' },
-  status: 'soon',
+  status: 'ready',
 }

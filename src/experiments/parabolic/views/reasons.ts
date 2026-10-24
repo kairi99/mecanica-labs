@@ -1,0 +1,16 @@
+// Turn an apparatus refusal, a mark result or a release block into text. Views never show a raw id.
+import type { ItemId, MarkResult, Reason, RunBlock } from '../apparatus/index.ts'
+import type { Lang } from '../../../core/i18n.ts'
+import { strings as reasonStrings } from './strings/reasons.ts'
+import { strings as inv } from './strings/inventory.ts'
+
+/** Text for a refusal reason; `{item}` becomes the item's name (or a generic word). */
+export function reasonText(lang: Lang, reason: Reason, item?: ItemId): string {
+  const raw = reasonStrings[lang].reasons[reason]
+  if (!raw.includes('{item}')) return raw
+  let name = item ? inv[lang].itemShort[item] : inv[lang].genericItem
+  if (raw.startsWith('{item}')) name = name.charAt(0).toUpperCase() + name.slice(1)
+  return raw.replace('{item}', name)
+}
+export const markResultText = (lang: Lang, r: MarkResult): string => reasonStrings[lang].markResults[r]
+export const blockText = (lang: Lang, b: RunBlock): string => reasonStrings[lang].blocks[b]

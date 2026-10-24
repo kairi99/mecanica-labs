@@ -4,6 +4,12 @@ import { formatNum } from './numfmt.ts'
 
 const HEAD_X: Record<Lang, string> = { es: 'x (cm)', en: 'x (cm)' }
 
+/** Rows of already formatted cells joined with the language's separator (ES ";", EN ","), one per line, final newline. */
+export function joinCSV(rows: readonly (readonly string[])[], lang: Lang): string {
+  const sep = lang === 'es' ? ';' : ','
+  return rows.map((r) => r.join(sep)).join('\n') + '\n'
+}
+
 export function toCSV(positions_cm: readonly number[], values_s: readonly (readonly (number | null)[])[], lang: Lang): string {
   const sep = lang === 'es' ? ';' : ','
   const cols = values_s[0]?.length ?? 0

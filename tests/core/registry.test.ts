@@ -7,10 +7,10 @@ import { readShellParams } from '../../src/core/shell/params.ts'
 import { Stopwatch } from '../../src/core/instruments/stopwatch.ts'
 
 describe('registry', () => {
-  it('lists MRUV as ready and the parabolic experiment as coming soon', () => {
+  it('lists MRUV and the parabolic experiment as ready', () => {
     expect(findExperiment('mruv')?.status).toBe('ready')
-    expect(findExperiment('parabolic')?.status).toBe('soon')
-    expect(readyExperiments().map((x) => x.id)).toEqual(['mruv'])
+    expect(findExperiment('parabolic')?.status).toBe('ready')
+    expect(readyExperiments().map((x) => x.id)).toEqual(['mruv', 'parabolic'])
   })
 
   it('has unique ids and slugs and well-formed manifests', () => {
@@ -47,16 +47,20 @@ describe('landing', () => {
   it('?exp= redirects to a ready experiment and keeps the other parameters and the hash', () => {
     expect(redirectTarget('?exp=mruv', '', experiments)).toBe('mruv/index.html')
     expect(redirectTarget('?tour=0&exp=mruv&preset=assembled&step=3', '#x', experiments)).toBe('mruv/index.html?tour=0&preset=assembled&step=3#x')
-    expect(redirectTarget('?exp=parabolic', '', experiments)).toBeNull()
+    expect(redirectTarget('?exp=parabolic&preset=assembled', '', experiments)).toBe('parabolico/index.html?preset=assembled')
+    const later = { ...experiments[0]!, id: 'later', slug: 'later', page: 'later/index.html', status: 'soon' as const }
+    expect(redirectTarget('?exp=later', '', [...experiments, later])).toBeNull()
     expect(redirectTarget('?exp=nope', '', experiments)).toBeNull()
     expect(redirectTarget('', '', experiments)).toBeNull()
   })
 
   it('shows the last opened ready experiment first and the coming-soon ones last', () => {
     expect(orderedExperiments(experiments, null).map((x) => x.id)).toEqual(['mruv', 'parabolic'])
-    expect(orderedExperiments(experiments, 'parabolic').map((x) => x.id)).toEqual(['mruv', 'parabolic'])
+    expect(orderedExperiments(experiments, 'parabolic').map((x) => x.id)).toEqual(['parabolic', 'mruv'])
     const extra = { ...experiments[0]!, id: 'other', slug: 'other', page: 'other/index.html' }
     expect(orderedExperiments([...experiments, extra], 'other').map((x) => x.id)).toEqual(['other', 'mruv', 'parabolic'])
+    const later = { ...experiments[0]!, id: 'later', slug: 'later', page: 'later/index.html', status: 'soon' as const }
+    expect(orderedExperiments([later, ...experiments], null).map((x) => x.id)).toEqual(['mruv', 'parabolic', 'later'])
   })
 })
 
