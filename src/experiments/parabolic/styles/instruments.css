@@ -23,18 +23,24 @@
 .zoom-val { min-width: 2.5rem; text-align: center; font-variant-numeric: tabular-nums; }
 .pad { padding: var(--space-3); }
 
-/* Tabla 2.1: five times and five ranges per trial, three calculated columns that stay empty until the analysis */
+/* Tabla 2.1: each trial is a block of three rows (five times, five ranges, a summary line with t, x and v0), so nothing hides behind a sideways scroll in the 420 px side column. */
 .table-scroll { overflow-x: auto; border: var(--stroke-hair) solid var(--separator); border-radius: var(--radius-s); max-width: 100%; }
-.data-table { border-collapse: separate; border-spacing: 0; font-variant-numeric: tabular-nums; width: max-content; min-width: 100%; }
+.data-table { border-collapse: separate; border-spacing: 0; font-variant-numeric: tabular-nums; width: 100%; }
+.data-table-p2 { table-layout: fixed; }
 .data-table th, .data-table td { border-bottom: var(--stroke-hair) solid var(--separator); padding: 0; }
-.data-table .col-head { font: var(--text-caption); color: var(--label-2); padding: var(--space-2); text-align: center; background: var(--surface-2); }
-.data-table .col-group { border-left: var(--stroke-hair) solid var(--separator); }
-.data-table .col-calc { min-width: 6.5rem; white-space: normal; border-left: var(--stroke-hair) solid var(--separator); }
-.data-table .corner, .data-table .row-head { position: sticky; left: 0; z-index: 1; background: var(--surface-2); font: var(--text-callout); font-weight: 600; text-align: right; padding: 0 var(--space-3); min-width: 3rem; border-right: var(--stroke-hair) solid var(--separator); }
-.data-table .corner { font: var(--text-caption); color: var(--label-2); text-align: center; }
-.data-table tr.current .row-head { color: var(--accent); }
-.data-table .calc-cell { text-align: center; color: var(--label-3); border-left: var(--stroke-hair) solid var(--separator); }
-.cell { width: 4.5rem; min-height: var(--touch); border: 0; background: transparent; text-align: right; padding: 0 var(--space-2); font: var(--text-callout); border-radius: 0; }
+.data-table .col-head { font: var(--text-caption); color: var(--label-2); padding: var(--space-1); text-align: center; background: var(--surface-2); }
+.data-table .corner, .data-table .row-head { background: var(--surface-2); font: var(--text-callout); font-weight: 600; text-align: center; border-right: var(--stroke-hair) solid var(--separator); }
+.data-table .corner { font: var(--text-caption); color: var(--label-2); padding: var(--space-1); }
+.data-table .col-no { width: 2.25rem; }
+.data-table .col-kind { width: 3rem; }
+.data-table .kind-head { background: var(--surface-2); font: var(--text-caption); color: var(--label-2); text-align: center; padding: 0 var(--space-1); border-right: var(--stroke-hair) solid var(--separator); }
+.data-table tbody.current .row-head { color: var(--accent); }
+.data-table .calc-line { padding: var(--space-1) var(--space-2); background: var(--surface-2); font: var(--text-footnote); color: var(--label-2); border-bottom: var(--stroke-hair) solid var(--separator); }
+.data-table .calc-flex { display: flex; flex-wrap: wrap; gap: var(--space-1) var(--space-3); }
+.data-table .calc-item { display: inline-flex; flex-wrap: wrap; gap: 0 var(--space-1); }
+.data-table .calc-k { color: var(--label-3); }
+.data-table .calc-v { color: var(--label); font-weight: 600; }
+.cell { width: 100%; min-width: 0; min-height: var(--touch); border: 0; background: transparent; text-align: right; padding: 0 var(--space-1); font: var(--text-footnote); border-radius: 0; }
 .cell:focus { background: var(--fill); outline-offset: -2px; }
 .cell.current-cell { background: var(--fill); }
 .cell.copied { box-shadow: inset 0 -2px 0 var(--accent); }
@@ -73,4 +79,17 @@
   .timing:has(.tb-target) .lcd-digits { letter-spacing: 0; }
   .timing:has(.tb-target) .tb-lcd { padding-inline: var(--space-1); }
   .timing:has(.tb-target) .tb-select { max-width: 3rem; }
+}
+
+/* Coach toast on the timing step: never over the release / stopwatch buttons. Phone: the core rule lifts it above the fixed bar.
+   Tablet: the bar sits under the stage and the sheet under the bar, so the toast goes to the top of the stage. Desktop: it moves
+   to the side column, which is also where the table and the copy buttons it talks about are. */
+@media (min-width: 820px) and (max-width: 1079px) {
+  body[data-step='3']:has(.tb-target) .coach { bottom: auto; top: calc(var(--header-h) + var(--space-3)); }
+}
+@media (min-width: 1080px) {
+  body[data-step='3']:has(.tb-target) .coach {
+    left: auto; margin-inline: 0; width: 420px; max-width: none;
+    right: max(var(--space-4), calc((100vw - 96rem) / 2 + var(--space-4)));
+  }
 }

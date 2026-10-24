@@ -46,29 +46,37 @@ export const mountTable: MountView = (root, ctx): View => {
   const table = el('table', 'data-table data-table-p2')
   const caption = el('caption', 'visually-hidden')
   const thead = el('thead')
-  const hr1 = el('tr'), hr2 = el('tr')
-  const corner = el('th', 'corner', undefined, { scope: 'col', rowspan: '2' })
-  const gTime = el('th', 'col-head col-group', undefined, { scope: 'colgroup', colspan: String(TABLE_REPS) })
-  const gRange = el('th', 'col-head col-group', undefined, { scope: 'colgroup', colspan: String(TABLE_REPS) })
-  const calcHeads = [el('th', 'col-head col-calc', undefined, { scope: 'col', rowspan: '2' }), el('th', 'col-head col-calc', undefined, { scope: 'col', rowspan: '2' }), el('th', 'col-head col-calc', undefined, { scope: 'col', rowspan: '2' })]
-  hr1.append(corner, gTime, gRange, ...calcHeads)
+  // Each trial is a block of three rows, so time, range and the computed values all fit a narrow column without sideways scroll:
+  // a row of five times, a row of five ranges and a summary line (t, x and v0 with their uncertainties).
+  const hr = el('tr')
+  const corner = el('th', 'corner', undefined, { scope: 'col' })
+  const kindCorner = el('th', 'col-head', undefined, { scope: 'col' })
   const repHeads: HTMLElement[] = []
-  for (let k = 0; k < 2 * TABLE_REPS; k++) { const h = el('th', 'col-head', undefined, { scope: 'col' }); repHeads.push(h); hr2.append(h) }
-  thead.append(hr1, hr2)
-  const tbody = el('tbody')
-  const inputs: HTMLInputElement[][] = [] // [trial][col 0..9]
-  const calcCells: HTMLElement[][] = [] // [trial][t_bar, x_bar, v0]
-  const rowEls: HTMLElement[] = []
-  const rowHeads: HTMLElement[] = []
+  hr.append(corner, kindCorner)
+  for (let k = 0; k < TABLE_REPS; k++) { const h = el('th', 'col-head', undefined, { scope: 'col' }); repHeads.push(h); hr.append(h) }
+  thead.append(hr)
+  const colgroup = el('colgroup')
+  colgroup.append(el('col', 'col-no'), el('col', 'col-kind'))
+  for (let k = 0; k < TABLE_REPS; k++) colgroup.append(el('col'))
+  const inputs: HTMLInputElement[][] = [] // [trial][col 0..9]: 0..4 times, 5..9 ranges
+  const calcCells: HTMLElement[][] = [] // [trial][t_bar, x_bar, v0] (value spans)
+  const calcKeys: HTMLElement[][] = [] // their labels
+  const rowEls: HTMLElement[] = [] // one tbody per trial
+  const kindHeads: HTMLElement[][] = [] // [trial][time, range]
+  const bodies: HTMLElement[] = []
   const colOf = (j: number): { col: Col; rep: number } => (j < TABLE_REPS ? { col: 'time', rep: j } : { col: 'range', rep: j - TABLE_REPS })
   for (let r = 0; r < TABLE_TRIALS; r++) {
-    const tr = el('tr', undefined, undefined, { 'data-row': String(r) })
-    rowEls[r] = tr
-    const rh = el('th', 'row-head', String(r + 1), { scope: 'row' })
-    rowHeads[r] = rh
-    tr.append(rh)
+    const body = el('tbody', 'trial', undefined, { 'data-row': String(r) })
+    rowEls[r] = body
+    bodies.push(body)
+    const trT = el('tr', 'row-time'), trX = el('tr', 'row-range'), trC = el('tr', 'row-calc')
+    trT.append(el('th', 'row-head', String(r + 1), { scope: 'rowgroup', rowspan: '3' }))
+    const kt = el('th', 'kind-head', undefined, { scope: 'row' }), kx = el('th', 'kind-head', undefined, { scope: 'row' })
+    kindHeads[r] = [kt, kx]
+    trT.append(kt); trX.append(kx)
     inputs[r] = []
     for (let j = 0; j < 2 * TABLE_REPS; j++) {
+      const tr = j < TABLE_REPS ? trT : trX
       const td = el('td')
       const inp = el('input', 'cell', undefined, { type: 'text', inputmode: 'decimal', autocomplete: 'off', spellcheck: 'false', 'data-r': String(r), 'data-c': String(j) })
       inp.addEventListener('input', () => { inp.dataset.dirty = '1'; inp.removeAttribute('aria-invalid') })
@@ -79,11 +87,19 @@ export const mountTable: MountView = (root, ctx): View => {
       tr.append(td)
       inputs[r]![j] = inp
     }
-    calcCells[r] = []
-    for (let k = 0; k < 3; k++) { const td = el('td', 'calc-cell', '—'); calcCells[r]![k] = td; tr.append(td) }
-    tbody.append(tr)
+    calcCells[r] = []; calcKeys[r] = []
+    const sum = el('td', 'calc-line', undefined, { colspan: String(TABLE_REPS + 1) })
+    const flex = el('div', 'calc-flex')
+    sum.append(flex)
+    for (let k = 0; k < 3; k++) {
+      const item = el('span', 'calc-item'), key = el('span', 'calc-k'), val = el('span', 'calc-v', '—')
+      item.append(key, val); flex.append(item)
+      calcKeys[r]![k] = key; calcCells[r]![k] = val
+    }
+    trC.append(sum)
+    body.append(trT, trX, trC)
   }
-  table.append(caption, thead, tbody)
+  table.append(caption, colgroup, thead, ...bodies)
   scroll.append(table)
   const calcNote = el('p', 'muted')
 
@@ -173,7 +189,7 @@ export const mountTable: MountView = (root, ctx): View => {
   const paintActive = (): void => {
     const T = S()
     active.textContent = fill(T.active, { ball: T.balls[getBall()], t: getTrial() + 1, r: getRep() + 1 })
-    rowEls.forEach((tr, r) => { tr.classList.toggle('current', r === getTrial()); if (r === getTrial()) tr.setAttribute('aria-current', 'true'); else tr.removeAttribute('aria-current') })
+    rowEls.forEach((tb, r) => { tb.classList.toggle('current', r === getTrial()); if (r === getTrial()) tb.setAttribute('aria-current', 'true'); else tb.removeAttribute('aria-current') })
     for (const [b, t] of tabBtns) { t.classList.toggle('active', b === getBall()); t.setAttribute('aria-pressed', String(b === getBall())) }
     for (let r = 0; r < TABLE_TRIALS; r++) for (let j = 0; j < 2 * TABLE_REPS; j++) inputs[r]![j]!.classList.toggle('current-cell', r === getTrial() && colOf(j).rep === getRep())
   }
@@ -186,9 +202,10 @@ export const mountTable: MountView = (root, ctx): View => {
     for (const [b, t] of tabBtns) t.textContent = T.balls[b]
     caption.textContent = T.caption
     corner.textContent = T.colTrial
-    gTime.textContent = T.groupTime; gRange.textContent = T.groupRange
-    calcHeads[0]!.textContent = T.calcTime; calcHeads[1]!.textContent = T.calcRange; calcHeads[2]!.textContent = T.calcSpeed
-    repHeads.forEach((h, k) => { h.textContent = fill(T.repHead, { n: (k % TABLE_REPS) + 1 }) })
+    kindCorner.textContent = T.kindHead
+    for (const [kt, kx] of kindHeads) { kt!.textContent = T.kindTime; kt!.title = T.groupTime; kx!.textContent = T.kindRange; kx!.title = T.groupRange }
+    for (const keys of calcKeys) { keys[0]!.textContent = T.calcTime; keys[1]!.textContent = T.calcRange; keys[2]!.textContent = T.calcSpeed }
+    repHeads.forEach((h, k) => { h.textContent = fill(T.repHead, { n: k + 1 }) })
     calcNote.textContent = T.calcNote
     copyTimeBtn.textContent = T.copyTime
     copyRangeBtn.textContent = T.copyRange

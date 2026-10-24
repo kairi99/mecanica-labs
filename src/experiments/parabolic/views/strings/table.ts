@@ -8,6 +8,9 @@ export interface TableStrings {
   colTrial: string
   groupTime: string
   groupRange: string
+  kindHead: string
+  kindTime: string
+  kindRange: string
   repHead: string
   calcTime: string
   calcRange: string
@@ -42,11 +45,14 @@ export const strings: Strings<TableStrings> = {
     colTrial: 'No.',
     groupTime: 'Tiempo t [s]',
     groupRange: 'Alcance x [m]',
+    kindHead: 'Dato',
+    kindTime: 't [s]',
+    kindRange: 'x [m]',
     repHead: '{n}',
-    calcTime: 'Tiempo promedio t ± Δt [s]',
-    calcRange: 'Alcance promedio x ± Δx [m]',
+    calcTime: 'Tiempo prom. t ± Δt [s]',
+    calcRange: 'Alcance prom. x ± Δx [m]',
     calcSpeed: 'Velocidad inicial v ± Δv [m/s]',
-    calcNote: 'Las tres últimas columnas se calculan solas con los datos de esa fila. Δt incluye la incertidumbre de tu reacción con el cronómetro; el desglose está en el Análisis.',
+    calcNote: 'La línea bajo cada No. se calcula sola con los datos de esa marca. Δt incluye la incertidumbre de tu reacción con el cronómetro; el desglose está en el Análisis.',
     active: 'Celda activa: {ball} · No. {t} · repetición {r}',
     copyTime: 'Copiar tiempo del cronómetro',
     copyRange: 'Copiar alcance de la cinta',
@@ -73,11 +79,14 @@ export const strings: Strings<TableStrings> = {
     colTrial: 'No.',
     groupTime: 'Time t [s]',
     groupRange: 'Range x [m]',
+    kindHead: 'Data',
+    kindTime: 't [s]',
+    kindRange: 'x [m]',
     repHead: '{n}',
     calcTime: 'Mean time t ± Δt [s]',
     calcRange: 'Mean range x ± Δx [m]',
     calcSpeed: 'Initial speed v ± Δv [m/s]',
-    calcNote: 'The last three columns compute by themselves from the data of that row. Δt includes the uncertainty of your stopwatch reaction; the breakdown is in the Analysis.',
+    calcNote: 'The line under each No. computes by itself from the data of that mark. Δt includes the uncertainty of your stopwatch reaction; the breakdown is in the Analysis.',
     active: 'Active cell: {ball} · No. {t} · repetition {r}',
     copyTime: 'Copy time from the stopwatch',
     copyRange: 'Copy range from the tape',
