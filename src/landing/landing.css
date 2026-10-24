@@ -33,3 +33,16 @@
 .lp-card-soon .lp-action { color: var(--label-2); }
 .btn[disabled] { cursor: not-allowed; }
 .lp-credits { max-width: 64rem; }
+
+/* card thumbnails: painted with tokens, so they follow the theme */
+.lp-thumb { display: block; width: 100%; height: auto; border-radius: var(--radius-m); }
+.th-bg { fill: var(--surface-2); }
+.th-ground { stroke: var(--label-3); stroke-width: 1.5; }
+.th-leg { fill: var(--label-3); }
+.th-rail { stroke: var(--label-2); stroke-width: 5; stroke-linecap: round; }
+.th-line { stroke: var(--label-3); stroke-width: 1.5; }
+.th-body { fill: var(--surface); stroke: var(--label-2); stroke-width: 1.5; }
+.th-wheel { fill: var(--label-2); }
+.th-accent { fill: var(--accent); }
+.th-dots { stroke: var(--accent); stroke-width: 2.5; stroke-dasharray: 0.1 7; stroke-linecap: round; }
+.th-paper { fill: var(--label-2); }

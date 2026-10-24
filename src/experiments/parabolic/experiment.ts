@@ -12,5 +12,6 @@ export const manifest: ExperimentManifest = {
   },
   page: 'parabolico/index.html',
   help: { es: 'parabolico/help/index.html', en: 'parabolico/help/en.html' },
+  thumb: 'arc',
   status: 'ready',
 }

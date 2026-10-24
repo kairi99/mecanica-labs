@@ -12,5 +12,6 @@ export const manifest: ExperimentManifest = {
   },
   page: 'mruv/index.html',
   help: { es: 'mruv/help/index.html', en: 'mruv/help/en.html' },
+  thumb: 'incline',
   status: 'ready',
 }

@@ -14,6 +14,7 @@ import { experiments } from '../experiments/registry.ts'
 import { readShellParams } from '../core/shell/params.ts'
 import { orderedExperiments, redirectTarget } from './order.ts'
 import { strings } from './strings.ts'
+import { thumb } from './thumbs.ts'
 
 function run(): void {
   const target = redirectTarget(location.search, location.hash, experiments)
@@ -64,7 +65,7 @@ function run(): void {
       b.disabled = true
       action = b
     }
-    article.append(meta, title, summary, action)
+    article.append(thumb(x.thumb), meta, title, summary, action)
     li.append(article)
     grid.append(li)
     cards.push({ x, guide, last: lastChip, title, summary, action })
