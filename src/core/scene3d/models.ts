@@ -411,9 +411,14 @@ export interface TapeModel {
   /** Rebuild for a mode and the blade length (cm) between the hook and the reading point. */
   set(mode: TapeMode, length_cm: number): void
 }
-const BLADE_W = 1.9
-const WINDOW_cm = 4
-const WINDOW_PX_PER_cm = 140
+/** Blade width, cm: a real 25 mm pocket tape (the old 1.9 cm blade was narrower than any common tape). */
+const BLADE_W = 2.5
+/** Graduated length of the blade drawn before the reading point, cm. */
+const WINDOW_cm = 6
+/** Texture density, canvas px per cm of blade: 1 mm = 20 px, so a mm tick stays a crisp 3 px line at close-up zoom. */
+const WINDOW_PX_PER_cm = 200
+/** Hard cap of the longest canvas side (phone GPUs, memory): the density falls back if a long window ever needs more. */
+const MAX_TEX_SIDE = 4096
 export function buildTapeMeasure(kit: Kit): TapeModel {
   const { M } = kit
   const root = new THREE.Group()
@@ -423,30 +428,53 @@ export function buildTapeMeasure(kit: Kit): TapeModel {
   let cacheKey = ''
   let windowTex: THREE.CanvasTexture | null = null
 
-  /** Graduations of the last WINDOW_cm before the reading point at s = L: 1 mm ticks, numerals every cm. Drawn along the long axis. */
+  /**
+   * Graduations of the last WINDOW_cm before the reading point at s = L, drawn along the long axis like a printed 25 mm tape:
+   * 1 mm ticks (finest, still visible), 5 mm, 1 cm, 5 cm and 10 cm ticks of growing length from one edge, and big bold condensed
+   * numerals every cm in the free part of the blade width. Only what a real tape prints (1 mm resolution, no extra precision).
+   */
   const makeWindow = (L_cm: number, vertical: boolean, flip: boolean): THREE.CanvasTexture => {
     windowTex?.dispose()
-    const long = WINDOW_cm * WINDOW_PX_PER_cm
-    const short = BLADE_W * WINDOW_PX_PER_cm
+    const S = Math.min(WINDOW_PX_PER_cm, MAX_TEX_SIDE / WINDOW_cm) // px per cm
+    const long = Math.round(WINDOW_cm * S)
+    const short = Math.round(BLADE_W * S)
     const s0 = L_cm - WINDOW_cm
+    // tick lengths from the edge (cm of blade) by kind
+    const tick = (mm: number): { len: number; w: number } =>
+      mm % 100 === 0 ? { len: 1.15 * S, w: 0.035 * S } : mm % 50 === 0 ? { len: 0.95 * S, w: 0.03 * S }
+        : mm % 10 === 0 ? { len: 0.75 * S, w: 0.024 * S } : mm % 5 === 0 ? { len: 0.5 * S, w: 0.017 * S } : { len: 0.32 * S, w: 0.012 * S }
     windowTex = canvasTexture(kit, vertical ? short : long, vertical ? long : short, (c) => {
       c.fillStyle = '#f2c230'; c.fillRect(0, 0, c.canvas.width, c.canvas.height)
-      c.strokeStyle = '#1b1608'; c.fillStyle = '#1b1608'; c.font = `700 26px ${FONT}`; c.textAlign = 'center'; c.textBaseline = 'middle'
+      c.strokeStyle = '#1b1608'; c.fillStyle = '#1b1608'; c.textAlign = 'center'; c.textBaseline = 'middle'
+      const digits = String(Math.floor(L_cm)).length
+      const FONT_PX = 0.95 * S // cap height about 0.7 cm
+      // free blade width for the numeral: beside the ticks (vertical blade) or under them (horizontal blade, one cm of length)
+      const room = vertical ? short - 0.95 * S : 0.9 * S
+      const sx = Math.min(0.78, room / (0.64 * digits * FONT_PX))
+      const labelAt = vertical ? 0.95 * S + (short - 0.95 * S) / 2 : 0.95 * S + (short - 0.95 * S) / 2
+      c.font = `800 ${FONT_PX}px ${FONT}`
       for (let mm = Math.ceil(s0 * 10); mm <= Math.floor(L_cm * 10); mm++) {
         if (mm < 0) continue
-        const q = (mm / 10 - s0) * WINDOW_PX_PER_cm
+        const q = (mm / 10 - s0) * S
         const p = flip ? long - q : q
-        const len = mm % 10 === 0 ? 46 : mm % 5 === 0 ? 34 : 22
-        c.lineWidth = mm % 10 === 0 ? 3 : 1.5
+        const t = tick(mm)
+        c.lineWidth = t.w
         c.beginPath()
-        if (vertical) { c.moveTo(0, p); c.lineTo(len, p) } else { c.moveTo(p, 0); c.lineTo(p, len) }
+        if (vertical) { c.moveTo(0, p); c.lineTo(t.len, p) } else { c.moveTo(p, 0); c.lineTo(p, t.len) }
         c.stroke()
         if (mm % 10 === 0) {
-          if (vertical) c.fillText(String(mm / 10), 78, p)
-          else c.fillText(String(mm / 10), p, 74)
+          c.save()
+          if (vertical) c.translate(labelAt, p)
+          else c.translate(p, labelAt)
+          c.scale(sx, 1)
+          c.fillText(String(mm / 10), 0, 0)
+          c.restore()
         }
       }
     })
+    windowTex.generateMipmaps = true
+    windowTex.minFilter = THREE.LinearMipmapLinearFilter
+    windowTex.magFilter = THREE.LinearFilter
     return windowTex
   }
 
@@ -456,8 +484,8 @@ export function buildTapeMeasure(kit: Kit): TapeModel {
    * z = 0 with its face toward +z, and the case sits on the side `side` (+1: +z, -1: -z). The origin is the reading
    * point; the blade runs from there up into the coil. The caller places and rotates the returned group.
    */
-  const R = 2.7 // case radius, cm (a 3 m pocket tape is about 5 to 6 cm across)
-  const T = 2.6 // case thickness along the coil axis, cm
+  const R = 2.9 // case radius, cm (a 3 to 5 m pocket tape is about 6 to 7 cm across)
+  const T = 3.1 // case thickness along the coil axis, cm
   const roundCase = (stripMat: THREE.Material, side: 1 | -1, stub_cm = 0): THREE.Group => {
     const g = new THREE.Group()
     const chrome = new THREE.MeshStandardMaterial({ color: 0xd9dde2, metalness: 1, roughness: 0.2 })

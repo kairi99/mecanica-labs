@@ -98,7 +98,7 @@ export function createScene(container: HTMLElement, ctx: ViewContext, opts: Scen
   probe.style.cssText = 'position:absolute;width:0;height:0;overflow:hidden;visibility:hidden'
   container.append(probe)
   const M = createMaterials(probe)
-  const kit: Kit = { M, textures: [], anisotropy: Math.min(4, renderer.capabilities.getMaxAnisotropy()) }
+  const kit: Kit = { M, textures: [], anisotropy: renderer.capabilities.getMaxAnisotropy() }
 
   // ---------- scene, camera, lights ----------
   const scene = new THREE.Scene()
@@ -199,8 +199,8 @@ export function createScene(container: HTMLElement, ctx: ViewContext, opts: Scen
       tapeMeasure.root.updateWorldMatrix(true, true)
       const at = tapeMeasure.root.localToWorld(new THREE.Vector3(...tapeReadingLocal))
       const pts = tapeMode === 'down'
-        ? boxCorners([at.x - 6, at.y - 6, at.z - 3], [at.x + 6, at.y + 2, at.z + 3])
-        : boxCorners([at.x - 6, at.y - 1.5, at.z - 3], [at.x + 6, at.y + 6, at.z + 3])
+        ? boxCorners([at.x - 4.5, at.y - 6, at.z - 3], [at.x + 4.5, at.y + 2, at.z + 3])
+        : boxCorners([at.x - 5.5, at.y - 1.5, at.z - 3], [at.x + 5.5, at.y + 6, at.z + 3])
       return fromFit(pts, tapeMode === 'down' ? 8 : 0, tapeMode === 'down' ? 8 : tapeMode === 'left' ? 45 : 14, 0.04)
     }
     const p = END_PRESETS[name]

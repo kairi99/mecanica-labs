@@ -84,7 +84,7 @@ export function createScene(container: HTMLElement, ctx: ViewContext, opts: Scen
   probe.style.cssText = 'position:absolute;width:0;height:0;overflow:hidden;visibility:hidden'
   container.append(probe)
   const M = createMaterials(probe)
-  const kit: PKit = { M, textures: [], anisotropy: Math.min(4, renderer.capabilities.getMaxAnisotropy()) }
+  const kit: PKit = { M, textures: [], anisotropy: renderer.capabilities.getMaxAnisotropy() }
 
   // ---------- scene, camera, lights ----------
   const scene = new THREE.Scene()

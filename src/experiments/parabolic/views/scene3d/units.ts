@@ -353,9 +353,9 @@ export function tapePoints(plan: TapePlan | null, restBox: { min: V3; max: V3 } 
     return boxCorners([b.min[0] - 2, b.min[1], b.min[2] - 2], [b.max[0] + 2, b.max[1], b.max[2] + 2])
   }
   const r = plan.reading
-  if (plan.mode === 'down') return boxCorners([r[0] - 7, r[1] - 7, r[2] - 3], [r[0] + 7, r[1] + 3, r[2] + 3])
+  if (plan.mode === 'down') return boxCorners([r[0] - 4.5, r[1] - 6, r[2] - 3], [r[0] + 4.5, r[1] + 3, r[2] + 3])
   const far = plan.flat ? 1.5 : 6
-  return boxCorners([r[0] - 7, r[1] - 1.5, r[2] - 6], [r[0] + 7, r[1] + far, r[2] + 6])
+  return boxCorners([r[0] - 5.5, r[1] - 1.5, r[2] - 4.5], [r[0] + 5.5, r[1] + far, r[2] + 4.5])
 }
 /** Camera angles of the tape close-up for a plan (down: low and almost frontal; flat on the table: from above and the front). */
 export function tapeAngles(plan: TapePlan | null): { azimuth: number; elevation: number } {
