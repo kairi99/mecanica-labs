@@ -3,7 +3,7 @@
 // change this file only.
 import {
   BALLS, DEFAULT_SETUP, firstBounce, carbonMark, effectiveRollingRadius_m, sampleRun, simulateLaunch, tableRollDecel_mps2,
-  ZERO_RUN, settlePath, type SettlePath, type BallSpec, type CarbonMark, type LaunchSetup, type PaperRect, type RunOffsets, type TrajectoryPoint, type PathPoint,
+  ZERO_RUN, settlePath, type SettlePath, type BallSpec, type CarbonMark, type LaunchSetup, type PaperRect, type RunOffsets, type TrajectoryPoint, type PathPoint, type ShoeSpec,
 } from '../physics/index.ts'
 import { TRAJECTORY_RATE_hz } from './constants.ts'
 
@@ -15,16 +15,37 @@ export { insidePaper } from '../physics/index.ts'
 export const ballSpec = (id: BallId): BallSpec => BALLS[id]
 export const GRAVITY_mps2 = DEFAULT_SETUP.g_mps2
 
-/** The bench as the physics sees it. rise_m is the height of the high support above the rail tip. */
+/**
+ * The bench as the physics sees it. rise_m is the height of the high support above the rail tip (the beam's top-surface end). gap_m is the
+ * distance from that beam end to the table edge (with a shoe, the lip is further along: lipGap_m = what the student sets).
+ */
 export interface BenchSetup {
   rise_m: number
   gap_m: number
+  /** Sloped end piece (shoe) resolved by the geometry; absent = none. */
+  shoe?: ShoeSpec
+  /** Distance from the shoe's lip to the edge, m (informative; the physics takes gap_m and shoe). */
+  lipGap_m?: number
   H_m: number
   /** Drop from the rail tip to the table, m (0 when the tip rests on the table). */
   stepDrop_m: number
 }
 
 export type LaunchOutcome = 'landed' | 'stopped' | 'rolledOver'
+
+/** How the ball left the table edge (what the guide's stopwatch sees). */
+export interface LaunchKindSummary {
+  /** 'horizontal': in contact (rolling/slipping) at the edge; 'diagonal': airborne at the edge, on the shoe past the edge, or on the rail past the edge. */
+  kind: 'horizontal' | 'diagonal'
+  /** Airborne at the edge crossing (leaving mid-hop or mid-arc over the table). */
+  midHop: boolean
+  angle_rad: number
+  speed_mps: number
+  /** The edge crossing is on the rail or the shoe (the rail end overhangs the edge). */
+  onRail: boolean
+  /** The ball rolled down the shoe ramp in contact. */
+  rolledOnRamp: boolean
+}
 
 export interface FlightSummary {
   t_flight_s: number
@@ -52,8 +73,10 @@ export interface LaunchSummary {
   /** Time on the table from the tip to the edge (or to the stop), s. */
   gapTime_s: number
   flight: FlightSummary | null
-  /** Bounces on the table between the rail tip and the edge (0 for an overhang). */
+  /** Bounces between the rail end and the edge (on the shoe ramp and on the table). */
   tableHops: number
+  /** The launch at the edge crossing; null if it did not fly. angle_rad above the horizontal (negative = downward). */
+  launch: LaunchKindSummary | null
   /** Launch angle at the table edge, rad above the horizontal (negative = downward); null if it did not fly. */
   launchAngle_rad: number | null
   /** First bounce after landing (animation / slow-mo only). */
@@ -68,7 +91,7 @@ export interface LaunchRun {
   path: PathPoint[]
 }
 
-const toSetup = (b: BenchSetup): LaunchSetup => ({ ...DEFAULT_SETUP, rise_m: b.rise_m, gap_m: b.gap_m, H_m: b.H_m, stepDrop_m: b.stepDrop_m })
+const toSetup = (b: BenchSetup): LaunchSetup => ({ ...DEFAULT_SETUP, rise_m: b.rise_m, gap_m: b.gap_m, H_m: b.H_m, stepDrop_m: b.stepDrop_m, shoe: b.shoe })
 
 /** Draw the offsets of one run (physics variability) from an injected RNG. */
 export const drawRunOffsets = (rng: () => number, ball: BallId): RunOffsets => sampleRun(rng, ballSpec(ball))
@@ -97,16 +120,23 @@ export function runLaunch(bench: BenchSetup, ball: BallId, releaseS_m: number, o
       v_tip_mps: r.v_tip_mps, v_roll_mps: r.v_roll_mps, v_edge_mps: r.v_edge_mps, tableDecel_mps2: decel,
       tTip_s: Number.isFinite(r.rollDownTime_s) ? r.rollDownTime_s : null, gapTime_s: Number.isFinite(r.gapTime_s) ? r.gapTime_s : 0,
       flight, tableHops: r.table?.hops ?? 0, launchAngle_rad: flight && r.edgeLaunch ? r.edgeLaunch.angle_rad : null,
+      launch: flight && r.edgeLaunch
+        ? { kind: r.edgeLaunch.kind, midHop: r.edgeLaunch.midHop, angle_rad: r.edgeLaunch.angle_rad, speed_mps: r.edgeLaunch.speed_mps, onRail: r.edgeLaunch.onRail, rolledOnRamp: r.table?.rolledOnRamp ?? false }
+        : null,
       bounce: bounce ? { vUp_mps: bounce.vUp_mps, tNext_s: bounce.tNext_s } : null,
     },
     trajectory: f && outcome === 'landed' ? f.trajectory : [],
-    path: f ? r.path : [],
+    path: r.path,
   }
 }
 
 /** Flight samples at TRAJECTORY_RATE_hz for a run (used for the animation and the slow-motion clip). */
 export const runTrajectory = (bench: BenchSetup, ball: BallId, releaseS_m: number, offsets: RunOffsets): TrajectoryPoint[] =>
   runLaunch(bench, ball, releaseS_m, offsets, TRAJECTORY_RATE_hz).trajectory
+
+/** Whole path (tip departure -> shoe -> table hops -> flight) at TRAJECTORY_RATE_hz; t from the departure from the beam end. */
+export const runPath = (bench: BenchSetup, ball: BallId, releaseS_m: number, offsets: RunOffsets): PathPoint[] =>
+  runLaunch(bench, ball, releaseS_m, offsets, TRAJECTORY_RATE_hz).path
 
 /** Carbon mark of the first contact on the marking area (the part of the carbon sheet that lies on the bond paper). */
 export const markOnPaper = (x_m: number, z_m: number, ball: BallId, vyImpact_mps: number, area: PaperRect, u_mark: number): CarbonMark =>

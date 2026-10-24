@@ -13,10 +13,13 @@ import { FLIGHT_EXPECTED_s, READING_FAR_s, START_EARLY_s, START_LATE_s, stopTimi
 
 export const COACH_KEYS = [
   'marksLowerHalf', 'noCarbon', 'paperMoved', 'riseOff', 'gapSmall', 'gapLarge', 'noEdgeProjection', 'offPaper', 'tooFaint',
-  'startedAtRelease', 'startedLate', 'timeFar', 'rangeFromTip', 'wrongBallTime', 'wrongMarkTime', 'wrongBallRange', 'wrongMarkRange', 'launchHeightMissing',
+  'hopsAtEdge', 'railBeyondEdge', 'tipLiftedDrop', 'startedAtRelease', 'startedLate', 'timeFar', 'rangeFromTip', 'wrongBallTime', 'wrongMarkTime', 'wrongBallRange', 'wrongMarkRange', 'launchHeightMissing',
 ] as const
 export type CoachKey = (typeof COACH_KEYS)[number]
 export type Nudge = CoreNudge<CoachKey>
+
+/** A mid-hop launch is worth a hint when it leaves more than this far off the horizontal, degrees. */
+export const COACH_TILT_MIN_deg = 8
 
 /** A gap below this (cm) is called "very short": the ball can reach the edge before it settles into rolling. */
 export const GAP_SMALL_m = GAP_TARGET_m - GAP_TOLERANCE_m
@@ -50,7 +53,14 @@ export function coachCandidates(app: ParabolicApparatus, e: ApparatusEvent): Nud
       if (app.getState().geometry && !p.riseOk) push('riseOff')
       if (p.gapOk === false && app.getState().items.rail) {
         if (gap_m > GAP_TARGET_m) push('gapLarge', { cm: Math.round(gap_m * 100) })
-        else push('gapSmall', { cm: Math.round(gap_m * 100) })
+        else if (gap_m >= 0) push('gapSmall', { cm: Math.round(gap_m * 100) })
+      }
+      // how the ball is going to leave the table: three set-ups that make the launch diagonal (the run is already computed at release)
+      if (app.getState().items.rail) {
+        const run = e.type === 'released' ? app.getRun(e.runId) : null
+        if (gap_m < 0) push('railBeyondEdge', { cm: Math.round(-gap_m * 100) })
+        else if (p.tipLifted) push('tipLiftedDrop')
+        else if (!out.some((n) => n.key === 'gapSmall' || n.key === 'gapLarge') && run?.launch && run.launch.midHop && Math.abs(run.launch.angle_rad) > (COACH_TILT_MIN_deg * Math.PI) / 180) push('hopsAtEdge', { deg: Math.round(Math.abs(run.launch.angle_rad) * 180 / Math.PI) })
       }
       if (!p.edgeProjectionPlaced) push('noEdgeProjection')
       break

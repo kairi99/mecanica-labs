@@ -1,7 +1,7 @@
 // Settings panel (step 2): rack-stand and two-leg heights, screw foot, rail position, level and its vial, rail marks, ball choice,
 // paper on the floor and the edge projection. Every action goes through the apparatus; the panel only renders its state.
 import {
-  FOOT_RANGE_mm, FOOT_STEP_mm, GAP_MAX_m, LEG_MAX_mm, LEG_MIN_mm, MARK_UPPER_HALF_FROM_m, RACK_MAX_mm, RACK_MIN_mm, RAIL_LENGTH_m,
+  FOOT_RANGE_mm, FOOT_STEP_mm, GAP_MAX_m, GAP_OVERHANG_MAX_m, LEG_MAX_mm, LEG_MIN_mm, MARK_UPPER_HALF_FROM_m, RACK_MAX_mm, RACK_MIN_mm, RAIL_LENGTH_m,
   type BallId, type LevelPlacement, type PaperOrientation, type Result,
 } from '../apparatus/index.ts'
 import type { MountView, View } from './view.ts'
@@ -87,7 +87,8 @@ export const mountAdjust: MountView = (root, ctx): View => {
   const foot = sliderBlock({ min: -FOOT_RANGE_mm, max: FOOT_RANGE_mm, step: FOOT_STEP_mm, nudges: [0.05, 0.5], set: (v) => app.setFoot_mm(v), get: () => app.getState().foot_mm, label: mmLabel })
   const legNote = el('p', 'muted')
   const gapHead = el('h3', 'sub-title')
-  const gap = sliderBlock({ min: 1, max: Math.round(GAP_MAX_m * 1000), step: 1, nudges: [1, 10], set: (v) => app.setGap_mm(v), get: () => app.getState().gap_mm, label: cmLabel })
+  const gapNote = el('p', 'muted')
+  const gap = sliderBlock({ min: -Math.round(GAP_OVERHANG_MAX_m * 1000), max: Math.round(GAP_MAX_m * 1000), step: 1, nudges: [1, 10], set: (v) => app.setGap_mm(v), get: () => app.getState().gap_mm, label: cmLabel })
 
   // ---- level -----------------------------------------------------------------------------------------------------------------------
   const levelHead = el('h3', 'sub-title')
@@ -215,7 +216,7 @@ export const mountAdjust: MountView = (root, ctx): View => {
 
   c.body.append(
     rackHead, rack.wrap, legHead, leg.wrap, foot.wrap, legNote,
-    gapHead, gap.wrap,
+    gapHead, gap.wrap, gapNote,
     levelHead, levelSeg, vialWrap, levelRead, levelHelp,
     markHead, markSumRow, markDialog,
     ballHead, ballSeg, ballStatus, ballMarkLabel, ballRow, ballResetBtn, ballWhy,
@@ -230,7 +231,7 @@ export const mountAdjust: MountView = (root, ctx): View => {
     legHead.textContent = T.legTitle; leg.label.textContent = T.legLabel; leg.relabelButtons()
     foot.label.textContent = T.footLabel; foot.relabelButtons()
     legNote.textContent = T.legNote
-    gapHead.textContent = T.gapTitle; gap.label.textContent = T.gapLabel; gap.relabelButtons()
+    gapHead.textContent = T.gapTitle; gap.label.textContent = T.gapLabel; gap.relabelButtons(); gapNote.textContent = T.gapNote
     levelHead.textContent = T.levelTitle
     levelSeg.setAttribute('aria-label', T.levelGroup)
     levelBtns.get('rail')!.textContent = T.levelOnRail
@@ -284,7 +285,7 @@ export const mountAdjust: MountView = (root, ctx): View => {
     setReadout(foot.read, T.footReading, `${s.foot_mm > 0 ? '+' : s.foot_mm < 0 ? '−' : ''}${formatNum(Math.abs(s.foot_mm), 2, L())}`)
     foot.enable(s.items.twoLeg)
     gap.input.value = String(s.gap_mm)
-    setReadout(gap.read, T.gapReading, formatNum(s.gap_mm / 10, 1, L()))
+    setReadout(gap.read, s.gap_mm < 0 ? T.gapReadingBeyond : T.gapReading, formatNum(Math.abs(s.gap_mm) / 10, 1, L()))
     gap.enable(s.items.rail)
     gap.why.textContent = s.items.rail ? '' : T.gapNeed
     // level

@@ -4,14 +4,18 @@
 import {
   BALLS, DEFAULT_SETUP as PHYSICS_DEFAULT, G_QUITO_mps2, VACUUM_EFFECTS, effectiveInertiaFactor, mean, mulberry32, reactionBiasTypeB_s, sampleRun, sampleSd, simulateLaunch, ZERO_RUN, type BallSpec,
 } from '../physics/index.ts'
-import { SLOWMO_FPS_hz, TABLE_HEIGHT_MAX_m, TABLE_HEIGHT_MIN_m, createApparatus } from '../apparatus/index.ts'
+import { SLOWMO_FPS_hz, TABLE_HEIGHT_MAX_m, TABLE_HEIGHT_MIN_m, createApparatus, railGeometry } from '../apparatus/index.ts'
 import { G_UNCERTAINTY_mps2, SIGMA_H_m, expectedFlightTime, fullAnalysis } from '../analysis/compute.ts'
 import { fillTableSimulated } from './simulatedReadings.ts'
 
 const f = (x: number, d: number): string => x.toFixed(d)
-/** The assembled preset's real contact geometry: 20 cm at the clamp, the 2 cm thick rail resting on the table at its tip (rise 18 cm, tip top 2 cm above the table). */
+/** The assembled preset's real contact geometry: 20 cm at the clamp, the 2 cm thick rail resting on the table at its tip (rise 18 cm, beam end 2 cm above the table), the shoe down to its lip 5 cm from the edge. */
 const ASSEMBLED_GEO = createApparatus('assembled').geometry()!
-const DEFAULT_SETUP = { ...PHYSICS_DEFAULT, rise_m: ASSEMBLED_GEO.rise_m, stepDrop_m: ASSEMBLED_GEO.stepDrop_m }
+/** Physics set-up of a rail geometry: the physics 'tip' is the beam end; the shoe continues to the lip. */
+const setupOf = (geo: ReturnType<typeof railGeometry>) => ({
+  ...PHYSICS_DEFAULT, rise_m: geo.rise_m, stepDrop_m: geo.stepDrop_m, gap_m: geo.shoe.beamEndGap_m, shoe: { length_m: geo.shoe.length_m, slope_rad: geo.shoe.slope_rad },
+})
+const DEFAULT_SETUP = setupOf(ASSEMBLED_GEO)
 const MARKS_m = [0.6, 0.7, 0.8, 0.9, 1.0]
 const BALL_NAMES: Record<BallSpec['id'], string> = { marble: 'Marble', pingpong: 'Ping-pong ball' }
 const N_MC = 1000
@@ -47,7 +51,7 @@ export function teacherKey(): string {
     '',
     '## Setup the numbers refer to',
     '',
-    `- Rail 1.2 m and 2 cm thick, rack-stand clamp 20 cm above the table (the tape reading; the rail rests on the table at its tip, so the ball feels a rise of ${f(DEFAULT_SETUP.rise_m * 100, 1)} cm and leaves the tip ${f(DEFAULT_SETUP.stepDrop_m * 100, 1)} cm above the table), high support ${f(DEFAULT_SETUP.supportDist_m, 2)} m from the low tip, tip ${f(DEFAULT_SETUP.gap_m * 100, 0)} cm from the edge, marks at 60, 70, 80, 90 and 100 cm from the low tip (the \`assembled\` preset).`,
+    `- Rail 1.2 m and 2 cm thick, rack-stand clamp 20 cm above the table (the tape reading; the rail rests on the table at its tip, so the ball feels a rise of ${f(DEFAULT_SETUP.rise_m * 100, 1)} cm and the beam end is ${f(DEFAULT_SETUP.stepDrop_m * 100, 1)} cm above the table), high support ${f(DEFAULT_SETUP.supportDist_m, 2)} m from the low tip, the rail ends in a sloped shoe (${f(ASSEMBLED_GEO.shoe.length_m * 100, 0)} cm, ${f(ASSEMBLED_GEO.shoe.kink_rad * 180 / Math.PI, 0)} deg steeper than the rail) whose lip is ${f(ASSEMBLED_GEO.shoe.lipHeight_m * 1000, 1)} mm above the table and ${f(ASSEMBLED_GEO.gap_m * 100, 0)} cm from the edge, marks at 60, 70, 80, 90 and 100 cm from the low tip (the \`assembled\` preset).`,
     `- Table height H is hidden and drawn per bench seed between ${f(TABLE_HEIGHT_MIN_m, 2)} and ${f(TABLE_HEIGHT_MAX_m, 2)} m; the tables below use H = ${f(DEFAULT_SETUP.H_m, 2)} m unless stated.`,
     `- Local g (Quito, 2800 m) = ${f(g, 4)} m/s^2.`,
     '',
@@ -65,7 +69,7 @@ export function teacherKey(): string {
     '',
     '## Expected launch speed, time and range per mark (no run variability)',
     '',
-    'v0 is the speed at the table edge, from the model (incline, corner loss, roll over the gap, air). It is below sqrt(2 g dh) because of rolling inertia (the marble keeps 5/7 of the energy as translation, the hollow ping-pong ball about 0.6), the junction and rolling resistance. Spread columns: mean and sd over ' + N_MC + ' seeded runs with the run variability on.',
+    'v0 is the horizontal speed of the ball centre as it crosses the table edge, from the model (incline, flight off the rail end, touches on the shoe ramp and the table, hops, slip and roll, air). It is below sqrt(2 g dh) because of rolling inertia (the marble keeps 5/7 of the energy as translation, the hollow ping-pong ball about 0.6), the energy lost in the touches and rolling resistance. Spread columns: mean and sd over ' + N_MC + ' seeded runs with the run variability on.',
     '',
   )
   for (const id of ['marble', 'pingpong'] as const) {
@@ -80,7 +84,50 @@ export function teacherKey(): string {
     push('')
   }
   push(
-    'The flight time hardly changes with the mark (it depends on H, not on v0): the range grows with v0, the time does not. This is the expected answer to tasks 3 and 5. The ping-pong ball is slower at the same mark (larger rolling inertia, more air drag and more corner loss) and its range is shorter.',
+    'The flight time hardly changes with the mark (it depends on H, not on v0): the range grows with v0, the time does not. This is the expected answer to tasks 3 and 5. The ping-pong ball is slower at the same mark (larger rolling inertia, more air drag and more corner loss) and its range is shorter. In this model the launch is not exactly horizontal (next section), so the times below differ from sqrt(2H/g) by a few percent; that difference is a property of the model, not a student error.',
+    '',
+    '## How the ball leaves the table (diagonal launches)',
+    '',
+    'The rail ends in a sloped shoe; the ball leaves the end of the rail as a projectile (it does not follow the change of slope at these speeds), can touch the ramp and the table, bounces (marble e = ' + f(BALLS.marble.e_table, 2) + ', ping-pong e = ' + f(BALLS.pingpong.e_table, 3) + ', the latter from the table-tennis bounce rule), and leaves the edge either rolling (horizontal launch) or in the air (mid-hop: a launch at a few degrees up or down). Launch angle: above the horizontal, negative = downward. Per mark, default set-up, no run variability:',
+    '',
+    '| Ball | Mark (cm) | touches (ramp/table) | leaves | angle (deg) | speed (m/s) | t (s) | x (m) |',
+    '|---|---|---|---|---|---|---|---|',
+  )
+  for (const id of ['marble', 'pingpong'] as const) {
+    for (const sm of MARKS_m) {
+      const r = simulateLaunch(DEFAULT_SETUP, BALLS[id], sm, ZERO_RUN)
+      const el = r.edgeLaunch
+      if (!r.flight || !el) { push(`| ${BALL_NAMES[id]} | ${f(sm * 100, 0)} | - | does not leave | | | | |`); continue }
+      const imp = r.table ? `${r.table.impacts.filter((i) => i.surface === 'ramp').length}/${r.table.impacts.filter((i) => i.surface === 'table').length}` : '-'
+      push(`| ${BALL_NAMES[id]} | ${f(sm * 100, 0)} | ${imp} | ${el.onRail ? 'on the rail or shoe' : el.midHop ? 'in the air' : 'rolling'} | ${f((el.angle_rad * 180) / Math.PI, 1)} | ${f(el.speed_mps, 2)} | ${f(r.flight.t_flight_s, 3)} | ${f(r.flight.x_land_m, 3)} |`)
+    }
+  }
+  push(
+    '',
+    'Set-ups that make the launch clearly diagonal (mark 80 cm, no run variability). The time is measured from the edge crossing, as the guide asks:',
+    '',
+    '| Set-up | Ball | angle (deg) | leaves | t (s) | x (m) |',
+    '|---|---|---|---|---|---|',
+  )
+  const cases: Array<[string, number, number, boolean]> = [
+    ['rail end 3 cm beyond the edge (overhang)', -0.03, 0, false],
+    ['rail end 9 cm beyond the edge (beam on the table corner)', -0.09, 0, false],
+    ['two-leg stand raised, 60 mm (tip lifted, ball falls on the table)', 0.05, 60, true],
+    ['gap 1 cm', 0.01, 0, false],
+    ['gap 7 cm', 0.07, 0, false],
+  ]
+  for (const [label, gap, leg, attached] of cases) {
+    const geo = railGeometry({ rack_mm: 140, leg_mm: leg, foot_mm: 0, gap_m: gap, tableRoll_rad: 0, twoLegAttached: attached })
+    for (const id of ['marble', 'pingpong'] as const) {
+      const r = simulateLaunch(setupOf(geo), BALLS[id], 0.8, ZERO_RUN)
+      const el = r.edgeLaunch
+      if (!r.flight || !el) { push(`| ${label} | ${BALL_NAMES[id]} | does not leave | | | |`); continue }
+      push(`| ${label} | ${BALL_NAMES[id]} | ${f((el.angle_rad * 180) / Math.PI, 1)} | ${el.onRail ? 'on the rail or shoe' : el.midHop ? 'in the air' : 'rolling'} | ${f(r.flight.t_flight_s, 3)} | ${f(r.flight.x_land_m, 3)} |`)
+    }
+  }
+  push(
+    '',
+    'Reading: a downward launch (overhang, a raised tip, a hop that leaves downward) shortens the flight below sqrt(2H/g) and lengthens the range for the same speed; an upward launch (a hop that leaves rising) does the opposite. Range is not monotonic in the mark where the first touch on the table falls close to the edge. The analysis panel tells the student, neutrally, when some launches were not horizontal; it never answers the guide\'s questions.',
     '',
     '## Why the hand-timed flight has a large relative error (task 6)',
     '',
@@ -147,7 +194,7 @@ export function teacherKey(): string {
     '',
     '### Task 1, the motion',
     '',
-    `After the edge only gravity (and a little air) acts. Horizontally the motion is uniform (constant velocity, no horizontal force); vertically it is free fall from rest (uniform acceleration g = ${f(g, 2)} m/s^2). The path is a parabola. The velocity at the edge is horizontal, along the rail direction on the table. Common mistake: drawing a force "of the launch" that keeps pushing the ball forward.`,
+    `After the edge only gravity (and a little air) acts. Horizontally the motion is uniform (constant velocity, no horizontal force); vertically it is free fall from rest (uniform acceleration g = ${f(g, 2)} m/s^2). The path is a parabola. The velocity at the edge is horizontal in the idealisation of the guide; in this virtual lab it is within a few degrees of horizontal for the guide's set-up (see the diagonal launches table). Common mistake: drawing a force "of the launch" that keeps pushing the ball forward.`,
     '',
     '### Task 4, launch speed per mark',
     '',
@@ -184,7 +231,7 @@ export function teacherKey(): string {
     '',
     '### Task 9, ideal projectile',
     '',
-    'Conditions of the ideal model: no air drag and no Magnus lift (the model includes both, small); constant g over the fall; launch velocity exactly horizontal; the ball treated as a point (it is a sphere with spin and size); the ball leaves exactly at the table edge, with no contact with it. Expected factors of deviation: reaction bias (raises or lowers t), edge projection placement (shifts every x), drag (lengthens t and shortens x slightly, more for the ping-pong ball), a launch that is not exactly horizontal (changes t). Common mistake: listing only "human error" without saying which quantity it shifts and in which direction.',
+    'Conditions of the ideal model: no air drag and no Magnus lift (the model includes both, small); constant g over the fall; launch velocity exactly horizontal (here it is a few degrees off, see above); the ball treated as a point (it is a sphere with spin and size); the ball leaves exactly at the table edge, with no contact with it. Expected factors of deviation: reaction bias (raises or lowers t), edge projection placement (shifts every x), drag (lengthens t and shortens x slightly, more for the ping-pong ball), a launch that is not exactly horizontal (changes t). Common mistake: listing only "human error" without saying which quantity it shifts and in which direction.',
   )
   push(
     '',

@@ -220,3 +220,30 @@ export function buildTable(kit: PKit): TableModel {
     dispose() { nearLegMat.dispose(); M.table.map = null; M.floor.map = null },
   }
 }
+
+// ---- sloped end piece (shoe) of the rail --------------------------------------------------------------------------------
+/** Thickness of the shoe wedge at its lip, cm (the lip stays at least SHOE_LIP_MIN_m = 2.5 mm above the table, so its underside clears the table). */
+export const SHOE_LIP_THICK_cm = 0.12
+/**
+ * The shoe as a wedge in the RAIL frame (x along the rail, 0 at the high end; y up, 0 on the rail top): from the rail's low end (x = railLength_cm) its top
+ * descends `length_cm` along a ramp `kink_rad` steeper than the rail; the underside runs back to the beam's lower end corner.
+ * Mesh placed at the low end; z centred on the rail axis.
+ */
+export function buildShoe(kit: PKit, railLength_cm: number, halfW_cm: number, height_cm: number, length_cm: number, kink_rad: number): THREE.Mesh {
+  const { M } = kit
+  const c = Math.cos(kink_rad), sn = Math.sin(kink_rad)
+  const lx = length_cm * c, ly = -length_cm * sn
+  const sh = new THREE.Shape()
+  sh.moveTo(0, 0)
+  sh.lineTo(lx, ly)
+  sh.lineTo(lx, ly - SHOE_LIP_THICK_cm)
+  sh.lineTo(0, -height_cm)
+  sh.closePath()
+  const g = new THREE.ExtrudeGeometry(sh, { depth: halfW_cm * 2, bevelEnabled: false })
+  g.translate(0, 0, -halfW_cm)
+  const m = new THREE.Mesh(g, M.alu)
+  m.position.set(railLength_cm, 0, 0)
+  m.castShadow = true; m.receiveShadow = true
+  tag(m, 'rail')
+  return m
+}

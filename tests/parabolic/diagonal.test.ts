@@ -6,7 +6,7 @@ import {
   simulateTablePhase, vacuumHeight_m, vacuumTimeToHeight_s, effectiveRollingRadius_m, type BallSpec, type LaunchSetup,
 } from '../../src/experiments/parabolic/physics/index.ts'
 import {
-  GAP_OVERHANG_MAX_m, GAP_OVERHANG_MIN_m, GAP_MIN_m, LEG_MAX_mm, RAIL_HEIGHT_m, RACK_FROM_TIP_m, RACK_MAX_mm, RACK_MIN_mm, createApparatus, railGeometry, type RailInput,
+  SHOE_KINK_rad, SHOE_LENGTH_m, SHOE_LIP_MIN_m, GAP_OVERHANG_MAX_m, GAP_OVERHANG_MIN_m, GAP_MIN_m, LEG_MAX_mm, RAIL_HEIGHT_m, RACK_FROM_TIP_m, RACK_MAX_mm, RACK_MIN_mm, createApparatus, railGeometry, solveBeam, type RailInput,
 } from '../../src/experiments/parabolic/apparatus/index.ts'
 
 const g = DEFAULT_SETUP.g_mps2
@@ -16,9 +16,20 @@ const geo = createApparatus('assembled').geometry()!
 const ASSEMBLED: LaunchSetup = { ...DEFAULT_SETUP, rise_m: geo.rise_m, stepDrop_m: geo.stepDrop_m }
 const railOf = (over: Partial<RailInput>): ReturnType<typeof railGeometry> =>
   railGeometry({ rack_mm: 140, leg_mm: 0, foot_mm: 0, gap_m: 0.05, tableRoll_rad: 0, twoLegAttached: false, ...over })
-const setupOf = (gap_m: number, over: Partial<RailInput> = {}): LaunchSetup => {
+/** Physics setup WITHOUT a shoe whose beam end (top-surface tip) is gap_m from the edge (negative: beyond it); the rail data that goes with it (pose.tip etc. from the beam alone). */
+const beamSetup = (beamGap_m: number, over: Partial<RailInput> = {}): { setup: LaunchSetup; rail: { theta_rad: number; tipHeight_m: number; edgeContact: boolean; overhang: boolean; pose: { tip: { x_m: number; y_m: number } }; lowest_m: number } } => {
+  const inp: RailInput = { rack_mm: 140, leg_mm: 0, foot_mm: 0, gap_m: beamGap_m, tableRoll_rad: 0, twoLegAttached: false, ...over }
+  const sol = solveBeam(inp, beamGap_m)
+  const rise = RACK_FROM_TIP_m * Math.sin(sol.theta)
+  return {
+    setup: { ...DEFAULT_SETUP, rise_m: rise, gap_m: beamGap_m, stepDrop_m: sol.tip },
+    rail: { theta_rad: sol.theta, tipHeight_m: sol.tip, edgeContact: sol.edgeContact, overhang: beamGap_m < 0, pose: { tip: { x_m: -beamGap_m, y_m: sol.tip } }, lowest_m: 0 },
+  }
+}
+/** Physics setup WITH the shoe of the rail geometry (the lip is gap_m from the edge). */
+const shoeSetup = (gap_m: number, over: Partial<RailInput> = {}): LaunchSetup => {
   const r = railOf({ gap_m, ...over })
-  return { ...DEFAULT_SETUP, rise_m: r.rise_m, gap_m, stepDrop_m: r.stepDrop_m }
+  return { ...DEFAULT_SETUP, rise_m: r.rise_m, gap_m: r.shoe.beamEndGap_m, stepDrop_m: r.stepDrop_m, shoe: { length_m: r.shoe.length_m, slope_rad: r.shoe.slope_rad } }
 }
 
 describe('ball-surface impact (impact.ts)', () => {
@@ -241,7 +252,7 @@ describe('launch from the rail tip (launch.ts, default projectile model)', () =>
 describe('rail overhanging the table edge (negative gap)', () => {
   it('the rail rests on the edge corner: its underside passes through the corner, the tip hangs lower than with the tip on the table, and the geometry is continuous in the gap', () => {
     const on = railOf({ gap_m: 0.05 })
-    const over = railOf({ gap_m: -0.03 })
+    const over = beamSetup(-0.03).rail // beam end 3 cm beyond the edge
     expect(over.overhang).toBe(true)
     expect(over.edgeContact).toBe(true)
     // underside line n . tip = t  (the edge corner E = (0, 0) lies on it)
@@ -249,10 +260,9 @@ describe('rail overhanging the table edge (negative gap)', () => {
     expect(Math.sin(th) * over.pose.tip.x_m + Math.cos(th) * over.pose.tip.y_m).toBeCloseTo(RAIL_HEIGHT_m, 12)
     expect(over.tipHeight_m).toBeLessThan(on.tipHeight_m)
     expect(over.theta_rad).toBeGreaterThan(on.theta_rad - 1e-12)
-    expect(over.lowest_m).toBeCloseTo(0, 9)
     // continuity of theta and of the tip height across the regime change (end corner reaching the edge), steps of 0.1 mm
     let prev = railOf({ gap_m: 0.01 })
-    for (let gap = 0.0099; gap >= -0.05; gap -= 0.0001) {
+    for (let gap = 0.0099; gap >= -0.12; gap -= 0.0001) {
       const cur = railOf({ gap_m: gap })
       expect(Math.abs(cur.theta_rad - prev.theta_rad)).toBeLessThan(2e-4)
       expect(Math.abs(cur.tipHeight_m - prev.tipHeight_m)).toBeLessThan(2e-4)
@@ -288,12 +298,10 @@ describe('rail overhanging the table edge (negative gap)', () => {
   })
   it('the ball leaves the tip beyond the edge: launch angle equals the rail angle (downward) and the times and range are measured from the edge', () => {
     for (const b of BALLS) {
-      const gap = -0.03
-      const rail = railOf({ gap_m: gap })
-      const setup = setupOf(gap)
+      const { setup, rail } = beamSetup(-0.03)
       const r = simulateLaunch(setup, b, 0.9, ZERO_RUN, { effects: VACUUM_EFFECTS, sampleRate_hz: 2000 })
       expect(r.overhang).toBe(true)
-      expect(r.table).toBeNull()
+      expect(r.table!.impacts.length).toBe(0) // no table under the ball
       expect(r.edgeLaunch!.kind).toBe('diagonal')
       expect(r.edgeLaunch!.angle_rad).toBeCloseTo(-rail.theta_rad, 12) // on the rail the velocity is along the slope
       expect(r.flight!.launch.angle_rad).toBeCloseTo(-rail.theta_rad, 12)
@@ -316,12 +324,113 @@ describe('rail overhanging the table edge (negative gap)', () => {
     }
   })
   it('a downward launch lands SOONER than a horizontal one from the same height: t < sqrt(2 (y0 - R)/g) after the tip', () => {
-    const setup = setupOf(-0.03)
+    const { setup } = beamSetup(-0.03)
     const r = simulateLaunch(setup, MARBLE, 0.9, ZERO_RUN, { effects: VACUUM_EFFECTS })
     const yC = setup.H_m + setup.stepDrop_m + r.rEff_m * Math.cos(r.theta_rad)
     expect(r.flight!.t_total_s).toBeLessThan(Math.sqrt((2 * (yC - MARBLE.R_m)) / g))
   })
   it('the settable band: the apparatus refuses the band around the edge corner and accepts the overhang range', () => {
     expect(GAP_OVERHANG_MIN_m).toBeGreaterThan(RAIL_HEIGHT_m * Math.sin(Math.asin(0.31 / RACK_FROM_TIP_m)) ) // end corner reaches past the edge at the steepest rail
+  })
+})
+
+describe('sloped end piece (shoe) at the low end of the rail', () => {
+  it('geometry: ramp 6 cm, 6 deg steeper than the rail, lip 3.8 mm above the table at the assembled preset; the lip is where the gap is measured', () => {
+    expect(geo.shoe.length_m).toBeCloseTo(SHOE_LENGTH_m, 12)
+    expect(geo.shoe.slope_rad - geo.theta_rad).toBeCloseTo(SHOE_KINK_rad, 12)
+    expect(geo.shoe.lipHeight_m).toBeGreaterThan(SHOE_LIP_MIN_m)
+    expect(geo.shoe.lipHeight_m).toBeCloseTo(0.0038, 4)
+    expect(geo.shoe.lip.x_m).toBeCloseTo(-geo.gap_m, 12)
+    expect(geo.shoe.beamEndGap_m).toBeCloseTo(geo.gap_m + SHOE_LENGTH_m * Math.cos(geo.shoe.slope_rad), 12)
+    expect(geo.pose.tip.x_m).toBeCloseTo(-geo.shoe.beamEndGap_m, 12)
+  })
+  it('the shoe never clips the table: the lip is at least SHOE_LIP_MIN_m above the tabletop wherever the beam rests (rack, stand, foot, gap sweep), and a lifted tip lifts the lip', () => {
+    let n = 0
+    for (let rack = RACK_MIN_mm; rack <= RACK_MAX_mm; rack += 25) {
+      for (let leg = 0; leg <= LEG_MAX_mm; leg += 15) {
+        for (const gap_m of [GAP_MIN_m, 0.05, 0.3, -0.02, -0.05, -GAP_OVERHANG_MAX_m]) {
+          const gm = railOf({ rack_mm: rack, leg_mm: leg, gap_m, twoLegAttached: true })
+          if (gm.shoe.length_m > 0) {
+            expect(gm.shoe.lipHeight_m).toBeGreaterThanOrEqual(SHOE_LIP_MIN_m - 1e-9)
+            expect(gm.shoe.lip.y_m).toBeCloseTo(gm.pose.tip.y_m - gm.shoe.length_m * Math.sin(gm.shoe.slope_rad), 12)
+          }
+          expect(gm.shoe.length_m).toBeLessThanOrEqual(SHOE_LENGTH_m + 1e-12)
+          n++
+        }
+      }
+    }
+    expect(n).toBeGreaterThan(500)
+    const lifted = railOf({ leg_mm: 60, twoLegAttached: true })
+    expect(lifted.shoe.lipHeight_m).toBeGreaterThan(10 * geo.shoe.lipHeight_m) // drop of ~7 cm: the ball falls onto the table
+  })
+  it('the ball is never inside the table or the shoe: the path stays above the table and above the ramp line (centre offset r_eff)', () => {
+    for (const b of BALLS) {
+      for (const [gap, over] of [[0.05, {}], [0.01, {}], [0.05, { leg_mm: 60, twoLegAttached: true }], [-0.03, {}]] as const) {
+        const setup = shoeSetup(gap, over)
+        for (const s of [0.2, 0.6, 1]) {
+          const r = simulateLaunch(setup, b, s, ZERO_RUN, { sampleRate_hz: 4000 })
+          const al = setup.shoe!.slope_rad
+          const xLip = -setup.gap_m + setup.shoe!.length_m * Math.cos(al) + r.rEff_m * Math.sin(al)
+          const hLip = setup.stepDrop_m - setup.shoe!.length_m * Math.sin(al) + r.rEff_m * Math.cos(al)
+          for (const p of r.path) {
+            const h = p.y_m - setup.H_m
+            if (p.x_m < 0) expect(h).toBeGreaterThanOrEqual(b.R_m - 1e-9)
+            if (p.phase !== 'flight' && p.x_m <= xLip) expect(h).toBeGreaterThanOrEqual(hLip + Math.tan(al) * (xLip - p.x_m) - 2e-3 * 0 - 1e-6 - r.rEff_m * 0.01)
+          }
+        }
+      }
+    }
+  })
+  it('energy bookkeeping closes with the shoe (ramp impacts, ramp roll, table): start = end + losses, with c_rr = 0 and no air', () => {
+    for (const b of BALLS) {
+      for (const [gap, over] of [[0.05, {}], [0.3, {}], [0.05, { leg_mm: 60, twoLegAttached: true }], [-0.03, {}]] as const) {
+        for (const s of [0.1, 0.3, 0.6, 1]) {
+          const r = simulateLaunch(shoeSetup(gap, over), { ...b, c_rr: 0 }, s, ZERO_RUN, { effects: VACUUM_EFFECTS })
+          const e = r.table!.energy
+          expect(e.start_J).toBeCloseTo(e.end_J + e.impacts_J + e.reboundDiscarded_J + e.slip_J + e.roll_J, 12)
+          expect(e.roll_J).toBeCloseTo(0, 12)
+          for (const i of r.table!.impacts) expect(i.energyLost_J).toBeGreaterThanOrEqual(-1e-15)
+        }
+      }
+    }
+  })
+  it('a slow ball that hits the ramp (no rebound) rolls down it and leaves the lip along the ramp slope with rolling spin v/r_eff', () => {
+    const b: BallSpec = { ...MARBLE, e_table: 0, c_rr: 0 }
+    const setup = shoeSetup(0.3)
+    const r = simulateLaunch(setup, b, 0.15, ZERO_RUN, { effects: VACUUM_EFFECTS, sampleRate_hz: 20000 })
+    expect(r.table!.rolledOnRamp).toBe(true)
+    expect(r.table!.impacts[0]!.surface).toBe('ramp')
+    const ramp = r.path.filter((p) => p.phase === 'ramp')
+    const last = ramp[ramp.length - 1]!
+    expect(Math.atan2(-last.vy_mps, last.vx_mps)).toBeCloseTo(setup.shoe!.slope_rad, 9)
+  })
+  it('with a long table and a rebound-free ball the shoe is the ideal limit: horizontal launch at the edge and t = sqrt(2H/g) in vacuum', () => {
+    const ideal: BallSpec = { ...MARBLE, e_table: 0, c_rr: 0 }
+    const H = DEFAULT_SETUP.H_m
+    const r = simulateLaunch(shoeSetup(3), ideal, 1, ZERO_RUN, { effects: VACUUM_EFFECTS })
+    expect(r.edgeLaunch!.kind).toBe('horizontal')
+    expect(r.flight!.t_flight_s).toBeCloseTo(Math.sqrt((2 * H) / g), 9)
+  })
+  it('default preset: the ball hops over the shoe and the table and leaves the edge at a small angle (not exactly horizontal): |angle| < 10 deg, t within -4 % and +8 % of sqrt(2H/g)', () => {
+    const setup = shoeSetup(0.05)
+    const tTheo = Math.sqrt((2 * setup.H_m) / g)
+    for (const b of BALLS) {
+      for (const s of [0.6, 0.7, 0.8, 0.9, 1]) {
+        const r = simulateLaunch(setup, b, s, ZERO_RUN)
+        expect(Math.abs(r.edgeLaunch!.angle_rad)).toBeLessThan((10 * Math.PI) / 180)
+        expect(r.flight!.t_flight_s / tTheo).toBeGreaterThan(0.96)
+        expect(r.flight!.t_flight_s / tTheo).toBeLessThan(1.08)
+      }
+    }
+  })
+  it('overhang with the shoe: the lip hangs beyond the edge, the crossing is on the shoe/rail and the launch is diagonal downward', () => {
+    const setup = shoeSetup(-0.03)
+    for (const b of BALLS) {
+      const r = simulateLaunch(setup, b, 0.9, ZERO_RUN)
+      expect(r.edgeLaunch!.onRail).toBe(true)
+      expect(r.edgeLaunch!.kind).toBe('diagonal')
+      expect(r.edgeLaunch!.angle_rad).toBeLessThan(0)
+      expect(r.flight!.t_total_s).toBeLessThan(r.flight!.t_flight_s) // the flight record starts at the lip, after the crossing on the shoe: t from the edge is longer
+    }
   })
 })

@@ -5,7 +5,7 @@
 import * as THREE from 'three'
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js'
 import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js'
-import { LEG_BASE_HEIGHT_m, SCREWS_TOTAL, paperStack, paperSurfaceAt_m, sheetToFloor, type BallId, type ParabolicApparatus, type TapeTarget } from '../../apparatus/index.ts'
+import { LEG_BASE_HEIGHT_m, SCREWS_TOTAL, SHOE_KINK_rad, SHOE_LENGTH_m, paperStack, paperSurfaceAt_m, sheetToFloor, type BallId, type ParabolicApparatus, type TapeTarget } from '../../apparatus/index.ts'
 import type { CardInfo } from '../../../../core/scene3d/types.ts'
 import { boxCorners, fitView, type Vec } from '../../../../core/scene3d/framing.ts'
 import {
@@ -16,7 +16,7 @@ import type { ViewContext } from '../view.ts'
 import { strings } from '../strings/scene3d.ts'
 import { createInteraction, type Interaction, type Preview } from './interaction.ts'
 import { createMaterials, createOutlineMaterial } from './materials.ts'
-import { SHEET_THICK_cm, buildBall, buildMarkDot, buildPlumb, buildSheet, buildTable, railFlag, tag, type BallModel, type PKit, box } from './models.ts'
+import { SHEET_THICK_cm, buildShoe, buildBall, buildMarkDot, buildPlumb, buildSheet, buildTable, railFlag, tag, type BallModel, type PKit, box } from './models.ts'
 import { PRESET_NAMES, type PresetName } from './presets.ts'
 import {
   CM, FOV_DEFAULT_deg, RAIL, STAGED_BOXES, STAGING, levelRailRange_cm, levelTableSpot, mountedBoxes, TABLE, VIEW_ANGLES, fovFor, defaultFrameInput, edgePoints, floorPoints, landMaxFor, markDiameter_cm, markLabel, overviewPoints,
@@ -129,6 +129,20 @@ export function createScene(container: HTMLElement, ctx: ViewContext, opts: Scen
   // this bench has no printed scale: the student measures with the tape (hide the scale strip and the end labels of the shared model)
   rail.root.traverse((o) => { const m = o as THREE.Mesh; if (m.isMesh && m.geometry.type === 'PlaneGeometry') m.visible = false })
   rail.root.children[0]!.userData.dragHandle = 'rail'
+  // the rail's black low end cap gives way to the shoe (sloped end piece) drawn by syncShoe
+  rail.root.traverse((o) => { const m = o as THREE.Mesh; if (m.isMesh && m.material === M.black && Math.abs(m.position.x - (RAIL.length + 0.175)) < 0.01) m.visible = false })
+  let shoeMesh: THREE.Mesh | null = null
+  let shoeKey = ''
+  const syncShoe = (geo: { shoe: { length_m: number; kink_rad: number } } | null): void => {
+    const len = geo ? geo.shoe.length_m * CM : SHOE_LENGTH_m * CM
+    const kink = geo ? geo.shoe.kink_rad : SHOE_KINK_rad
+    const key = `${len.toFixed(3)}|${kink.toFixed(5)}`
+    if (key === shoeKey) return
+    shoeKey = key
+    if (shoeMesh) { rail.root.remove(shoeMesh); shoeMesh.geometry.dispose() }
+    shoeMesh = len > 0.05 ? buildShoe(kit, RAIL.length, RAIL.halfW, RAIL.height, len, kink) : null
+    if (shoeMesh) rail.root.add(shoeMesh)
+  }
   scene.add(rail.root)
   const base = buildBase(kit)
   const rack = buildRackStand(kit)
@@ -319,6 +333,7 @@ export function createScene(container: HTMLElement, ctx: ViewContext, opts: Scen
 
     // rail: on the stand clamp and the table, or lying on the table until it is fastened
     rail.root.visible = it.rail
+    syncShoe(geo)
     if (frame) { rail.root.position.set(...frame.origin); rail.root.rotation.set(0, 0, frame.tilt_rad) }
     else { slot(rail.root, STAGING.rail, RAIL.height); }
     clampScrews.visible = st.joints.rackClamp
@@ -439,11 +454,11 @@ export function createScene(container: HTMLElement, ctx: ViewContext, opts: Scen
   let trailEdge_s = 0
   let trailFadeStart = -1
   const loadTrail = (runId: number): void => {
-    const traj = a.runTrajectory(runId)
+    const traj = a.runPath(runId) // the whole path: shoe, arc, hops on the table, flight
     const run = a.getRun(runId)
-    if (traj.length === 0 || !run || run.times.edge_s === null) return
+    if (traj.length === 0 || !run || run.times.edge_s === null || run.times.tip_s === null) return
     trailRun = runId
-    trailEdge_s = run.times.edge_s
+    trailEdge_s = run.times.tip_s // run clock of the first path sample (the departure from the beam end)
     const step = Math.max(1, Math.ceil(traj.length / TRAIL_DOTS))
     trailTimes = []
     let n = 0

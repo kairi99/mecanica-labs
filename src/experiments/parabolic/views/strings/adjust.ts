@@ -7,7 +7,7 @@ export interface AdjustStrings {
   // two-leg stand
   legTitle: string; legLabel: string; legReading: string; footLabel: string; footReading: string; legNeed: string; legNote: string
   // gap
-  gapTitle: string; gapLabel: string; gapReading: string; gapNeed: string
+  gapTitle: string; gapLabel: string; gapReading: string; gapReadingBeyond: string; gapNote: string; gapNeed: string
   // generic nudge
   up: string; down: string
   // level
@@ -45,6 +45,8 @@ export const strings: Strings<AdjustStrings> = {
     gapTitle: 'Posición de la riel en la mesa',
     gapLabel: 'Distancia del extremo bajo al borde de la mesa',
     gapReading: '{n} cm',
+    gapReadingBeyond: '{n} cm más allá del borde',
+    gapNote: 'La riel termina en una pieza inclinada (zapata) que baja hasta un labio de unos 3 mm sobre la mesa; la distancia se mide hasta ese labio. Con valores negativos el extremo sobresale del borde: la riel se apoya en la esquina de la mesa y la bola sale en diagonal, hacia abajo. Entre 4 mm antes del borde y 10 mm más allá no se puede poner el extremo (quedaría sobre la esquina): salta de 4 mm a −10 mm.',
     gapNeed: 'Pon la riel sobre la mesa (paso 1).',
     up: 'Subir {n}', down: 'Bajar {n}',
     levelTitle: 'Nivelador',
@@ -128,6 +130,8 @@ export const strings: Strings<AdjustStrings> = {
     gapTitle: 'Rail position on the table',
     gapLabel: 'Distance from the low end to the table edge',
     gapReading: '{n} cm',
+    gapReadingBeyond: '{n} cm beyond the edge',
+    gapNote: 'The rail ends in a sloped piece (shoe) that comes down to a lip about 3 mm above the table; the distance is measured to that lip. With negative values the end overhangs the edge: the rail rests on the table corner and the ball leaves diagonally, downward. Between 4 mm before the edge and 10 mm beyond it the end cannot be placed (it would sit on the corner): it jumps from 4 mm to -10 mm.',
     gapNeed: 'Put the rail on the table (step 1).',
     up: 'Raise {n}', down: 'Lower {n}',
     levelTitle: 'Level',

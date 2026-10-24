@@ -7,7 +7,7 @@ import { tapeMaxPermissibleError_m } from '../../../core/physics/instruments.ts'
 import { deg2rad } from '../../../core/physics/angles.ts'
 import { Stopwatch } from '../../../core/instruments/stopwatch.ts'
 import {
-  BALL_IDS, EXPECTED_OFFSETS, GRAVITY_mps2, ballSpec, drawRunOffsets, insidePaper, markOnPaper, runLaunch, runTrajectory, settleAfterLanding, type BallId, type TrajectoryPoint,
+  BALL_IDS, EXPECTED_OFFSETS, GRAVITY_mps2, ballSpec, rollingRadius_m, drawRunOffsets, insidePaper, markOnPaper, runLaunch, runPath, runTrajectory, settleAfterLanding, type BallId, type PathPoint, type TrajectoryPoint,
 } from './model.ts'
 import {
   BOND_SHEETS, EDGE_PROJECTION_SIGMA_m, FOOT_RANGE_mm, FOOT_STEP_mm, GAP_MAX_m, GAP_MIN_m, GAP_OVERHANG_MAX_m, GAP_OVERHANG_MIN_m, GAP_START_m, GAP_STEP_m, GAP_TARGET_m, GAP_TOLERANCE_m,
@@ -81,6 +81,7 @@ export class ParabolicApparatus {
   private lastRange: { carbonId: string; runId: number; reading_m: number } | null = null
   private runs: RunRecord[] = []
   private trajectories = new Map<number, TrajectoryPoint[]>()
+  private paths = new Map<number, PathPoint[]>()
   private announced = new Set<number>()
   private readonly sw = new Stopwatch<ReturnType<typeof eventRecords>[number]>()
   private tables = freshTables()
@@ -577,12 +578,12 @@ export class ParabolicApparatus {
     const drawn = drawRunOffsets(this.runRng.next, ball)
     const videoPhase = this.benchRng.next()
     const offsets = { ...drawn, lateralAngle_rad: drawn.lateralAngle_rad + LATERAL_DRIFT_GAIN * geo.roll_rad }
-    const bench = { rise_m: geo.rise_m, gap_m: this.gap_m, H_m: this.hidden.H_m, stepDrop_m: geo.stepDrop_m, roll_rad: geo.roll_rad }
+    const bench = this.benchOf(geo)
     const id = this.runs.length + 1
     const rec: RunRecord = {
       id, ball, markId: this.ball.markId, startS_m: startS, releaseS_m: startS, releaseTime_ms: now_ms, bench, offsets, outcome: 'notStarted',
       theta_rad: geo.theta_rad, a_incline_mps2: 0, v_roll_mps: 0, v_edge_mps: 0, tableDecel_mps2: 0,
-      times: { tip_s: null, edge_s: null, land_s: null, end_s: 0 }, flight: null, bounce: null, mark: { result: 'noLanding', carbonId: null }, videoPhase,
+      times: { tip_s: null, edge_s: null, land_s: null, end_s: 0 }, flight: null, launch: null, tableHops: 0, bounce: null, mark: { result: 'noLanding', carbonId: null }, videoPhase,
     }
     // A flat or downhill rail (the two-leg stand holds the tip up) never starts the ball: no physics call.
     if (geo.rise_m > 0) {
@@ -596,6 +597,8 @@ export class ParabolicApparatus {
       rec.v_edge_mps = s.v_edge_mps
       rec.tableDecel_mps2 = s.tableDecel_mps2
       rec.flight = s.flight
+      rec.launch = s.launch
+      rec.tableHops = s.tableHops
       rec.bounce = s.bounce
       const tip = s.tTip_s
       if (s.outcome === 'stopped') { rec.times = { tip_s: tip, edge_s: null, land_s: null, end_s: (tip ?? 0) + (tip === null ? 0 : s.gapTime_s) } }
@@ -606,6 +609,7 @@ export class ParabolicApparatus {
           : { tip_s: tip, edge_s: edge, land_s: null, end_s: edge + ROLL_OVER_TAIL_s }
       }
       if (s.flight) this.trajectories.set(id, out.trajectory)
+      this.paths.set(id, out.path)
     }
     if (rec.outcome === 'notStarted') rec.outcome = 'stopped'
     this.depositMark(rec)
@@ -646,6 +650,21 @@ export class ParabolicApparatus {
   }
   getRuns(): RunRecord[] { return structuredClone(this.runs) }
   getRun(runId: number): RunRecord | null { const r = this.runs.find((x) => x.id === runId); return r ? structuredClone(r) : null }
+  /** The bench of the current set-up as the physics sees it (beam end gap, shoe). */
+  private benchOf(geo: RailGeometry): RunRecord['bench'] {
+    return {
+      rise_m: geo.rise_m, gap_m: geo.shoe.beamEndGap_m, lipGap_m: this.gap_m, shoe: { length_m: geo.shoe.length_m, slope_rad: geo.shoe.slope_rad },
+      H_m: this.hidden.H_m, stepDrop_m: geo.stepDrop_m, roll_rad: geo.roll_rad,
+    }
+  }
+  /** Whole path of a run that flew (1200 Hz, t from the departure at the beam end: shoe, table hops, flight), regenerated when not cached. Empty otherwise. */
+  runPath(runId: number): readonly PathPoint[] {
+    const r = this.runs.find((x) => x.id === runId)
+    if (!r || r.times.tip_s === null) return []
+    let p = this.paths.get(runId)
+    if (!p) { p = runPath(r.bench, r.ball, r.startS_m, r.offsets); this.paths.set(runId, p) }
+    return p
+  }
   /** Flight samples (1200 Hz, from the edge to the landing) of a run, regenerated from its record when not cached. Empty if it did not fly. */
   runTrajectory(runId: number): readonly TrajectoryPoint[] {
     const r = this.runs.find((x) => x.id === runId)
@@ -657,7 +676,7 @@ export class ParabolicApparatus {
   /** The 240 fps slow-motion reference of a run that flew (see slowmo.ts); null otherwise. */
   slowmo(runId: number): SlowmoClip | null {
     const r = this.runs.find((x) => x.id === runId)
-    return r ? slowmoClip(r, this.runTrajectory(runId)) : null
+    return r ? slowmoClip(r, this.runPath(runId)) : null
   }
   /**
    * State of the ball at now_ms, from the release time: idle on the rail, rolling (rail then table), flying, landed (or
@@ -672,39 +691,30 @@ export class ParabolicApparatus {
     if (!b.released) {
       if (!b.placed || b.s_m === null) return { phase: 'unplaced', ...none }
       const g = this.geometry()
-      return { phase: 'idle', runId: null, ball: b.selected, t_s: 0, pos: g ? this.railBallPos(g.theta_rad, g.stepDrop_m, this.gap_m, b.s_m, R) : null, onRail_s_m: b.s_m }
+      return { phase: 'idle', runId: null, ball: b.selected, t_s: 0, pos: g ? this.railBallPos(g.theta_rad, g.stepDrop_m, g.shoe.beamEndGap_m, b.s_m, this.railRadius(b.selected)) : null, onRail_s_m: b.s_m }
     }
     const run = this.runs.find((x) => x.id === b.runId)!
     const t = Math.max(0, (now_ms - run.releaseTime_ms) / 1000)
     const base = { runId: run.id, ball: run.ball, t_s: t }
-    const rail = (s: number): Vec3 => this.railBallPos(run.theta_rad, run.bench.stepDrop_m, run.bench.gap_m, s, R, run.bench.H_m)
+    const rail = (s: number): Vec3 => this.railBallPos(run.theta_rad, run.bench.stepDrop_m, run.bench.gap_m, s, this.railRadius(run.ball), run.bench.H_m)
     const { tip_s, edge_s, land_s } = run.times
     if (run.outcome === 'stopped' && tip_s === null) return { phase: 'stopped', ...base, pos: rail(run.releaseS_m), onRail_s_m: run.releaseS_m }
     if (tip_s !== null && t < tip_s) {
       const s = Math.max(0, run.releaseS_m - (run.offsets.pushSpeed_mps * t + 0.5 * run.a_incline_mps2 * t * t))
-      return { phase: 'rolling', ...base, pos: rail(s), onRail_s_m: s }
+      return { phase: edge_s !== null && t >= edge_s ? 'flying' : 'rolling', ...base, pos: rail(s), onRail_s_m: s }
     }
-    // off the rail end the ball falls the step (free fall); a ball that stops on the table rests clear of the rail end face (centre R beyond it)
-    const drop = run.bench.stepDrop_m
-    const tDrop = Math.sqrt((2 * drop) / GRAVITY_mps2)
-    const tableX = (tau: number): number => -run.bench.gap_m + run.v_roll_mps * tau - 0.5 * run.tableDecel_mps2 * tau * tau
-    const tableYat = (tau: number): number => run.bench.H_m + R + Math.max(0, drop - 0.5 * GRAVITY_mps2 * Math.max(0, tau) ** 2)
-    const tableY = run.bench.H_m + R
-    if (run.outcome === 'stopped') {
-      const tau = Math.min(t - tip_s!, run.times.end_s - tip_s!)
-      return { phase: t >= run.times.end_s ? 'stopped' : 'rolling', ...base, pos: { x_m: tableX(tau) + (tDrop > 0 ? R * Math.min(1, tau / tDrop) : R), y_m: tableYat(tau), z_m: 0 }, onRail_s_m: null }
-    }
-    if (t < edge_s!) return { phase: 'rolling', ...base, pos: { x_m: tableX(t - tip_s!), y_m: tableYat(t - tip_s!), z_m: 0 }, onRail_s_m: null }
+    // from the beam end on, the ball follows the stored whole path: the shoe ramp, the arc and the hops on the table, the flight (physics/launch.ts)
+    const trk = this.runPath(run.id)
+    const tauP = t - tip_s!
+    const at = (u: number): Vec3 => { const p = flightPointAt(trk, u); return { x_m: p.x_m, y_m: p.y_m, z_m: p.z_m } }
+    if (run.outcome === 'stopped') return { phase: t >= run.times.end_s ? 'stopped' : 'rolling', ...base, pos: at(Math.min(tauP, run.times.end_s - tip_s!)), onRail_s_m: null }
+    if (t < edge_s!) return { phase: 'rolling', ...base, pos: at(tauP), onRail_s_m: null }
     if (run.outcome === 'rolledOver') {
-      const tau = Math.min(t - edge_s!, ROLL_OVER_TAIL_s)
-      const y = Math.max(R, tableY - 0.5 * GRAVITY_mps2 * tau * tau)
-      return { phase: 'rolledOver', ...base, pos: { x_m: run.v_edge_mps * tau, y_m: y, z_m: 0 }, onRail_s_m: null }
+      const u = Math.min(t - edge_s!, ROLL_OVER_TAIL_s)
+      const y = Math.max(R, run.bench.H_m + R - 0.5 * GRAVITY_mps2 * u * u)
+      return { phase: 'rolledOver', ...base, pos: { x_m: run.v_edge_mps * u, y_m: y, z_m: 0 }, onRail_s_m: null }
     }
-    const traj = this.runTrajectory(run.id)
-    if (t < land_s!) {
-      const p = flightPointAt(traj, t - edge_s!)
-      return { phase: 'flying', ...base, pos: { x_m: p.x_m, y_m: p.y_m, z_m: p.z_m }, onRail_s_m: null }
-    }
+    if (t < land_s!) return { phase: 'flying', ...base, pos: at(tauP), onRail_s_m: null }
     // landed: first contact, then the hops and the roll-out (physics/settle.ts); it stays on the floor, on the paper surface where it rests on a sheet
     const path = settleAfterLanding(run.flight!, run.ball)
     const tau = t - land_s!
@@ -719,10 +729,12 @@ export class ParabolicApparatus {
     return run?.outcome === 'landed' && run.flight ? settleAfterLanding(run.flight, run.ball).rest : null
   }
   private ballRadius(b: BallId): number { return ballSpec(b).R_m }
-  /** Ball centre on the rail at s_m from the tip (approximate: centre R above the top surface along the normal). For drawing. */
+  /** Radius at which the ball sits in the channel, m: the centre is this far above the rail top (the physics' r_eff). */
+  private railRadius(b: BallId): number { return rollingRadius_m(b) }
+  /** Ball centre on the rail at s_m from the beam end (the centre r_eff above the top surface along its normal, as the physics departs). For drawing. */
   private railBallPos(theta_rad: number, tip_m: number, gap_m: number, s_m: number, R_m: number, H_m: number = this.hidden.H_m): Vec3 {
     return {
-      x_m: -gap_m - s_m * Math.cos(theta_rad) - R_m * Math.sin(theta_rad),
+      x_m: -gap_m - s_m * Math.cos(theta_rad) + R_m * Math.sin(theta_rad),
       y_m: H_m + tip_m + s_m * Math.sin(theta_rad) + R_m * Math.cos(theta_rad),
       z_m: 0,
     }
@@ -912,7 +924,7 @@ export class ParabolicApparatus {
     this.ball = c.ball
     this.paper = c.paper
     this.edgeProjection = c.edgeProjection; this.lastRange = c.lastRange; this.clock_ms = c.clock_ms
-    this.runs = c.runs; this.trajectories.clear(); this.announced = new Set(c.runs.map((r) => r.id))
+    this.runs = c.runs; this.trajectories.clear(); this.paths.clear(); this.announced = new Set(c.runs.map((r) => r.id))
     this.sw.load(c.stopwatch, c.stops)
     this.tables = c.tables
     this.events = c.events; this.seq = c.events.length ? c.events[c.events.length - 1]!.seq : 0
@@ -930,7 +942,7 @@ export class ParabolicApparatus {
     this.measured = { launchHeight: false, gap: false, rise: false }
     this.marks = []; this.nextMarkId = 1
     this.ball = freshBall(); this.paper = freshPaper(); this.edgeProjection = null; this.lastRange = null
-    this.runs = []; this.trajectories.clear(); this.announced = new Set()
+    this.runs = []; this.trajectories.clear(); this.paths.clear(); this.announced = new Set()
     this.sw.clear(); this.tables = freshTables()
   }
   /**
@@ -960,7 +972,7 @@ export class ParabolicApparatus {
     for (let i = 0; i < 5; i++) { const r = this.placeMark(0.6 + 0.1 * i); if (r.ok) ids.push(r.markId) }
     this.placeEdgeProjection(0)
     const geo = this.geometry()!
-    const bench = { rise_m: geo.rise_m, gap_m: this.gap_m, H_m: this.hidden.H_m, stepDrop_m: geo.stepDrop_m }
+    const bench = this.benchOf(geo)
     const xs = [0.6, 1.0].map((s) => runLaunch(bench, 'marble', s, EXPECTED_OFFSETS).summary.flight?.x_land_m ?? 0.6)
     const xc = Math.round(((xs[0]! + xs[1]!) / 2) * 1000) / 1000
     this.placeBond(xc, 0, 'alongX')

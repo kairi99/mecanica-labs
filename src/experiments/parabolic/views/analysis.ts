@@ -1,6 +1,7 @@
 // Analysis panel (guide section 2.4, tasks 1 to 9). Reads Tabla 2.1 through the pure analysis layer (analysis/compute.ts, which calls
 // core physics); this view only lays the numbers out and draws them. Updates live as the table fills. Hidden by the shell with
 // ?analysis=0. Free-text answers and the typed launch height persist in this browser (persist.ts).
+import { summariseLaunches } from '../analysis/launchNote.ts'
 import type { MountView, View } from './view.ts'
 import { BALL_IDS, TABLE_REPS, TABLE_TRIALS, type BallId } from '../apparatus/index.ts'
 import { button, card, el, nextId, watch } from '../../../core/views/dom.ts'
@@ -119,6 +120,18 @@ export function mountAnalysis(opts: AnalysisOptions = { reference: true }): Moun
     }
     const pm = (v: number | null, u: number | null): string => (v === null || u === null ? '–' : pmText(v, u, L()))
 
+    /** Neutral note when some launches were not horizontal (from the run records); null when all were (within a degree) or none flew. */
+    function launchNote(): HTMLElement | null {
+      const T = S(), lang = L()
+      const sum = summariseLaunches(app.getRuns())
+      if (sum.nTilted === 0 || sum.minAngle_deg === null || sum.maxAngle_deg === null) return null
+      const box = el('div', 'an-launchnote')
+      box.append(el('p', 'muted', fmt(T.launchNote, { m: sum.nTilted, n: sum.n, a: numText(sum.minAngle_deg, 1, lang), b: numText(sum.maxAngle_deg, 1, lang) })))
+      if (sum.nBounced > 0) box.append(el('p', 'muted', fmt(T.launchNoteBounce, { k: sum.nBounced })))
+      if (sum.nOverRail > 0) box.append(el('p', 'muted', fmt(T.launchNoteRail, { k: sum.nOverRail })))
+      return box
+    }
+
     function render(): void {
       const T = S(), lang = L()
       const H = H_m()
@@ -213,6 +226,8 @@ export function mountAnalysis(opts: AnalysisOptions = { reference: true }): Moun
         t5.push(checkBox(T.t5Formula))
       } else t5.push(el('p', 'muted', T.t5NoH))
       t5.push(el('p', 'note', T.t5Prompt))
+      const ln = launchNote()
+      if (ln) t5.push(ln)
       secs.t5.dyn.replaceChildren(...t5)
 
       // task 6
@@ -234,6 +249,7 @@ export function mountAnalysis(opts: AnalysisOptions = { reference: true }): Moun
           if (pe && bt.pooled) t6.push(el('p', 'readout-text', fmt(T.t6Pooled, { ball: ballName(b), n: bt.pooled.n, t: pmText(bt.pooled.t_s, bt.pooled.u_s, lang), err: `${pe.error_pct >= 0 ? '+' : '−'}${numText(Math.abs(pe.error_pct), 1, lang)}`, verdict: T.verdicts[pe.comparison.verdict] })))
         }
       } else t6.push(el('p', 'muted', T.t5NoH))
+      { const ln6 = launchNote(); if (ln6) t6.push(ln6) }
       if (opts.reference) {
         const box = el('div', 'an-body')
         box.append(sub(T.t6RefTitle))

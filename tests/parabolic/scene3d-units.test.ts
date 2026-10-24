@@ -86,7 +86,9 @@ describe('drag maths', () => {
   })
   it('dragging the rail toward the edge shrinks the gap and stays accepted by the apparatus', () => {
     expect(gapFromDrag_mm(50, 2)).toBe(30)
-    expect(gapFromDrag_mm(50, 100)).toBe(4)
+    expect(gapFromDrag_mm(50, 100)).toBe(-90) // dragged far past the edge: the farthest overhang
+    expect(gapFromDrag_mm(50, 4.8)).toBe(4) // the refused band (4 mm before the edge to 10 mm beyond) jumps to its nearer side
+    expect(gapFromDrag_mm(50, 5.7)).toBe(-10)
     expect(gapFromDrag_mm(50, -1000)).toBe(600)
     const a = createApparatus('assembled', { seed: 7 })
     for (const g of [4, 30, 600]) expect(a.setGap_mm(g).ok).toBe(true)
@@ -261,7 +263,7 @@ describe('tape plan', () => {
     expect(p.mode).toBe('left'); expect(p.flat).toBe(true)
     expect(p.length_cm).toBeCloseTo(world.geo!.gap_m * CM, 9)
     expect(p.hook[0]).toBe(0)
-    expect(p.reading[0]).toBeCloseTo(world.geo!.pose.tip.x_m * CM, 9)
+    expect(p.reading[0]).toBeCloseTo(world.geo!.shoe.lip.x_m * CM, 9) // the gap is measured to the lip (the rail's lower end)
   })
   it('rise measures table top to the rail top at the clamp, vertically', () => {
     const { world } = mk()

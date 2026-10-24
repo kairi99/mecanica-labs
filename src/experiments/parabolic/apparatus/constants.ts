@@ -50,9 +50,9 @@ export const LEVEL_BUBBLE_MAX_mm = 6
 export const LEVEL_CENTERED_TOL_mm = 0.5
 
 // ---- Placement of the rail on the table --------------------------------------------------------------------------
-/** Start position of the rail tip from the table edge when the rail is first put down, m. ASSUMED. */
+/** Start position of the rail's lower end (the lip of the shoe) from the table edge when the rail is first put down, m. ASSUMED. */
 export const GAP_START_m = 0.15
-/** Farthest the rail tip can be set from the edge, m (the table is finite). ASSUMED. */
+/** Farthest the rail's lower end (lip) can be set from the edge, m (the table is finite). ASSUMED. */
 export const GAP_MAX_m = 0.6
 export const GAP_STEP_m = 0.001
 /** Black end cap of the rail, m: it sticks out beyond the tip toward the edge, so the tip must stay at least this far from the edge. */
@@ -69,6 +69,18 @@ export const GAP_MIN_m = 0.004
 export const GAP_OVERHANG_MIN_m = 0.01
 /** Farthest overhang, m: the two-leg stand (0.1 m from the tip) must stay on the table. ASSUMED. */
 export const GAP_OVERHANG_MAX_m = 0.09
+
+// ---- Sloped end piece (shoe) at the low end of the rail -----------------------------------------------------------
+/**
+ * The rail ends in a short sloped piece (shoe): the channel top surface continues from the beam's tip down a straight ramp to a low lip, so
+ * the ball does not fall off a 2 cm step. GEOMETRY CHOSEN FIRST, results reported after (never tuned): ramp length 6 cm along the ramp,
+ * 6 deg steeper than the rail (a small convex kink), lip at least 2.5 mm above the table top. At the assembled preset (rail 9.4 deg) the ramp
+ * is 15.4 deg and the lip 3.8 mm above the table. All ASSUMED (PARAMETERS.md).
+ */
+export const SHOE_LENGTH_m = 0.06
+export const SHOE_KINK_deg = 6
+export const SHOE_KINK_rad = deg2rad(SHOE_KINK_deg)
+export const SHOE_LIP_MIN_m = 0.0025
 
 // ---- Marks on the rail -------------------------------------------------------------------------------------------
 export const MARK_SNAP_m = 0.0005

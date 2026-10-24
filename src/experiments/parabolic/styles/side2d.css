@@ -19,6 +19,7 @@
 .s2d-leg { stroke: var(--stage-metal-hi); stroke-width: calc(3px * var(--k)); stroke-linecap: round; fill: none; }
 .s2d-leg-sw { fill: var(--stage-metal-hi); }
 .s2d-rail { stroke: var(--stage-ink); stroke-width: calc(5px * var(--k)); stroke-linecap: butt; }
+.s2d-shoe { fill: var(--stage-ink); stroke: var(--stage-ink); stroke-width: calc(1px * var(--k)); stroke-linejoin: round; }
 .s2d-rail-sw { fill: var(--stage-ink); }
 .s2d-label {
   fill: var(--stage-ink-2); font: 500 calc(11px * var(--k)) var(--font);

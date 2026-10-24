@@ -7,7 +7,7 @@ import { brent } from '../../../core/physics/roots.ts'
 import { inTapeRange as coreInTapeRange } from '../../../core/physics/instruments.ts'
 import type { PaperRect } from './model.ts'
 import {
-  LEG_BASE_HEIGHT_m, LEVEL_BUBBLE_MAX_mm, RACK_BASE_HEIGHT_m, RAIL_HEIGHT_m, RACK_FROM_TIP_m, RAIL_LENGTH_m, SHEET_LONG_m, SHEET_SHORT_m, PAPER_THICKNESS_m, TAPE_RANGE_m,
+  LEG_BASE_HEIGHT_m, LEVEL_BUBBLE_MAX_mm, SHOE_KINK_rad, SHOE_LENGTH_m, SHOE_LIP_MIN_m, RACK_BASE_HEIGHT_m, RAIL_HEIGHT_m, RACK_FROM_TIP_m, RAIL_LENGTH_m, SHEET_LONG_m, SHEET_SHORT_m, PAPER_THICKNESS_m, TAPE_RANGE_m,
   TIP_LIFT_TOL_m, TWO_LEG_FROM_TIP_m, TWO_LEG_SPAN_m, LEVEL_SENSITIVITY_mm_per_deg,
 } from './constants.ts'
 
@@ -75,6 +75,21 @@ export interface RailGeometry {
   /** The rail rests on the table EDGE corner (the end corner is past the edge) instead of its own end corner. */
   edgeContact: boolean
   contacts: RailContacts
+  /** The sloped end piece (shoe) at the low end of the beam: a straight ramp from the beam's top-surface tip down to a low lip. */
+  shoe: {
+    /** Ramp length along the ramp, m (SHOE_LENGTH_m, shortened when the beam is low so the lip stays SHOE_LIP_MIN_m above the table). */
+    length_m: number
+    /** Slope of the ramp below the horizontal, rad: the rail angle plus the kink. */
+    slope_rad: number
+    /** Extra slope of the ramp over the rail (the kink), rad. */
+    kink_rad: number
+    /** Top-surface point at the lip (table frame). */
+    lip: Vec3
+    /** Height of the lip above the table top, m (negative-free: >= SHOE_LIP_MIN_m while the beam end is above it). */
+    lipHeight_m: number
+    /** Distance from the beam end (top-surface tip, pose.tip) to the table edge, m = gap_m + the horizontal length of the ramp. What the physics calls the tip gap. */
+    beamEndGap_m: number
+  }
   /** Clearance between the two-leg support top and the rail underside at the stand, m: > 0 when it does not touch (a gap shows), 0 when it does. */
   twoLegClearance_m: number
   /** Lowest point of the rail body (the underside corners of both ends) above the table, m. Never below 0 up to rounding. */
@@ -106,13 +121,68 @@ const clampUnit = (v: number): number => Math.max(-1, Math.min(1, v))
  * itself is valid for any gap, which the contact tests exploit.
  */
 export function railGeometry(inp: RailInput): RailGeometry {
+  // The shoe makes the lip (what the student sets, inp.gap_m) lie Lh beyond the beam end toward the edge, and Lh depends on the beam's tip
+  // height and angle, which depend on where the beam end is: a contraction, solved by fixed-point iteration (converges in 3-4 steps).
+  let Lh = 0
+  let sol = solveBeam(inp, inp.gap_m)
+  for (let n = 0; n < 12; n++) {
+    const L = shoeLength_m(sol.theta, sol.tip)
+    const next = L * Math.cos(sol.theta + SHOE_KINK_rad)
+    if (Math.abs(next - Lh) < 1e-13) break
+    Lh = next
+    sol = solveBeam(inp, inp.gap_m + Lh)
+  }
+  const { theta, tip, tipRest, twoLeg, edgeContact, thetaTable } = sol
+  void thetaTable
+  const t = RAIL_HEIGHT_m
+  const hHigh = RACK_BASE_HEIGHT_m + inp.rack_mm / 1000
+  const bLeg = LEG_BASE_HEIGHT_m + inp.leg_mm / 1000
+  const Dc = RACK_FROM_TIP_m
+  const xTip = -(inp.gap_m + Lh)
+  const cos = Math.cos(theta)
+  const sin = Math.sin(theta)
+  const rise = Dc * sin
+  const tipPt: Vec3 = { x_m: xTip, y_m: tip, z_m: 0 }
+  const d = dirOf(theta)
+  const roll = inp.tableRoll_rad + (inp.twoLegAttached ? Math.asin(clampUnit(inp.foot_mm / 1000 / TWO_LEG_SPAN_m)) : 0)
+  const pose: RailPose = { tip: tipPt, highEnd: along(tipPt, d, RAIL_LENGTH_m), clamp: along(tipPt, d, Dc), twoLeg: along(tipPt, d, TWO_LEG_FROM_TIP_m), direction: d }
+  const lifted = tip - tipRest > TIP_LIFT_TOL_m
+  const underAtStand = pose.twoLeg.y_m - t * cos
+  // lowest point of the underside over the TABLE (x <= 0): the end corner if it is over the table, else the underside where it crosses the edge
+  const xCorner = xTip - t * sin
+  const yCorner = tip - t * cos
+  const lowOverTable = xCorner <= 0 ? yCorner : yCorner + xCorner * Math.tan(theta)
+  // shoe
+  const slope = theta + SHOE_KINK_rad
+  const L = shoeLength_m(theta, tip)
+  const lipX = xTip + L * Math.cos(slope)
+  const lipY = tip - L * Math.sin(slope)
+  void hHigh; void bLeg
+  return {
+    clampHeight_m: hHigh, legHeight_m: bLeg, tipHeight_m: tip, tipRestHeight_m: tipRest, tipLifted: lifted, stepDrop_m: tip, rise_m: rise, theta_rad: theta,
+    roll_rad: roll, gap_m: inp.gap_m, overhang: inp.gap_m < 0, edgeContact: edgeContact && !twoLeg, contacts: { rack: true, twoLeg, table: !lifted },
+    twoLegClearance_m: twoLeg ? 0 : Math.max(0, underAtStand - bLeg),
+    lowest_m: Math.min(lowOverTable, pose.highEnd.y_m - t * cos), pose,
+    shoe: { length_m: L, slope_rad: slope, kink_rad: SHOE_KINK_rad, lip: { x_m: lipX, y_m: lipY, z_m: 0 }, lipHeight_m: lipY, beamEndGap_m: -xTip },
+  }
+}
+
+/** Shoe ramp length actually built, m: SHOE_LENGTH_m, shortened so the lip is never below SHOE_LIP_MIN_m above the table top (the shoe never clips the table); 0 if the ramp would not descend. */
+export function shoeLength_m(theta_rad: number, tipHeight_m: number): number {
+  const slope = theta_rad + SHOE_KINK_rad
+  if (!(slope > 0.02)) return 0
+  return Math.max(0, Math.min(SHOE_LENGTH_m, (tipHeight_m - SHOE_LIP_MIN_m) / Math.sin(slope)))
+}
+
+/** The rigid beam alone (exported for tests that isolate the beam from the shoe): the angle, the tip height and which supports it rests on, for the beam end (top-surface tip) at gapBeam_m from the edge (see railGeometry). */
+export function solveBeam(inp: RailInput, gapBeam_m: number): { theta: number; tip: number; tipRest: number; twoLeg: boolean; edgeContact: boolean; thetaTable: number } {
   const t = RAIL_HEIGHT_m
   const hHigh = RACK_BASE_HEIGHT_m + inp.rack_mm / 1000
   const bLeg = LEG_BASE_HEIGHT_m + inp.leg_mm / 1000
   const Dc = RACK_FROM_TIP_m
   /** theta of a beam with D sin(theta) + t cos(theta) = h (h above a support underside point D metres along the rail from the clamp). */
   const thetaFor = (h: number, D: number): number => Math.asin(clampUnit(h / Math.hypot(D, t))) - Math.atan2(t, D)
-  const xTip = -inp.gap_m
+  const xTip = -gapBeam_m
   let thetaTable = thetaFor(hHigh, Dc)
   let edgeContact = false
   if (xTip - t * Math.sin(thetaTable) > 0) {
@@ -129,27 +199,7 @@ export function railGeometry(inp: RailInput): RailGeometry {
     const thetaStand = thetaFor(hHigh - bLeg, Dc - TWO_LEG_FROM_TIP_m)
     if (thetaStand < thetaTable) { twoLeg = true; theta = thetaStand }
   }
-  const cos = Math.cos(theta)
-  const sin = Math.sin(theta)
-  const tipRest = hHigh - Dc * Math.sin(thetaTable)
-  const tip = hHigh - Dc * sin
-  const rise = Dc * sin
-  const tipPt: Vec3 = { x_m: xTip, y_m: tip, z_m: 0 }
-  const d = dirOf(theta)
-  const roll = inp.tableRoll_rad + (inp.twoLegAttached ? Math.asin(clampUnit(inp.foot_mm / 1000 / TWO_LEG_SPAN_m)) : 0)
-  const pose: RailPose = { tip: tipPt, highEnd: along(tipPt, d, RAIL_LENGTH_m), clamp: along(tipPt, d, Dc), twoLeg: along(tipPt, d, TWO_LEG_FROM_TIP_m), direction: d }
-  const lifted = tip - tipRest > TIP_LIFT_TOL_m
-  const underAtStand = pose.twoLeg.y_m - t * cos
-  // lowest point of the underside over the TABLE (x <= 0): the end corner if it is over the table, else the underside where it crosses the edge
-  const xCorner = xTip - t * sin
-  const yCorner = tip - t * cos
-  const lowOverTable = xCorner <= 0 ? yCorner : yCorner + xCorner * Math.tan(theta)
-  return {
-    clampHeight_m: hHigh, legHeight_m: bLeg, tipHeight_m: tip, tipRestHeight_m: tipRest, tipLifted: lifted, stepDrop_m: tip, rise_m: rise, theta_rad: theta,
-    roll_rad: roll, gap_m: inp.gap_m, overhang: inp.gap_m < 0, edgeContact: edgeContact && !twoLeg, contacts: { rack: true, twoLeg, table: !lifted },
-    twoLegClearance_m: twoLeg ? 0 : Math.max(0, underAtStand - bLeg),
-    lowest_m: Math.min(lowOverTable, pose.highEnd.y_m - t * cos), pose,
-  }
+  return { theta, tip: hHigh - Dc * Math.sin(theta), tipRest: hHigh - Dc * Math.sin(thetaTable), twoLeg, edgeContact, thetaTable }
 }
 
 /** Point on the rail top surface at s_m from the low tip (table frame). */

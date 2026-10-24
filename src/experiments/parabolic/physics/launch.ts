@@ -15,9 +15,11 @@
 //   Run scatter junctionFactor (<= 1: dust, joint, rail end) scales (vx, vy, omega) at the departure: the energy only falls.
 // Edge launch. Airborne at the edge (a hop crossing it): diagonal launch with the (vx, vy) there. In contact (slipping or rolling) at the
 //   edge: horizontal launch, kept only if v^2 >= g R (leavesHorizontally), otherwise the ball rolls over the edge (no projectile).
-// Overhang (gap_m < 0): the tip is beyond the edge, there is no table under the ball; the edge crossing is ON THE RAIL (centre x = 0), the
+// Shoe (setup.shoe, tablePhase.ts): a sloped end piece after the beam end; the ball can touch its ramp, roll down it, and leaves its lip. With a
+//   shoe setup.gap_m is the distance from the BEAM END (the physics tip) to the edge; the lip is further along.
+// Overhang (gap_m < 0): the beam end is beyond the edge, there is no table under the ball; the edge crossing is ON THE RAIL (centre x = 0), the
 //   state there (speed from the slope, angle -theta exactly, nothing lost) is the launch state and `tRailAfterEdge_s` the time from it to
-//   the tip. `gapTime_s` (tip departure -> edge crossing) is then NEGATIVE, so times from the release add up as before:
+//   the tip (with a shoe the crossing can also happen over the shoe: then `edgeLaunch.onRail` and the angle is the one there). `gapTime_s` (tip departure -> edge crossing) is then NEGATIVE, so times from the release add up as before:
 //   t_edge = t_tip + gapTime_s, t_land = t_edge + flight.t_flight_s.
 // Lateral angle psi (run.lateralAngle_rad) splits the horizontal speed: vx = vh cos psi, vz = vh sin psi; the table phase runs on vh along x
 //   (error O(psi^2)) and z grows as z = (x - x_centre_at_tip) tan psi (z = 0 at the tip).
@@ -27,7 +29,7 @@ import { type BallSpec, type LaunchSetup } from './constants.ts'
 import { ALL_EFFECTS, simulateFlight, type FlightEffects, type FlightResult } from './flight.ts'
 import { airDragK_pm, quadraticDragMotion, effectiveInertiaFactor, effectiveRollingRadius_m, inclineAcceleration_mps2, inclineAngle_rad, rollDownTime_s, speedAtTip_mps } from './incline.ts'
 import { junctionTransition, leavesHorizontally, rollGap, tableRoll, tableRollDecel_mps2 } from './junction.ts'
-import { simulateTablePhase, type TableImpact, type TableExit } from './tablePhase.ts'
+import { simulateTablePhase, type RampSpec, type TableImpact, type TableExit } from './tablePhase.ts'
 
 /** Offsets of one run, all zero for the expectation. */
 export interface RunOffsets {
@@ -70,7 +72,7 @@ export interface PathPoint {
   vx_mps: number
   vy_mps: number
   vz_mps: number
-  phase: 'air' | 'impact' | 'slip' | 'roll' | 'flight'
+  phase: 'air' | 'impact' | 'ramp' | 'slip' | 'roll' | 'flight'
 }
 
 /** What happened on the table between the rail tip and the edge (null for the corner model and for an overhanging tip, where there is no table phase). */
@@ -82,6 +84,8 @@ export interface TableRecord {
   hops: number
   /** The ball settled into contact (slip/roll) before the edge. */
   settled: boolean
+  /** The ball rolled down the shoe ramp in contact. */
+  rolledOnRamp: boolean
   /** Energy ledger of the table phase, J (E = translation + rotation + m g h over the table top): start = end + the four losses. */
   energy: { start_J: number; end_J: number; impacts_J: number; reboundDiscarded_J: number; slip_J: number; roll_J: number }
 }
@@ -92,6 +96,8 @@ export interface EdgeLaunch {
   kind: 'horizontal' | 'diagonal'
   /** Leaves in the air mid-hop (true) or in contact (false). Overhang: false (the ball is still on the rail). */
   midHop: boolean
+  /** The edge crossing is over the rail or the shoe (they overhang the edge), not over the table. */
+  onRail: boolean
   /** Angle of the velocity above the horizontal, rad; negative = launched downward. */
   angle_rad: number
   speed_mps: number
@@ -202,11 +208,11 @@ export function simulateLaunch(setup: LaunchSetup, ball: BallSpec, releaseS_m: n
     })
     return {
       ...out, leavesHorizontally: true, flight,
-      edgeLaunch: { kind: 'horizontal', midHop: false, angle_rad: 0, speed_mps: gap.v_edge_mps, vx_mps: gap.v_edge_mps, vy_mps: 0, y_m: setup.H_m + ball.R_m },
+      edgeLaunch: { kind: 'horizontal', midHop: false, onRail: false, angle_rad: 0, speed_mps: gap.v_edge_mps, vx_mps: gap.v_edge_mps, vy_mps: 0, y_m: setup.H_m + ball.R_m },
     }
   }
 
-  // ---- projectile model: departure from the tip ----
+  // ---- projectile model: departure from the beam end, shoe, table ----
   const psi = run.lateralAngle_rad
   const tanPsi = Math.tan(psi)
   const f = run.junctionFactor
@@ -223,51 +229,53 @@ export function simulateLaunch(setup: LaunchSetup, ball: BallSpec, releaseS_m: n
   const toPath = (t: number, x: number, h: number, vx: number, vy: number, phase: PathPoint['phase']): PathPoint =>
     ({ t_s: t, x_m: x, y_m: setup.H_m + h, z_m: (x - xC0) * tanPsi, vx_mps: vx * Math.cos(psi), vy_mps: vy, vz_mps: vx * Math.sin(psi), phase })
 
+  // the shoe: lip centre in the table frame
+  let ramp: RampSpec | undefined
+  if (setup.shoe && setup.shoe.length_m > 0) {
+    const al = setup.shoe.slope_rad
+    const xLip = -setup.gap_m + setup.shoe.length_m * Math.cos(al)
+    const yLip = setup.stepDrop_m - setup.shoe.length_m * Math.sin(al)
+    ramp = { xLip_m: xLip + rEff * Math.sin(al), hLip_m: yLip + rEff * Math.cos(al), slope_rad: al, rEff_m: rEff, kEff, kappaSlope_pm: kappaSlope }
+  }
+  // beam end beyond the edge: the edge crossing is ON THE RAIL, sRail before the end of the beam (speed from the slope's closed form, backwards)
+  let edgeBefore: { t_s: number; h_m: number; vx_mps: number; vy_mps: number } | undefined
   if (xC0 >= 0) {
-    // overhang: the ball is already past the edge at the tip; the edge crossing is on the rail, sRail before the tip
     const sRail = xC0 / cos
     const k2 = 2 * kappaSlope * sRail
     const vE2 = kappaSlope > 0 ? a / kappaSlope + (v_tip * v_tip - a / kappaSlope) * Math.exp(k2) : v_tip * v_tip - 2 * a * sRail
     const vE = Math.sqrt(Math.max(0, vE2))
     const tRail = vE > 0 ? quadraticDragMotion(vE, a, kappaSlope, sRail).t_s : 0
-    const hEdge = h0 + sRail * sin
-    const vxE = vE * cos, vyE = -vE * sin
-    const flight = simulateFlight({
-      ...flightArgs, x0_m: xC0, y0_m: setup.H_m + h0, z0_m: 0, vx0_mps: vh0 * Math.cos(psi), vz0_mps: vh0 * Math.sin(psi), vy0_mps: vy0, omega_radps: om0,
-      edgeCrossing: { tBeforeStart_s: tRail, y_m: setup.H_m + hEdge, vx_mps: vxE * Math.cos(psi), vy_mps: vyE },
-    })
-    const path: PathPoint[] = flight.trajectory.map((p) => ({ ...p, phase: 'flight' as const }))
-    return {
-      ...common, v_edge_mps: vxE, omega_edge_radps: vE / rEff, gapTime_s: -tRail, tRailAfterEdge_s: tRail, flight, path,
-      edgeLaunch: { kind: 'diagonal', midHop: false, angle_rad: Math.atan2(vyE, vxE), speed_mps: vE, vx_mps: vxE, vy_mps: vyE, y_m: setup.H_m + hEdge },
-    }
+    edgeBefore = { t_s: -tRail, h_m: h0 + sRail * sin, vx_mps: vE * cos, vy_mps: -vE * sin }
   }
-
   const tp = simulateTablePhase({
-    ball, g_mps2: g, x0_m: xC0, h0_m: h0, vx0_mps: vh0, vy0_mps: vy0, omega0_radps: om0, kappaRoll_pm: kappaRoll, sampleRate_hz: rate,
+    ball, g_mps2: g, x0_m: xC0, h0_m: h0, vx0_mps: vh0, vy0_mps: vy0, omega0_radps: om0, kappaRoll_pm: kappaRoll, sampleRate_hz: rate, ramp, edgeBefore,
   })
-  const table: TableRecord = { exit: tp.exit, impacts: tp.impacts, hops: tp.hops, settled: tp.settled, energy: tp.energy }
+  const table: TableRecord = { exit: tp.exit, impacts: tp.impacts, hops: tp.hops, settled: tp.settled, energy: tp.energy, rolledOnRamp: tp.rolledOnRamp }
   const lost = tp.energy.impacts_J + tp.energy.reboundDiscarded_J + tp.energy.slip_J
   const tablePath = tp.samples.map((p) => toPath(p.t_s, p.x_m, p.h_m, p.vx_mps, p.vy_mps, p.phase))
+  const edge = tp.edge
   const withTable: LaunchResult = {
-    ...common, table, v_roll_mps: tp.vRoll_mps, slipDistance_m: tp.slipDistance_m, energyLostJunction_J: lost, gapTime_s: tp.t_exit_s,
-    v_edge_mps: tp.vx_exit_mps, omega_edge_radps: tp.omega_exit_radps, rollingAtEdge: tp.exit === 'rollingEdge', path: tablePath,
+    ...common, table, v_roll_mps: tp.vRoll_mps, slipDistance_m: tp.slipDistance_m, energyLostJunction_J: lost, gapTime_s: edge ? edge.t_s : tp.t_exit_s,
+    tRailAfterEdge_s: edge && edge.t_s < 0 ? -edge.t_s : 0,
+    v_edge_mps: edge ? edge.vx_mps : 0, omega_edge_radps: tp.omega_exit_radps, rollingAtEdge: tp.exit === 'rollingEdge', path: tablePath,
   }
-  if (tp.exit === 'stopped') return { ...withTable, stopped: true, v_edge_mps: 0 }
-  const midHop = tp.exit === 'airborneEdge'
-  if (!midHop && !leavesHorizontally(tp.vx_exit_mps, ball.R_m, g)) return withTable
+  if (tp.exit === 'stopped' || !edge) return { ...withTable, stopped: true, v_edge_mps: 0 }
+  const inContact = tp.exit === 'rollingEdge' || tp.exit === 'slippingEdge'
+  if (inContact && !leavesHorizontally(tp.vx_exit_mps, ball.R_m, g)) return withTable
   const vh = tp.vx_exit_mps
   const flight = simulateFlight({
-    ...flightArgs, x0_m: 0, y0_m: setup.H_m + tp.h_exit_m, z0_m: -xC0 * tanPsi, vx0_mps: vh * Math.cos(psi), vz0_mps: vh * Math.sin(psi), vy0_mps: tp.vy_exit_mps,
-    omega_radps: tp.omega_exit_radps,
+    ...flightArgs, x0_m: tp.x_exit_m, y0_m: setup.H_m + tp.h_exit_m, z0_m: (tp.x_exit_m - xC0) * tanPsi, vx0_mps: vh * Math.cos(psi), vz0_mps: vh * Math.sin(psi),
+    vy0_mps: tp.vy_exit_mps, omega_radps: tp.omega_exit_radps,
+    edgeCrossing: tp.x_exit_m > 0 ? { tBeforeStart_s: tp.t_exit_s - edge.t_s, y_m: setup.H_m + edge.h_m, vx_mps: edge.vx_mps * Math.cos(psi), vy_mps: edge.vy_mps } : undefined,
   })
   const tStart = tp.t_exit_s
   const path = [...tablePath, ...flight.trajectory.slice(rate > 0 ? 1 : 0).map((p) => ({ ...p, t_s: p.t_s + tStart, phase: 'flight' as const }))]
+  const midHop = tp.exit === 'airborneEdge' && edge.t_s > 0 && !edge.onRail
   return {
-    ...withTable, leavesHorizontally: !midHop, flight, path,
+    ...withTable, leavesHorizontally: inContact, flight, path,
     edgeLaunch: {
-      kind: midHop ? 'diagonal' : 'horizontal', midHop, angle_rad: Math.atan2(tp.vy_exit_mps, vh), speed_mps: Math.hypot(vh, tp.vy_exit_mps), vx_mps: vh, vy_mps: tp.vy_exit_mps,
-      y_m: setup.H_m + tp.h_exit_m,
+      kind: inContact ? 'horizontal' : 'diagonal', midHop, onRail: edge.onRail, angle_rad: Math.atan2(edge.vy_mps, edge.vx_mps), speed_mps: Math.hypot(edge.vx_mps, edge.vy_mps), vx_mps: edge.vx_mps,
+      vy_mps: edge.vy_mps, y_m: setup.H_m + edge.h_m,
     },
   }
 }

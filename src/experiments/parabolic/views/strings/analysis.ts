@@ -50,6 +50,9 @@ export interface AnalysisStrings {
   hBad: string
   hNotMeasured: string
   t5Result: string
+  launchNote: string
+  launchNoteBounce: string
+  launchNoteRail: string
   t5Inputs: string
   t5NoH: string
   checkExpr: string
@@ -150,6 +153,9 @@ export const strings: Strings<AnalysisStrings> = {
     hBad: 'Escribe una altura entre 20 y 200 cm.',
     hNotMeasured: 'Aún no has medido la altura con la cinta métrica.',
     t5Result: 't esperado = {t} s',
+    launchNote: 'En {m} de {n} lanzamientos la bola no salió horizontal del borde (ángulo entre {a}° y {b}° respecto a la horizontal; negativo es hacia abajo). El tiempo esperado de esta tarea corresponde a un lanzamiento horizontal: con otro ángulo el tiempo real de vuelo es distinto, y esa diferencia se suma a los errores de cronometraje cuando comparas.',
+    launchNoteBounce: 'En {k} de ellos la bola rebotó entre el extremo de la riel y el borde.',
+    launchNoteRail: 'En {k} de ellos la bola todavía iba sobre la riel al pasar el borde (el extremo sobresale).',
     t5Inputs: 'H = {H} m (incertidumbre {uH} m, dos extremos de la cinta) y g = {g} m/s² en Quito (incertidumbre {ug} m/s², supuesta).',
     t5NoH: 'Escribe tu altura H para calcular el tiempo esperado.',
     checkExpr: 'Comprobar mi expresión',
@@ -247,6 +253,9 @@ export const strings: Strings<AnalysisStrings> = {
     hBad: 'Type a height between 20 and 200 cm.',
     hNotMeasured: 'You have not measured the height with the tape yet.',
     t5Result: 'expected t = {t} s',
+    launchNote: 'In {m} of {n} launches the ball did not leave the edge horizontally (angle between {a}° and {b}° from the horizontal; negative is downward). The expected time of this task is for a horizontal launch: with another angle the real flight time is different, and that difference adds to the timing errors when you compare.',
+    launchNoteBounce: 'In {k} of them the ball bounced between the end of the rail and the edge.',
+    launchNoteRail: 'In {k} of them the ball was still on the rail when it passed the edge (the end overhangs).',
     t5Inputs: 'H = {H} m (uncertainty {uH} m, two tape ends) and g = {g} m/s² in Quito (uncertainty {ug} m/s², assumed).',
     t5NoH: 'Type your height H to compute the expected time.',
     checkExpr: 'Check my expression',

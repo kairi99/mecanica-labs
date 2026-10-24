@@ -73,6 +73,16 @@ export const PING_PONG: BallSpec = {
 
 export const BALLS: Readonly<Record<BallSpec['id'], BallSpec>> = { marble: MARBLE, pingpong: PING_PONG }
 
+/**
+ * The sloped end piece (shoe) at the low end of the rail. The rail beam ends at its top-surface tip; from there a straight ramp of length
+ * `length_m` (along the ramp) descends at `slope_rad` below the horizontal to a low lip. Geometry is decided in apparatus/geometry.ts
+ * (SHOE_* constants) and passed to the physics resolved (already truncated so the lip is never below SHOE_LIP_MIN_m).
+ */
+export interface ShoeSpec {
+  length_m: number
+  slope_rad: number
+}
+
 /** Geometry of the set-up (rail, supports, table, paper). */
 export interface LaunchSetup {
   /** Rail length, m (guide: 1.2 m). */
@@ -84,8 +94,11 @@ export interface LaunchSetup {
   /**
    * Distance from the rail's low tip (end of the top surface) to the table edge, m (guide: about 5 cm). NEGATIVE = the tip overhangs the
    * edge (tip beyond the edge, rail resting on the edge corner); then the ball is already past the edge at the tip.
+   * With a shoe the "tip" of the physics is the END OF THE BEAM (where the ramp starts), not the lip.
    */
   gap_m: number
+  /** Sloped end piece at the rail's low end (absent = none: the ball leaves the beam end directly). */
+  shoe?: ShoeSpec
   /** Table height H, m (edge to the floor/paper top). ASSUMED default; seeded per bench elsewhere. */
   H_m: number
   /** Distance between the two contact lines of the ball on the rail, m (channel width). ASSUMED. 0 = single line. */

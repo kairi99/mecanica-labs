@@ -4,7 +4,7 @@
 // The apparatus frames are the launch frame (x_m, y_m, z_m): rail poses use the table frame (y = 0 on the table top), ball poses
 // and floor items the floor frame (y = 0 on the floor).
 import {
-  GAP_MAX_m, GAP_MIN_m, RACK_BASE_HEIGHT_m, RACK_MAX_mm, RACK_MIN_mm, RACK_FROM_TIP_m, RAIL_HEIGHT_m, RAIL_LENGTH_m, TWO_LEG_FROM_TIP_m, SHEET_LONG_m, SHEET_SHORT_m,
+  GAP_MAX_m, GAP_MIN_m, GAP_OVERHANG_MAX_m, GAP_OVERHANG_MIN_m, RACK_BASE_HEIGHT_m, RACK_MAX_mm, RACK_MIN_mm, RACK_FROM_TIP_m, RAIL_HEIGHT_m, RAIL_LENGTH_m, TWO_LEG_FROM_TIP_m, SHEET_LONG_m, SHEET_SHORT_m,
   type RailGeometry, type SheetPose, type TapeTarget, type Vec3,
 } from '../../apparatus/index.ts'
 import { boxCorners, type Vec } from '../../../../core/scene3d/framing.ts'
@@ -164,9 +164,16 @@ export function rackFromKnobY_mm(knobY_cm: number): number {
   const mm = Math.round(((knobY_cm + 2.4) / CM - RACK_BASE_HEIGHT_m) * 1000)
   return Math.min(RACK_MAX_mm, Math.max(RACK_MIN_mm, mm))
 }
-/** Gap (whole mm) after dragging the rail by dx_cm along +x (toward the edge shrinks the gap). Kept inside what the apparatus accepts. */
+/**
+ * Gap (whole mm, to the shoe's lip) after dragging the rail by dx_cm along +x (toward the edge shrinks the gap, below zero the end overhangs the edge).
+ * Kept inside what the apparatus accepts: the refused band between GAP_MIN_m before the edge and GAP_OVERHANG_MIN_m beyond it is jumped to its nearer side.
+ */
 export function gapFromDrag_mm(startGap_mm: number, dx_cm: number): number {
-  return Math.min(Math.round(GAP_MAX_m * 1000), Math.max(Math.round(GAP_MIN_m * 1000), Math.round(startGap_mm - dx_cm * 10)))
+  const lo = -Math.round(GAP_OVERHANG_MAX_m * 1000), hi = Math.round(GAP_MAX_m * 1000)
+  const g = Math.min(hi, Math.max(lo, Math.round(startGap_mm - dx_cm * 10)))
+  const bandHi = Math.round(GAP_MIN_m * 1000), bandLo = -Math.round(GAP_OVERHANG_MIN_m * 1000)
+  if (g < bandHi && g > bandLo) return bandHi - g <= g - bandLo ? bandHi : bandLo
+  return g
 }
 /** Wheel step for fine adjustment: one unit per notch, sign opposite to the scroll direction (scroll up raises). */
 export const wheelStep = (deltaY: number): number => (deltaY < 0 ? 1 : -1)

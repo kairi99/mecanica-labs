@@ -57,33 +57,26 @@ export function flightPointAt(traj: readonly TrajectoryPoint[], t_s: number): Tr
 }
 
 /**
- * The clip of a landed run: frames from SLOWMO_PRE_FRAMES before the launch frame to SLOWMO_POST_FRAMES after the landing
- * frame. Before the edge the ball rolls on the table with the run's constant deceleration; in flight it follows the stored
- * trajectory; after the first contact it follows the first bounce (vertical speed e |vy|, horizontal speed kept; the
+ * The clip of a landed run: frames from SLOWMO_PRE_FRAMES before the launch frame (the instant the ball crosses the table edge) to SLOWMO_POST_FRAMES after the landing
+ * frame. The ball follows the stored whole path (shoe ramp, arc, hops on the table, flight), so the video shows the real launch angle; after the first contact it follows the first bounce (vertical speed e |vy|, horizontal speed kept; the
  * clip ends long before the second contact). Returns null for a run that did not fly.
  */
-export function slowmoClip(run: RunRecord, traj: readonly TrajectoryPoint[]): SlowmoClip | null {
+export function slowmoClip(run: RunRecord, path: readonly TrajectoryPoint[]): SlowmoClip | null {
   const fl = run.flight
-  if (!fl || traj.length < 2 || !run.bounce) return null
+  if (!fl || path.length < 2 || !run.bounce) return null
   const dt = 1 / SLOWMO_FPS_hz
   const R = ballSpec(run.ball).R_m
   const g = GRAVITY_mps2
-  const vz0 = run.v_edge_mps * Math.sin(run.offsets.lateralAngle_rad)
-  const vx0 = run.v_edge_mps * Math.cos(run.offsets.lateralAngle_rad)
-  const yCentre0 = run.bench.H_m + R
+  const edgeOff = (run.times.edge_s ?? 0) - (run.times.tip_s ?? 0)
   const phase = run.videoPhase
   const kLand = Math.ceil(fl.t_flight_s / dt - phase)
   const frames: SlowmoFrame[] = []
   for (let k = -SLOWMO_PRE_FRAMES; k <= kLand + SLOWMO_POST_FRAMES; k++) {
     const t = (k + phase) * dt
     let x: number, y: number, z: number
-    if (t < 0) {
-      // Before the edge (constant deceleration on the table, so the ball was faster earlier): x = v t - d t^2 / 2 for t < 0.
-      x = vx0 * t - 0.5 * run.tableDecel_mps2 * t * t
-      z = vz0 * t
-      y = yCentre0
-    } else if (t <= fl.t_flight_s) {
-      const p = flightPointAt(traj, t)
+    if (t <= fl.t_flight_s) {
+      // the stored whole path (shoe, table hops, flight), t measured from the edge crossing; before the first sample the ball sits at the rail end
+      const p = flightPointAt(path, t + edgeOff)
       x = p.x_m; y = p.y_m; z = p.z_m
     } else {
       const tau = t - fl.t_flight_s

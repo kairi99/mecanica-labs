@@ -110,6 +110,26 @@ describe('coach triggers', () => {
     e.tapeMeasure({ kind: 'range', carbonId: 'c1' })
     expect(keys(e, last(e, 'refused'))).toEqual(['noEdgeProjection'])
   })
+  it('a diagonal launch: the rail end beyond the edge, a lifted tip, a ball that hops off the edge (rate-limited like the others)', () => {
+    const a = createApparatus('assembled', { seed: 7 })
+    a.setGap_mm(-30); a.release(1000)
+    const nc = coachCandidates(a, last(a, 'released')!)
+    expect(nc.map((n) => n.key)).toContain('railBeyondEdge'); expect(nc.find((n) => n.key === 'railBeyondEdge')!.params.cm).toBe(3)
+    const b = createApparatus('assembled', { seed: 7 })
+    b.setLegHeight_mm(60); b.release(1000)
+    expect(keys(b, last(b, 'released'))).toContain('tipLiftedDrop')
+    // a ball that leaves the edge mid-hop at more than COACH_TILT_MIN_deg: a long hop sequence from a tip very close to the edge (gap 4 mm)
+    const c = createApparatus('assembled', { seed: 7 })
+    c.setGap_mm(4); c.release(1000)
+    const r = c.getRun(1)!
+    expect(Math.abs((r.launch!.angle_rad * 180) / Math.PI)).toBeGreaterThan(8)
+    expect(keys(c, last(c, 'released'))).toEqual(expect.arrayContaining(['gapSmall']))
+    // gap 6 cm is inside the guide's tolerance, the marble from mark 1 leaves mid-hop about 10 degrees downward: the hop hint
+    const d = createApparatus('assembled', { seed: 7 })
+    d.setGap_mm(60); d.release(1000)
+    const nd = coachCandidates(d, last(d, 'released')!)
+    expect(nd.map((n) => n.key)).toEqual(['hopsAtEdge']); expect(nd[0]!.params.deg).toBeGreaterThanOrEqual(8)
+  })
   it('a ball that falls off the paper, and a moved paper', () => {
     const a = createApparatus('assembled', { seed: 7 })
     a.placeBond(2.5, 1.5)
@@ -214,7 +234,7 @@ describe('coach triggers', () => {
     off()
   })
   it('every coach key is reachable by one of the tests above', () => {
-    expect(COACH_KEYS.length).toBe(18)
+    expect(COACH_KEYS.length).toBe(21)
   })
 })
 

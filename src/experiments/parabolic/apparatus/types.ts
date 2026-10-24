@@ -2,7 +2,7 @@
 import type { StopRecord as CoreStopRecord } from '../../../core/instruments/stopwatch.ts'
 import type { DecimalInputReason } from '../../../core/instruments/numberInput.ts'
 import type { PaperOrientation, RailGeometry, SheetPose, TapeGeometry, Vec3 } from './geometry.ts'
-import type { BallId, FlightSummary, LaunchOutcome, RunOffsets } from './model.ts'
+import type { BallId, FlightSummary, LaunchKindSummary, LaunchOutcome, RunOffsets } from './model.ts'
 
 export type { BallId, PaperOrientation, SheetPose, Vec3 }
 
@@ -194,7 +194,7 @@ export interface RunRecord {
   releaseS_m: number
   releaseTime_ms: number
   /** The bench at release (enough to regenerate the trajectory from `offsets`). */
-  bench: { rise_m: number; gap_m: number; H_m: number; stepDrop_m: number; roll_rad: number }
+  bench: { rise_m: number; gap_m: number; lipGap_m: number; shoe: { length_m: number; slope_rad: number }; H_m: number; stepDrop_m: number; roll_rad: number }
   /** Offsets drawn for this run; lateralAngle_rad already includes the rail-roll drift. */
   offsets: RunOffsets
   outcome: LaunchOutcome | 'notStarted'
@@ -205,6 +205,10 @@ export interface RunRecord {
   tableDecel_mps2: number
   times: RunTimes
   flight: FlightSummary | null
+  /** Launch at the edge crossing (hops, angle, kind); null if the ball did not fly. */
+  launch: LaunchKindSummary | null
+  /** Bounces between the rail end and the edge. */
+  tableHops: number
   bounce: { vUp_mps: number; tNext_s: number } | null
   mark: { result: MarkResult; carbonId: string | null }
   /** Video frame phase, frames: the first slow-mo frame at/after the edge is this fraction of a frame late. */

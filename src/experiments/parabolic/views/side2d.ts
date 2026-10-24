@@ -193,6 +193,15 @@ export const mountSide2d: MountView = (root, ctx): View => {
     if (it.rail && geo && frame) {
       const a = railLocalToWorld(frame, [0, -RAIL.height / 2, 0]), b = railLocalToWorld(frame, [RAIL.length, -RAIL.height / 2, 0])
       add(svg('line', { x1: X(a[0]), y1: Y(a[1]), x2: X(b[0]), y2: Y(b[1]), class: 's2d-rail' }))
+      // shoe: the sloped end piece, a wedge from the beam's low end down to the lip (same polygon as the 3D model)
+      {
+        const kk = geo.shoe.kink_rad, Ls = geo.shoe.length_m * CM
+        if (Ls > 0.05) {
+          const P = (lx: number, ly: number): string => { const w = railLocalToWorld(frame, [lx, ly, 0]); return `${X(w[0]).toFixed(1)},${Y(w[1]).toFixed(1)}` }
+          const lx = RAIL.length + Ls * Math.cos(kk), ly = -Ls * Math.sin(kk)
+          add(svg('polygon', { points: [P(RAIL.length, 0), P(lx, ly), P(lx, ly - 0.12), P(RAIL.length, -RAIL.height)].join(' '), class: 's2d-shoe' }))
+        }
+      }
       for (let i = 0; i <= 16; i++) { const f = i / 16, cx = X(a[0] * (1 - f) + b[0] * f), cy = Y(a[1] * (1 - f) + b[1] * f); occupy(cx - 5 * kPx, cy - 5 * kPx, cx + 5 * kPx, cy + 5 * kPx) }
       const railSpot = (f: number, dy: number, anchor: 'middle' = 'middle'): Spot => ({ x: X(a[0] * (1 - f) + b[0] * f), y: Y(a[1] * (1 - f) + b[1] * f) + dy * kPx, anchor })
       label([t.rail], [railSpot(0.7, -13), railSpot(0.5, -13), railSpot(0.85, -13), railSpot(0.3, -13), railSpot(0.7, 21), railSpot(0.5, 21), railSpot(0.85, 21), railSpot(0.3, 21), ...sky([X(a[0] * 0.25 + b[0] * 0.75), Y(a[1] * 0.25 + b[1] * 0.75) - 3 * kPx])])
@@ -255,7 +264,7 @@ export const mountSide2d: MountView = (root, ctx): View => {
   let trailPts = ''
   const setTrail = (runId: number): void => {
     trailRun = runId
-    const traj = app.runTrajectory(runId)
+    const traj = app.runPath(runId) // the whole path: shoe, arc, hops, flight
     const step = Math.max(1, Math.ceil(traj.length / 60))
     const pts: string[] = []
     for (let i = 0; i < traj.length; i += step) pts.push(`${X(traj[i]!.x_m * CM).toFixed(1)},${Y((traj[i]!.y_m - app.getState().world.H_m) * CM).toFixed(1)}`)

@@ -256,10 +256,10 @@ describe('release, states and landing', () => {
     a.release(0)
     const r = a.getRun(1)!
     const H = a.hiddenTruth().H_m
-    // The ball leaves the table with a downward (or upward after a hop) velocity component now, not horizontally: the flight time from the
-    // edge is sqrt(2H/g) only for a horizontal launch (physics.test.ts checks the exact diagonal closed form). Here a coarse band.
-    expect(r.flight!.t_flight_s).toBeGreaterThan(Math.sqrt((2 * H) / 9.7717) * 0.75)
-    expect(r.flight!.t_flight_s).toBeLessThan(Math.sqrt((2 * H) / 9.7717) * 1.15)
+    // The ball hops over the shoe and the table and leaves the edge at a few degrees (not exactly horizontally): the flight time is within
+    // -4 % and +8 % of sqrt(2H/g) (physics tests give the exact closed forms for horizontal and diagonal launches).
+    expect(r.flight!.t_flight_s).toBeGreaterThan(Math.sqrt((2 * H) / 9.7717) * 0.96)
+    expect(r.flight!.t_flight_s).toBeLessThan(Math.sqrt((2 * H) / 9.7717) * 1.08)
   })
   it('only one ball moves at a time; reset puts the ball back on its mark', () => {
     const a = ready()
