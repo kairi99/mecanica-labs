@@ -23,7 +23,7 @@ type Lang = 'es' | 'en'
 const NOTE_TASKS = ['t1', 't24', 't3', 't5', 't6', 't7', 't8', 't9'] as const
 type NoteTask = (typeof NOTE_TASKS)[number]
 
-function table(headers: string[], rows: string[][], cls = 'data-table an-table'): HTMLElement {
+function table(headers: string[], rows: string[][], cls = 'data-table an-table an-compact'): HTMLElement {
   const wrap = el('div', 'table-scroll', undefined, { tabindex: '0' })
   const t = el('table', cls)
   const thead = el('thead'), hr = el('tr')
@@ -153,9 +153,8 @@ export function mountAnalysis(opts: AnalysisOptions = { reference: true }): Moun
         t24.push(sub(ballName(b)))
         t24.push(bt.pooled === null
           ? el('p', 'muted', T.needData)
-          : table([T.colTrial, T.colN, T.colT, T.colX, T.colV, T.colStat], bt.trials.map((t, i) => [
-            String(i + 1), `${t.n_t}, ${t.n_x}`, pm(t.t_s, t.u_t_s), pm(t.x_m, t.u_x_m), pm(t.v0_mps, t.u_v0_mps),
-            t.uStat_t_s === null ? '–' : numText(t.uStat_t_s, 3, lang),
+          : table([T.colTrial, T.colT, T.colX, T.colV], bt.trials.map((t, i) => [
+            String(i + 1), pm(t.t_s, t.u_t_s), pm(t.x_m, t.u_x_m), pm(t.v0_mps, t.u_v0_mps),
           ])))
       }
       t24.push(el('p', 'note', T.reactNote))
@@ -167,8 +166,8 @@ export function mountAnalysis(opts: AnalysisOptions = { reference: true }): Moun
         const bt = a.balls[b]
         if (bt.pooled === null) continue
         convBody.append(sub(`${ballName(b)} · ${T.bdTitle}`))
-        convBody.append(table([T.colTrial, `${T.bdTime}: ${T.bdCols.sd}`, T.bdCols.uA, T.bdCols.uRes, T.bdCols.uReact, `${T.bdRange}: ${T.bdCols.sd}`, T.bdCols.uA, T.bdCols.uTape, T.bdCols.uProj],
-          bt.trials.map((t, i) => [String(i + 1), numText(t.sd_t_s, 3, lang), numText(t.uA_t_s, 3, lang), numText(t.uRes_s, 4, lang), numText(t.uReact_s, 3, lang),
+        convBody.append(table([T.colTrial, T.colN, `${T.bdTime}: ${T.bdCols.sd}`, T.bdCols.uA, T.bdCols.uRes, T.bdCols.uReact, `${T.bdRange}: ${T.bdCols.sd}`, T.bdCols.uA, T.bdCols.uTape, T.bdCols.uProj],
+          bt.trials.map((t, i) => [String(i + 1), `${t.n_t}, ${t.n_x}`, numText(t.sd_t_s, 3, lang), numText(t.uA_t_s, 3, lang), numText(t.uRes_s, 4, lang), numText(t.uReact_s, 3, lang),
             numText(t.sd_x_m, 4, lang), numText(t.uA_x_m, 4, lang), numText(t.uTape_m, 4, lang), numText(t.uProj_m, 4, lang)])))
       }
       conv.append(convBody)

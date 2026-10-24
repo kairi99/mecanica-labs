@@ -23,7 +23,6 @@ export interface AnalysisStrings {
   colT: string
   colX: string
   colV: string
-  colStat: string
   convTitle: string
   convItems: string[]
   bdTitle: string
@@ -116,7 +115,6 @@ export const strings: Strings<AnalysisStrings> = {
     colT: 't ± Δt [s]',
     colX: 'x ± Δx [m]',
     colV: 'v0 ± Δv [m/s]',
-    colStat: 'Dispersión de t [s]',
     convTitle: 'Cómo se calculó la incertidumbre',
     convItems: [
       'Promedio de los 5 datos. Tipo A: s/√5, con s la desviación estándar de la muestra.',
@@ -155,9 +153,9 @@ export const strings: Strings<AnalysisStrings> = {
     t6Title: 'Tarea 6 · Error porcentual',
     t6Intro: 'Compara el tiempo medido con el esperado: error % = (t − t esperado) / t esperado × 100. El veredicto usa la incertidumbre combinada de ambos.',
     colErr: 'Error %',
-    colVerdict: 'Frente a la incertidumbre',
-    verdicts: { within1: 'Dentro de 1σ', within2: 'Entre 1σ y 2σ', beyond2: 'Más de 2σ' },
-    t6Pooled: '{ball}, los {n} datos juntos: t = {t} s, error {err} % ({verdict}).',
+    colVerdict: 'Veredicto',
+    verdicts: { within1: '< 1σ', within2: '1σ a 2σ', beyond2: '> 2σ' },
+    t6Pooled: '{ball}, los {n} datos juntos: t = {t} s, error {err} % (desviación {verdict}).',
     t6RefTitle: 'Referencia de la cámara lenta',
     t6RefLine: '{ball}: {t} s contando cuadros ({n} lanzamientos), error {err} % frente al tiempo esperado.',
     t6RefCompare: 'Tu cronómetro frente a la cámara lenta: {diff} s ({pct} %).',
@@ -213,7 +211,6 @@ export const strings: Strings<AnalysisStrings> = {
     colT: 't ± Δt [s]',
     colX: 'x ± Δx [m]',
     colV: 'v0 ± Δv [m/s]',
-    colStat: 'Scatter of t [s]',
     convTitle: 'How the uncertainty was computed',
     convItems: [
       'Mean of the 5 values. Type A: s/√5, with s the sample standard deviation.',
@@ -252,9 +249,9 @@ export const strings: Strings<AnalysisStrings> = {
     t6Title: 'Task 6 · Percent error',
     t6Intro: 'Compare the measured time with the expected one: error % = (t − expected t) / expected t × 100. The verdict uses the combined uncertainty of both.',
     colErr: 'Error %',
-    colVerdict: 'Against the uncertainty',
-    verdicts: { within1: 'Within 1σ', within2: 'Between 1σ and 2σ', beyond2: 'Beyond 2σ' },
-    t6Pooled: '{ball}, all {n} values together: t = {t} s, error {err} % ({verdict}).',
+    colVerdict: 'Verdict',
+    verdicts: { within1: '< 1σ', within2: '1σ to 2σ', beyond2: '> 2σ' },
+    t6Pooled: '{ball}, all {n} values together: t = {t} s, error {err} % (deviation {verdict}).',
     t6RefTitle: 'Slow-motion reference',
     t6RefLine: '{ball}: {t} s counting frames ({n} launches), error {err} % against the expected time.',
     t6RefCompare: 'Your stopwatch against slow motion: {diff} s ({pct} %).',
