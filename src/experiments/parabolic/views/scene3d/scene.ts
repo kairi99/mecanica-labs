@@ -97,7 +97,7 @@ export function createScene(container: HTMLElement, ctx: ViewContext, opts: Scen
   scene.environmentIntensity = 0.75
   const camera = new THREE.PerspectiveCamera(FOV, 1.6, 1, 1800)
   const controls = new OrbitControls(camera, canvas)
-  controls.enableDamping = true
+  controls.enableDamping = !ctx.reducedMotion()
   controls.dampingFactor = 0.1
   controls.minDistance = 8
   controls.maxDistance = 900

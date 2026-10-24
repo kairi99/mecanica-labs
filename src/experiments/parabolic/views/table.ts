@@ -191,7 +191,12 @@ export const mountTable: MountView = (root, ctx): View => {
     active.textContent = fill(T.active, { ball: T.balls[getBall()], t: getTrial() + 1, r: getRep() + 1 })
     rowEls.forEach((tb, r) => { tb.classList.toggle('current', r === getTrial()); if (r === getTrial()) tb.setAttribute('aria-current', 'true'); else tb.removeAttribute('aria-current') })
     for (const [b, t] of tabBtns) { t.classList.toggle('active', b === getBall()); t.setAttribute('aria-pressed', String(b === getBall())) }
-    for (let r = 0; r < TABLE_TRIALS; r++) for (let j = 0; j < 2 * TABLE_REPS; j++) inputs[r]![j]!.classList.toggle('current-cell', r === getTrial() && colOf(j).rep === getRep())
+    // roving tab stop: Tab enters the table at the active cell only (50 stops would trap the keyboard); the arrow keys and Enter move inside it
+    for (let r = 0; r < TABLE_TRIALS; r++) for (let j = 0; j < 2 * TABLE_REPS; j++) {
+      const cur = r === getTrial() && colOf(j).rep === getRep()
+      inputs[r]![j]!.classList.toggle('current-cell', cur)
+      inputs[r]![j]!.tabIndex = cur && j < TABLE_REPS ? 0 : -1
+    }
   }
   const offUi = onUiState(() => { paintActive(); w.touch() })
 

@@ -38,7 +38,7 @@
 .data-table .calc-line { padding: var(--space-1) var(--space-2); background: var(--surface-2); font: var(--text-footnote); color: var(--label-2); border-bottom: var(--stroke-hair) solid var(--separator); }
 .data-table .calc-flex { display: flex; flex-wrap: wrap; gap: var(--space-1) var(--space-3); }
 .data-table .calc-item { display: inline-flex; flex-wrap: wrap; gap: 0 var(--space-1); }
-.data-table .calc-k { color: var(--label-3); }
+.data-table .calc-k { color: var(--label-2); }
 .data-table .calc-v { color: var(--label); font-weight: 600; }
 .cell { width: 100%; min-width: 0; min-height: var(--touch); border: 0; background: transparent; text-align: right; padding: 0 var(--space-1); font: var(--text-footnote); border-radius: 0; }
 .cell:focus { background: var(--fill); outline-offset: -2px; }
@@ -100,3 +100,11 @@
     right: max(var(--space-4), calc((100vw - 96rem) / 2 + var(--space-4)));
   }
 }
+
+/* touch targets: the parabolic page keeps every control at 44 px (the shared defaults are 36 to 42 px in a few places) */
+.inv-row .link-btn { min-width: var(--touch); min-height: var(--touch); }
+.stage-mode .seg-btn { min-height: var(--touch); }
+.timing:has(.tb-target) .tb-select { min-height: var(--touch); }
+
+/* contrast: secondary text sits on --surface-2 in the table and notes, so the light --label-2 is a little darker here (>= 4.5:1). The dark theme keeps its own value (higher specificity in tokens.css). */
+:root { --label-2: rgba(60, 60, 67, 0.8); }
