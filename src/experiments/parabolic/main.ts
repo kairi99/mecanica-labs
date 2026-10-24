@@ -112,7 +112,7 @@ function progressOf(steps: ChecklistStep[], next: ChecklistStep | null): Procedu
   const ok = (ids: StepId[]): boolean => ids.every((id) => steps.find((s) => s.id === id)?.status === 'ok')
   const done: Record<StepKey, boolean> = {
     assembly: ok(['assembly']),
-    adjust: ok(['rise', 'gap', 'marks', 'paper']),
+    adjust: ok(['rise', 'gap', 'marks', 'paper', 'edgeProjection']),
     launch: ok(['launches']),
     slowmo: app.getRuns().length > 0,
     analysis: false,

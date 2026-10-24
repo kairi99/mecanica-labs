@@ -204,7 +204,7 @@ describe('procedure checklist and coach', () => {
     expect(nextStep(empty)!.id).toBe('assembly')
     const ready = buildChecklist(createApparatus('assembled', { seed: 7 }))
     const st = Object.fromEntries(ready.map((s) => [s.id, s.status]))
-    expect(st).toEqual({ assembly: 'ok', rise: 'ok', gap: 'ok', marks: 'ok', paper: 'ok', launches: 'pending' })
+    expect(st).toEqual({ assembly: 'ok', rise: 'ok', gap: 'ok', marks: 'ok', paper: 'ok', edgeProjection: 'ok', timing: 'na', range: 'na', launches: 'pending', bothBalls: 'pending', launchHeight: 'ok' })
     expect(nextStep(ready)!.id).toBe('launches')
   })
   it('coaches marks in the lower half, a release without carbon and a moved paper', () => {
