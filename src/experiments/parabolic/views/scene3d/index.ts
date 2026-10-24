@@ -1,6 +1,6 @@
 // Public entry of the 3D bench scene: mountScene3D(root, ctx, opts) returns a Scene3DView. It paints its (cheap) overlay immediately
 // and lazy-loads scene.ts, which pulls in three.js as a separate chunk, so the first paint does not wait for it.
-import '../../styles/scene3d.css'
+import '../../../../core/styles/scene3d.css'
 import type { TapeTarget } from '../../apparatus/index.ts'
 import type { CardInfo } from '../../../../core/scene3d/types.ts'
 import { webgl2Available } from '../../../../core/scene3d/webgl.ts'

@@ -8,9 +8,9 @@
   width: 100%; height: 100%; aspect-ratio: 16 / 10; min-height: 260px;
 }
 .scene3d-stage canvas { position: absolute; inset: 0; display: block; width: 100%; height: 100%; outline: none; touch-action: none; border-radius: inherit; }
-.scene3d-stage canvas:focus-visible { outline: 2px solid var(--accent); outline-offset: -3px; }
+.scene3d-stage canvas:focus-visible { outline: var(--focus-ring) solid var(--accent); outline-offset: -3px; }
 .scene3d-tip, .scene3d-readout {
-  position: absolute; left: 0; top: 0; pointer-events: none; z-index: 2; padding: var(--space-1) var(--space-3);
+  position: absolute; left: 0; top: 0; pointer-events: none; z-index: var(--z-stage-tip); padding: var(--space-1) var(--space-3);
   border-radius: var(--radius-full); background: var(--surface); color: var(--label); box-shadow: var(--shadow-1);
   font: var(--text-footnote); white-space: nowrap;
 }
@@ -18,7 +18,7 @@
 .scene3d-tip[hidden], .scene3d-readout[hidden] { display: none; }
 
 /* chips and menus */
-.scene3d-topleft, .scene3d-topright { position: absolute; top: var(--space-2); z-index: 4; display: flex; gap: var(--space-1); }
+.scene3d-topleft, .scene3d-topright { position: absolute; top: var(--space-2); z-index: var(--z-stage-chips); display: flex; gap: var(--space-1); }
 .scene3d-topleft { left: var(--space-2); }
 .scene3d-topright { right: var(--space-2); justify-content: flex-end; }
 .scene3d-chip, .scene3d-card button {
@@ -27,10 +27,10 @@
   white-space: nowrap; box-shadow: var(--shadow-1); backdrop-filter: blur(6px); display: inline-flex; align-items: center; gap: var(--space-1);
 }
 .scene3d-chip[aria-pressed='true'], .scene3d-chip-on { background: var(--accent-fill); color: var(--on-accent); font-weight: 600; }
-.scene3d-chip:focus-visible, .scene3d-card button:focus-visible, .scene3d-menu-pop button:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.scene3d-chip:focus-visible, .scene3d-card button:focus-visible, .scene3d-menu-pop button:focus-visible { outline: var(--focus-ring) solid var(--accent); outline-offset: 2px; }
 .scene3d-menu { position: relative; }
 .scene3d-menu-pop {
-  position: absolute; top: calc(100% + var(--space-1)); left: 0; min-width: 11rem; max-height: 15rem; overflow-y: auto; padding: var(--space-1); z-index: 5;
+  position: absolute; top: calc(100% + var(--space-1)); left: 0; min-width: 11rem; max-height: 15rem; overflow-y: auto; padding: var(--space-1); z-index: var(--z-stage-menu);
   border-radius: var(--radius-m); background: var(--surface); color: var(--label); box-shadow: var(--shadow-1);
   display: flex; flex-direction: column; animation: scene3d-pop var(--dur-base) var(--ease-out);
 }
@@ -51,7 +51,7 @@
 
 /* status line and part card sit under the chips (never at the bottom edge: the shell's timing bar is below the stage) */
 .scene3d-stack {
-  position: absolute; left: var(--space-2); right: var(--space-2); top: calc(var(--touch) + 2 * var(--space-2)); z-index: 3;
+  position: absolute; left: var(--space-2); right: var(--space-2); top: calc(var(--touch) + 2 * var(--space-2)); z-index: var(--z-stage-stack);
   display: flex; flex-direction: column; align-items: flex-start; gap: var(--space-2); pointer-events: none;
 }
 .scene3d-status {
@@ -70,4 +70,3 @@
 @keyframes scene3d-pop { from { opacity: 0; transform: translateY(-4px); } to { opacity: 1; transform: none; } }
 @media (prefers-reduced-motion: reduce) { .scene3d-card, .scene3d-menu-pop { animation: none; } }
 @media (max-width: 819px) { .scene3d-stage { aspect-ratio: 4 / 3; } }
-

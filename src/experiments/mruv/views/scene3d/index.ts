@@ -1,6 +1,6 @@
 // Public entry of the 3D table scene: mountScene3D(root, ctx, opts) returns a View. It paints its (cheap) overlay immediately
 // and lazy-loads scene.ts, which pulls in three.js as a separate chunk, so the first paint does not wait for it.
-import '../../styles/scene3d.css'
+import '../../../../core/styles/scene3d.css'
 import type { TapeTarget } from '../../apparatus/index.ts'
 import type { View, ViewContext } from '../view.ts'
 import { strings } from '../strings/scene3d.ts'

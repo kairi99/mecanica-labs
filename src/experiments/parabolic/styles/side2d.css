@@ -33,9 +33,12 @@
 .s2d-ball.marble { fill: #7ec4d2; stroke: var(--stage-white); stroke-width: calc(1px * var(--k)); }
 .s2d-ball.pingpong { fill: var(--stage-white); stroke: var(--stage-black); stroke-width: calc(1px * var(--k)); }
 .s2d-trail { stroke: var(--stage-blue); stroke-width: calc(2.5px * var(--k)); stroke-dasharray: 0 calc(7px * var(--k)); stroke-linecap: round; opacity: 0.8; }
+.s2d-leader { stroke: var(--stage-ink-2); stroke-width: 1px; vector-effect: non-scaling-stroke; opacity: 0.7; }
 .s2d-legend { list-style: none; margin: 0; padding: 0 var(--space-3); display: flex; flex-wrap: wrap; gap: var(--space-1) var(--space-3); font: var(--text-footnote); color: var(--stage-ink-2); }
 .s2d-legend-item { display: inline-flex; align-items: center; gap: var(--space-1); }
-.s2d-swatch { width: 16px; height: 12px; }
+.s2d-swatch { width: var(--swatch-w); height: var(--swatch-h); }
 
 /* phone: the 3D/2D toggle floats over the bottom of the stage, so the legend must clear it */
 @media (max-width: 819px) { .side2d { padding-bottom: calc(var(--touch) + var(--space-3)); } }
+/* a view taller than the stage keeps its top (flags, labels) and loses its bottom note, not the other way round */
+.stage-2d:has(> .side2d-pb) { justify-content: safe center; }

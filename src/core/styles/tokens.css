@@ -19,6 +19,12 @@
   --touch: 44px;
   --dur-needle: 120ms; --dur-fast: 150ms; --dur-base: 250ms; --dur-slow: 350ms;
   --z-overlay: 1; --z-sheet: 2; --z-dock: 2; --z-tour: 3;
+  /* inside a stage (it is an isolated stacking context): readout/tip < status stack < chips < open menu */
+  --z-stage-tip: 2; --z-stage-stack: 3; --z-stage-chips: 4; --z-stage-menu: 5;
+  --focus-ring: 2px;
+  --text-tick: 600 14px var(--font);
+  --swatch-w: 16px; --swatch-h: 12px;
+  --slider-thumb-half: 10px;
   --scrim-tour: rgba(0, 0, 0, 0.6); --scrim: rgba(0, 0, 0, 0.35);
   --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
   --ease-in-out: cubic-bezier(0.65, 0, 0.35, 1);

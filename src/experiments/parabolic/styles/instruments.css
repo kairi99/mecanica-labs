@@ -1,6 +1,6 @@
 /* Stopwatch, LCD, tape measure, Tabla 2.1. Instrument colours are device tokens, fixed in both themes. */
 .lcd { background: var(--lcd-bg); color: var(--lcd-ink); border-radius: var(--radius-s); padding: var(--space-2) var(--space-3); text-align: right; box-shadow: inset 0 2px 6px var(--key-edge); font-family: var(--font-mono); }
-.lcd-digits { font-size: 28px; line-height: 32px; letter-spacing: 0.04em; font-weight: 600; font-variant-numeric: tabular-nums; display: block; }
+.lcd-digits { font: var(--text-display); font-family: var(--font-mono); letter-spacing: 0.04em; font-variant-numeric: tabular-nums; display: block; }
 .lcd.off { opacity: 0.55; }
 
 /* timing bar: the target cell (mark number and repetition) sits in the slot of the layout's mark selector */
@@ -17,8 +17,8 @@
 .bl-edge { stroke: var(--metal-ink); stroke-width: 2; }
 .bl-tick { stroke: var(--tape-ink); stroke-width: 1; }
 .bl-tick-cm { stroke-width: 1.5; }
-.bl-num { fill: var(--tape-ink); font: 600 14px var(--font); }
-.bl-num-small { font-size: 11px; font-weight: 500; }
+.bl-num { fill: var(--tape-ink); font: var(--text-tick); }
+.bl-num-small { font: var(--text-caption); }
 .zoom-row { display: flex; align-items: center; gap: var(--space-2); }
 .zoom-val { min-width: 2.5rem; text-align: center; font-variant-numeric: tabular-nums; }
 .pad { padding: var(--space-3); }
@@ -63,15 +63,22 @@
   .timing:has(.tb-target) { align-items: stretch; }
   .timing:has(.tb-target) .tb-row2 > .tb-btn { white-space: nowrap; font: var(--text-footnote); font-weight: 600; }
 }
-/* desktop: the bar is as wide as the stage (about 580 to 950 px); below that it needs two rows */
+/* desktop: the bar is as wide as the stage (about 580 to 950 px). One calm row down to 46rem (compact LCD and keys, the copy button
+   keeps only its icon below 62rem); under 46rem the release key moves to a second row, content-width, still not accent-filled until ready. */
 .timing-host:has(.tb-target) { container-type: inline-size; }
 @media (min-width: 1080px) {
   @container (max-width: 62rem) {
-    .timing:has(.tb-target) { grid-template-columns: auto minmax(8rem, 1fr) auto auto auto; }
-    .timing:has(.tb-target) .tb-copy { grid-column: 5; }
+    .timing:has(.tb-target) { grid-template-columns: auto minmax(10.5rem, 11rem) auto auto 1fr auto auto; }
     .timing:has(.tb-target) .tb-copy .tb-text, .timing:has(.tb-target) .tb-kbd { display: none; }
-    .timing:has(.tb-target) .tb-start { grid-column: 4; min-width: 0; }
-    .timing:has(.tb-target) .tb-release { grid-column: 1 / -1; grid-row: 2; }
+    .timing:has(.tb-target) .tb-btn { padding: 0 var(--space-3); }
+    .timing:has(.tb-target) .tb-start { min-width: 0; }
+    .timing:has(.tb-target) .tb-target .tb-select { min-width: 4rem; }
+  }
+  @container (max-width: 46rem) {
+    .timing:has(.tb-target) { grid-template-columns: auto minmax(10.5rem, 1fr) auto auto auto; }
+    .timing:has(.tb-target) .tb-copy { grid-column: 5; }
+    .timing:has(.tb-target) .tb-start { grid-column: 4; }
+    .timing:has(.tb-target) .tb-release { grid-column: 1 / 3; grid-row: 2; justify-self: start; min-width: 11rem; }
     .timing:has(.tb-target) .tb-caption { grid-row: 3; }
   }
 }

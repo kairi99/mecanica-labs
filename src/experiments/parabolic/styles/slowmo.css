@@ -3,9 +3,9 @@
 .sm-stage { min-width: 0; }
 .sm-frame { font-variant-numeric: tabular-nums; }
 .sm-controls { align-items: stretch; }
-.sm-marks { position: relative; height: 1.6rem; margin: 0 10px; }
+.sm-marks { position: relative; height: 1.6rem; margin: 0 var(--slider-thumb-half); }
 .sm-mark { position: absolute; top: 0; transform: translateX(-50%); font: var(--text-caption); color: var(--label-2); text-align: center; white-space: nowrap; }
-.sm-mark-launch { color: var(--accent); transform: translateX(-10px); text-align: left; }
+.sm-mark-launch { color: var(--accent); transform: translateX(calc(-1 * var(--slider-thumb-half))); text-align: left; }
 .sm-mark-landing { color: var(--success); transform: translateX(-100%); text-align: right; }
 .sm-results { display: flex; flex-direction: column; gap: var(--space-2); border-top: var(--stroke-hair) solid var(--separator); padding-top: var(--space-3); }
 
