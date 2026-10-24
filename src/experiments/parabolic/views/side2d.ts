@@ -16,7 +16,7 @@ export const mountSide2d: MountView = (root, ctx): View => {
   const app = ctx.apparatus
   const T = () => strings[ctx.lang()]
   const w = watch(app)
-  const wrap = el('div', 'side2d')
+  const wrap = el('div', 'side2d side2d-pb')
   const g = svg('svg', { class: 's2d', role: 'img', preserveAspectRatio: 'xMidYMid meet' })
   const staticLayer = svg('g')
   const dynLayer = svg('g', { class: 's2d-dyn' })
@@ -63,6 +63,42 @@ export const mountSide2d: MountView = (root, ctx): View => {
     const add = (...e: SVGElement[]): void => { L.push(...e) }
     const legendItems: Array<{ cls: string; text: string }> = []
 
+    // Text labels are placed last, each at the first of its candidate spots that touches no shape and no earlier label; if the
+    // full text does not fit anywhere the short one is tried, and a label that fits nowhere is left out (it has a legend or a tooltip role elsewhere).
+    type Box = [number, number, number, number]
+    const occupied: Box[] = []
+    const occupy = (x0: number, y0: number, x1: number, y1: number): void => { occupied.push([Math.min(x0, x1), Math.min(y0, y1), Math.max(x0, x1), Math.max(y0, y1)]) }
+    type Spot = { x: number; y: number; anchor?: 'start' | 'middle' | 'end'; to?: [number, number] }
+    /** Free sky to the right of the bench: a label that fits nowhere near its part goes here with a leader line to it. */
+    const sky = (to: [number, number], first = 0): Spot[] => [0, 1, 2, 3].map((i) => ({ x: vb.x0 + vb.w - 6 * kPx, y: Y(0) - (34 + 17 * (i + first)) * kPx, anchor: 'end' as const, to }))
+    const requests: Array<{ texts: string[]; spots: Spot[]; cls: string }> = []
+    const label = (texts: string[], spots: Spot[], cls = 's2d-label'): void => { requests.push({ texts, spots, cls }) }
+    const boxOf = (text: string, sp: Spot): Box => {
+      const wText = text.length * 6 * kPx + 4 * kPx, a = sp.anchor ?? 'start'
+      const x0 = a === 'start' ? sp.x : a === 'end' ? sp.x - wText : sp.x - wText / 2
+      return [x0, sp.y - 11 * kPx, x0 + wText, sp.y + 1.5 * kPx]
+    }
+    const hits = (b: Box): boolean => occupied.some((o) => b[0] < o[2] && b[2] > o[0] && b[1] < o[3] && b[3] > o[1]) || b[0] < vb.x0 || b[2] > vb.x0 + vb.w
+    const placeLabels = (): void => {
+      const topLimit = minY - 2 * kPx // labels never grow the viewbox: it is already as tall as the flags need
+      for (const r of requests) {
+        let done = false
+        for (const text of r.texts) {
+          for (const sp of r.spots) {
+            const b = boxOf(text, sp)
+            if (hits(b) || b[1] < topLimit) continue
+            if (sp.to) add(svg('line', { x1: sp.anchor === 'end' ? b[0] - 3 * kPx : b[2] + 3 * kPx, y1: sp.y - 4 * kPx, x2: sp.to[0], y2: sp.to[1], class: 's2d-leader' }))
+            add(svg('text', { x: sp.x, y: sp.y, class: r.cls, ...(sp.anchor && sp.anchor !== 'start' ? { 'text-anchor': sp.anchor } : {}) }, text))
+            occupied.push(b)
+            minY = Math.min(minY, b[1])
+            done = true
+            break
+          }
+          if (done) break
+        }
+      }
+    }
+
     // extent: from a little behind the rail's high end to the landing zone
     const sheets = [st.paper.bond, st.paper.carbon].filter((p) => p !== null).map((p) => sheetRectCm(p!))
     const marks = st.paper.bond ? app.paperMarks(ctx.now()).map((m) => { const p = sheetToFloor(st.paper.bond!, m.a_m, m.b_m); return [p.x_m * CM, p.z_m * CM] as [number, number] }) : []
@@ -76,15 +112,23 @@ export const mountSide2d: MountView = (root, ctx): View => {
     // floor, table, legs and the table edge
     add(svg('rect', { x: vb.x0, y: Y(-H_cm), width: vb.w, height: floorPad, class: 's2d-floor' }))
     add(svg('line', { x1: vb.x0, y1: Y(-H_cm), x2: vb.x0 + vb.w, y2: Y(-H_cm), class: 's2d-ground' }))
-    add(svg('text', { x: vb.x0 + 6 * kPx, y: Y(-H_cm) + 15 * kPx, class: 's2d-label' }, t.floor))
+    label([t.floor], [{ x: vb.x0 + 6 * kPx, y: Y(-H_cm) + 15 * kPx }])
     for (const lx of [TABLE.x1 - TABLE.legInset, TABLE.x0 + TABLE.legInset]) {
       if (X(lx) < vb.x0 - 40) continue
       add(svg('rect', { x: X(lx) - (TABLE.legSize * S) / 2, y: Y(-TABLE.thickness), width: TABLE.legSize * S, height: (H_cm - TABLE.thickness) * S, class: 's2d-leg-body' }))
+      occupy(X(lx) - (TABLE.legSize * S) / 2, Y(-TABLE.thickness), X(lx) + (TABLE.legSize * S) / 2, Y(-H_cm))
     }
     add(svg('rect', { x: vb.x0 - 40, y: Y(0), width: X(0) - vb.x0 + 40, height: TABLE.thickness * S, class: 's2d-table' }))
     add(svg('line', { x1: X(0), y1: Y(0), x2: X(0), y2: Y(-H_cm), class: 's2d-edge' }))
-    add(svg('text', { x: X(0) + 6 * kPx, y: Y(0) - 7 * kPx, class: 's2d-label s2d-edge-label' }, t.edge))
-    add(svg('text', { x: vb.x0 + 6 * kPx, y: Y(0) - 7 * kPx, class: 's2d-label' }, t.table))
+    occupy(vb.x0 - 40, Y(0), X(0), Y(0) + TABLE.thickness * S)
+    occupy(X(0) - 1, Y(0), X(0) + 1, Y(-H_cm))
+    label([t.edge, t.short.edge], [
+      { x: X(0) + 6 * kPx, y: Y(0) - 7 * kPx }, { x: X(0) - 6 * kPx, y: Y(0) - 7 * kPx, anchor: 'end' },
+      { x: X(0) + 6 * kPx, y: Y(-H_cm * 0.5) }, { x: X(0) + 6 * kPx, y: Y(-H_cm * 0.3) },
+    ], 's2d-label s2d-edge-label')
+    label([t.table, t.short.table], [
+      { x: vb.x0 + 6 * kPx, y: Y(0) - 7 * kPx }, { x: vb.x0 + 6 * kPx, y: Y(0) + TABLE.thickness * S + 13 * kPx },
+    ])
 
     // paper on the floor, the plumb point and the carbon marks
     if (st.paper.bond) {
@@ -118,26 +162,38 @@ export const mountSide2d: MountView = (root, ctx): View => {
     const clampH = geo ? geo.clampHeight_m * CM : (0.06 + st.rack_mm / 1000) * CM
     if (it.base) {
       add(svg('rect', { x: X(standX) - 8 * S, y: Y(0.7), width: 16 * S, height: 0.7 * S, rx: 2, class: 's2d-metal' }))
+      occupy(X(standX) - 8 * S, Y(0.7), X(standX) + 8 * S, Y(0))
     }
     if (it.rackStand) {
       add(svg('rect', { x: X(standX) - 0.6 * S, y: Y(38), width: 1.2 * S, height: 38 * S, class: 's2d-metal-hi' }))
       add(svg('rect', { x: X(standX) - 2.2 * S, y: Y(clampH) - 1 * S, width: 4.4 * S, height: 3.6 * S, rx: 2, class: 's2d-clamp' }))
-      add(svg('text', { x: X(standX) + 4 * S + 3 * kPx, y: Y(clampH * 0.4) + 4 * kPx, class: 's2d-label' }, t.rack))
+      occupy(X(standX) - 0.6 * S, Y(38), X(standX) + 0.6 * S, Y(0))
+      occupy(X(standX) - 2.2 * S, Y(clampH) - 1 * S, X(standX) + 2.2 * S, Y(clampH) + 2.6 * S)
+      occupy(X(standX) + 3.4 * S - 5 * kPx, Y(clampH) + 1 * S - 5 * kPx, X(standX) + 3.4 * S + 5 * kPx, Y(clampH) + 1 * S + 5 * kPx)
+      const rackSpots: Spot[] = []
+      for (const f of [0.3, 0.22, 0.14]) rackSpots.push({ x: X(standX) + 3 * S + 3 * kPx, y: Y(clampH * f) + 4 * kPx }, { x: X(standX) - 3 * S - 3 * kPx, y: Y(clampH * f) + 4 * kPx, anchor: 'end' })
+      label([t.rack, t.short.rack], [...rackSpots, ...sky([X(standX), Y(Math.min(38, clampH + 6))], 1)])
       add(svg('circle', { cx: X(standX) + 3.4 * S, cy: Y(clampH) + 1 * S, r: Math.max(1.5 * S, 5 * kPx), class: 's2d-blue' }))
     }
 
     // two-leg stand
     if (it.twoLeg && geo && st.joints.twoLegStand) {
       const tx = X(geo.pose.twoLeg.x_m * CM), ty = Y(geo.legHeight_m * CM - RAIL.height)
-      add(svg('text', { x: tx, y: Y(0) + TABLE.thickness * S + 13 * kPx, class: 's2d-label', 'text-anchor': 'middle' }, t.twoLeg))
       add(svg('line', { x1: tx, y1: ty, x2: tx - 3 * S, y2: Y(0), class: 's2d-leg' }), svg('line', { x1: tx, y1: ty, x2: tx + 3 * S, y2: Y(0), class: 's2d-leg' }))
+      occupy(tx - 3 * S - 2 * kPx, ty, tx + 3 * S + 2 * kPx, Y(0))
+      label([t.twoLeg, t.short.twoLeg], [
+        { x: tx, y: Y(0) + TABLE.thickness * S + 13 * kPx, anchor: 'middle' }, { x: tx + 3 * S + 5 * kPx, y: Y(0) + TABLE.thickness * S + 13 * kPx },
+        { x: tx - 3 * S - 5 * kPx, y: Y(0) + TABLE.thickness * S + 13 * kPx, anchor: 'end' }, { x: tx + 3 * S + 5 * kPx, y: Y(0) + TABLE.thickness * S + 28 * kPx },
+      ])
     }
 
     // rail
     if (it.rail && geo && frame) {
       const a = railLocalToWorld(frame, [0, -RAIL.height / 2, 0]), b = railLocalToWorld(frame, [RAIL.length, -RAIL.height / 2, 0])
       add(svg('line', { x1: X(a[0]), y1: Y(a[1]), x2: X(b[0]), y2: Y(b[1]), class: 's2d-rail' }))
-      add(svg('text', { x: X(a[0] * 0.3 + b[0] * 0.7), y: Y(a[1] * 0.3 + b[1] * 0.7) - 8 * kPx, class: 's2d-label', 'text-anchor': 'middle' }, t.rail))
+      for (let i = 0; i <= 16; i++) { const f = i / 16, cx = X(a[0] * (1 - f) + b[0] * f), cy = Y(a[1] * (1 - f) + b[1] * f); occupy(cx - 5 * kPx, cy - 5 * kPx, cx + 5 * kPx, cy + 5 * kPx) }
+      const railSpot = (f: number, dy: number, anchor: 'middle' = 'middle'): Spot => ({ x: X(a[0] * (1 - f) + b[0] * f), y: Y(a[1] * (1 - f) + b[1] * f) + dy * kPx, anchor })
+      label([t.rail], [railSpot(0.7, -13), railSpot(0.5, -13), railSpot(0.85, -13), railSpot(0.3, -13), railSpot(0.7, 21), railSpot(0.5, 21), railSpot(0.85, 21), railSpot(0.3, 21), ...sky([X(a[0] * 0.25 + b[0] * 0.75), Y(a[1] * 0.25 + b[1] * 0.75) - 3 * kPx])])
       // marks: yellow flags above the rail, staggered so neighbouring labels never overlap
       const sorted = [...st.marks].sort((p, q) => p.s_m - q.s_m)
       sorted.forEach((m, i) => {
@@ -147,6 +203,7 @@ export const mountSide2d: MountView = (root, ctx): View => {
         const tw = (txt.length * 7 + 8) * kPx, th = 17 * kPx
         const yTop = Y(p[1]) - 9 * kPx - row * (th + 5 * kPx)
         add(svg('line', { x1: X(p[0]), y1: Y(p[1]), x2: X(p[0]), y2: yTop, class: 's2d-mark' }))
+        occupy(X(p[0]) - tw / 2, yTop - th, X(p[0]) + tw / 2, Y(p[1]))
         minY = Math.min(minY, yTop - th)
         add(svg('rect', { x: X(p[0]) - tw / 2, y: yTop - th, width: tw, height: th, rx: 2 * kPx, class: 's2d-tape' }))
         add(svg('text', { x: X(p[0]), y: yTop - th / 2 + 4.2 * kPx, class: 's2d-tape-label', 'text-anchor': 'middle' }, txt))
@@ -174,6 +231,7 @@ export const mountSide2d: MountView = (root, ctx): View => {
       }
     }
 
+    placeLabels()
     staticLayer.replaceChildren(...L)
     // the viewbox grows upward to hold the flags: no clipped labels, no empty band
     vb.y0 = Math.min(vb.y0, minY - 6 * kPx)
@@ -212,12 +270,12 @@ export const mountSide2d: MountView = (root, ctx): View => {
     // the ball is drawn larger than life when small: a 16 mm marble would be a 1 px dot at this scale
     const r = Math.max(R * S, 3.4 * kPx)
     const pos = status.pos ? { x: status.pos.x_m * CM, y: (status.pos.y_m - st.world.H_m) * CM } : { x: STAGING.marble.x, y: R }
-    const key = `${id}|${pos.x.toFixed(2)}|${pos.y.toFixed(2)}|${r.toFixed(2)}|${st.items.marble}|${st.items.pingPong}`
+    const key = `${id}|${status.settled === true}|${pos.x.toFixed(2)}|${pos.y.toFixed(2)}|${r.toFixed(2)}|${st.items.marble}|${st.items.pingPong}`
     if (key !== ballKey) {
       ballKey = key
       ball.setAttribute('cx', String(X(pos.x))); ball.setAttribute('cy', String(Y(pos.y) - (r - R * S))); ball.setAttribute('r', String(r))
       ball.setAttribute('class', id === 'marble' ? 's2d-ball marble' : 's2d-ball pingpong')
-      ball.style.display = status.ball === null && !st.items.marble && !st.items.pingPong ? 'none' : ''
+      ball.style.display = (status.ball === null && !st.items.marble && !st.items.pingPong) || status.settled === true ? 'none' : ''
     }
     // dotted trail of the flight: the newest run that flew; hidden while the next ball is still rolling
     const runId = status.runId

@@ -464,7 +464,7 @@ export function createScene(container: HTMLElement, ctx: ViewContext, opts: Scen
     for (const id of ['marble', 'pingpong'] as const) {
       const ball = balls[id]
       const item = st.items[BALL_ITEM[id]]
-      ball.root.visible = item
+      ball.root.visible = item && !(status.ball === id && status.settled === true)
       if (!item) continue
       const R = ball.radius_cm
       const sp = spin[id]
@@ -490,7 +490,7 @@ export function createScene(container: HTMLElement, ctx: ViewContext, opts: Scen
       }
       sp.lastT = nowPerf
       ball.spin.rotation.z = sp.angle
-      parts.push(`${id}:${pos[0].toFixed(2)},${pos[1].toFixed(2)},${pos[2].toFixed(2)},${sp.angle.toFixed(2)}`)
+      parts.push(`${id}:${pos[0].toFixed(2)},${pos[1].toFixed(2)},${pos[2].toFixed(2)},${sp.angle.toFixed(2)},${ball.root.visible}`)
     }
 
     // trail: adopt the new run's flight as soon as it flies; fade the old one while the next ball is still on the rail

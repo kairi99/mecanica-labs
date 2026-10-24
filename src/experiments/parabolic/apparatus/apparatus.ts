@@ -703,7 +703,7 @@ export class ParabolicApparatus {
     const fl = run.flight!
     const tau = Math.min(t - land_s!, run.bounce!.tNext_s)
     const y = R + run.bounce!.vUp_mps * tau - 0.5 * GRAVITY_mps2 * tau * tau
-    return { phase: 'landed', ...base, pos: { x_m: fl.x_land_m + fl.vx_impact_mps * tau, y_m: Math.max(R, y), z_m: fl.z_land_m + fl.vz_impact_mps * tau }, onRail_s_m: null }
+    return { phase: 'landed', ...base, pos: { x_m: fl.x_land_m + fl.vx_impact_mps * tau, y_m: Math.max(R, y), z_m: fl.z_land_m + fl.vz_impact_mps * tau }, onRail_s_m: null, settled: tau >= run.bounce!.tNext_s }
   }
   private ballRadius(b: BallId): number { return ballSpec(b).R_m }
   /** Ball centre on the rail at s_m from the tip (approximate: centre R above the top surface along the normal). For drawing. */

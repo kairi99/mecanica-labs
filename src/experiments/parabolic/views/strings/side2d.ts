@@ -20,6 +20,8 @@ export interface Side2dStrings {
   level: string
   trail: string
   plumb: string
+  /** Shorter labels for the 2D view on narrow screens, where the full ones would run into each other. */
+  short: { rack: string; twoLeg: string; edge: string; table: string }
 }
 
 export const strings: Strings<Side2dStrings> = {
@@ -43,6 +45,7 @@ export const strings: Strings<Side2dStrings> = {
     level: 'Nivelador',
     trail: 'Última trayectoria',
     plumb: 'Proyección del borde',
+    short: { rack: 'Soporte', twoLeg: 'Dos patas', edge: 'Borde', table: 'Mesa' },
   },
   en: {
     aria: 'Side view of the table: inclined rail, table edge, ball trajectory and paper on the floor',
@@ -64,5 +67,6 @@ export const strings: Strings<Side2dStrings> = {
     level: 'Level',
     trail: 'Last trajectory',
     plumb: 'Edge projection',
+    short: { rack: 'Stand', twoLeg: 'Two-leg', edge: 'Edge', table: 'Table' },
   },
 }

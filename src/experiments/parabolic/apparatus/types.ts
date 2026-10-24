@@ -171,6 +171,8 @@ export interface BallStatus {
   pos: Vec3 | null
   /** While on the rail: distance from the low tip, m. */
   onRail_s_m: number | null
+  /** Landed and the first hop is over: the ball has left the picture (it bounced away, the student picks it up). Views hide it. */
+  settled?: boolean
 }
 
 export interface RunTimes {
