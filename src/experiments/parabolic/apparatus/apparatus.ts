@@ -7,7 +7,7 @@ import { tapeMaxPermissibleError_m } from '../../../core/physics/instruments.ts'
 import { deg2rad } from '../../../core/physics/angles.ts'
 import { Stopwatch } from '../../../core/instruments/stopwatch.ts'
 import {
-  BALL_IDS, EXPECTED_OFFSETS, drawRunOffsets, insidePaper, markOnPaper, runLaunch, runTrajectory, type BallId, type TrajectoryPoint,
+  BALL_IDS, EXPECTED_OFFSETS, GRAVITY_mps2, ballSpec, drawRunOffsets, insidePaper, markOnPaper, runLaunch, runTrajectory, type BallId, type TrajectoryPoint,
 } from './model.ts'
 import {
   BOND_SHEETS, EDGE_PROJECTION_SIGMA_m, FOOT_RANGE_mm, FOOT_STEP_mm, GAP_MAX_m, GAP_START_m, GAP_STEP_m, GAP_TARGET_m, GAP_TOLERANCE_m,
@@ -692,7 +692,7 @@ export class ParabolicApparatus {
     if (t < edge_s!) return { phase: 'rolling', ...base, pos: { x_m: tableX(t - tip_s!), y_m: tableY, z_m: 0 }, onRail_s_m: null }
     if (run.outcome === 'rolledOver') {
       const tau = Math.min(t - edge_s!, ROLL_OVER_TAIL_s)
-      const y = Math.max(R, tableY - 0.5 * 9.80665 * tau * tau)
+      const y = Math.max(R, tableY - 0.5 * GRAVITY_mps2 * tau * tau)
       return { phase: 'rolledOver', ...base, pos: { x_m: run.v_edge_mps * tau, y_m: y, z_m: 0 }, onRail_s_m: null }
     }
     const traj = this.runTrajectory(run.id)
@@ -702,10 +702,10 @@ export class ParabolicApparatus {
     }
     const fl = run.flight!
     const tau = Math.min(t - land_s!, run.bounce!.tNext_s)
-    const y = R + run.bounce!.vUp_mps * tau - 0.5 * 9.80665 * tau * tau
+    const y = R + run.bounce!.vUp_mps * tau - 0.5 * GRAVITY_mps2 * tau * tau
     return { phase: 'landed', ...base, pos: { x_m: fl.x_land_m + fl.vx_impact_mps * tau, y_m: Math.max(R, y), z_m: fl.z_land_m + fl.vz_impact_mps * tau }, onRail_s_m: null }
   }
-  private ballRadius(b: BallId): number { return b === 'marble' ? 0.008 : 0.02 }
+  private ballRadius(b: BallId): number { return ballSpec(b).R_m }
   /** Ball centre on the rail at s_m from the tip (approximate: centre R above the top surface along the normal). For drawing. */
   private railBallPos(theta_rad: number, tip_m: number, gap_m: number, s_m: number, R_m: number, H_m: number = this.hidden.H_m): Vec3 {
     return {

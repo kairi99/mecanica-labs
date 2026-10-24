@@ -1,0 +1,22 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Parabolic stage dev harness</title>
+    <style>
+      body { margin: 0; font: 14px system-ui, sans-serif; }
+      #root3d { margin: 6px; }
+      #root2d { margin: 6px; background: var(--stage-plate); border-radius: 12px; }
+      #st { font: 11px ui-monospace, monospace; padding: 2px 6px; }
+      #log { font: 11px ui-monospace, monospace; padding: 0 6px 6px; white-space: pre-wrap; max-height: 90px; overflow: hidden; }
+    </style>
+  </head>
+  <body>
+    <div id="root3d"></div>
+    <div id="root2d"></div>
+    <div id="st"></div>
+    <div id="log"></div>
+    <script type="module" src="./parabolic.ts"></script>
+  </body>
+</html>
