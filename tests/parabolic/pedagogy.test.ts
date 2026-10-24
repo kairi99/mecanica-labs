@@ -137,6 +137,38 @@ describe('coach triggers', () => {
     a.resetBall(); a.stopwatchReset()
     launch(a, 60000, 'edge')
     expect(keys(a, last(a, 'stopwatchStop'))).toEqual([])
+    // a lag of 0.35 s after the edge is already worth a word; 0.25 s (the 'edge' helper uses 0.2) is not
+    const b = createApparatus('assembled', { seed: 7 })
+    const rel2 = b.release(1000)
+    const run2 = b.getRun(rel2.ok ? rel2.runId : 0)!
+    b.stopwatchStartStop(1000 + (run2.times.edge_s! + 0.35) * 1000)
+    b.stopwatchStartStop(1000 + (run2.times.land_s! + 0.2) * 1000)
+    expect(keys(b, last(b, 'stopwatchStop'))).toEqual(['startedLate'])
+  })
+  it('copying a time or range from the other ball or another mark is allowed but coached', () => {
+    const a = createApparatus('assembled', { seed: 7 })
+    a.selectBall('marble')
+    const marks = [...a.getMarks()].sort((p, q) => p.s_m - q.s_m)
+    expect(a.placeBall({ markId: marks[0]!.id }).ok).toBe(true)
+    const { stopAt } = launch(a, 1000, 'edge')
+    expect(a.tableCopyTime('pingpong', 0, 0, stopAt + 300).ok).toBe(true)
+    const wb = coachCandidates(a, last(a, 'recorded')!)
+    expect(wb.map((n) => n.key)).toEqual(['wrongBallTime']); expect(wb[0]!.params.ball).toBe('marble')
+    expect(a.tableCopyTime('marble', 2, 0, stopAt + 300).ok).toBe(true)
+    const wm = coachCandidates(a, last(a, 'recorded')!)
+    expect(wm.map((n) => n.key)).toEqual(['wrongMarkTime']); expect(wm[0]!.params).toEqual({ m: 1, n: 3 })
+    expect(a.tableCopyTime('marble', 0, 1, stopAt + 300).ok).toBe(true)
+    expect(keys(a, last(a, 'recorded'))).toEqual([])
+    // the same for a range copied from the tape
+    const b = createApparatus('assembled', { seed: 7 })
+    fillTableSimulated(b, { seed: 1, perTrial: 1, trials: [1], balls: ['marble'] })
+    expect(b.tableCopyRange('pingpong', 1, 0).ok).toBe(true)
+    expect(keys(b, last(b, 'recorded'))).toEqual(['wrongBallRange'])
+    expect(b.tableCopyRange('marble', 3, 0).ok).toBe(true)
+    expect(coachCandidates(b, last(b, 'recorded')!)[0]).toMatchObject({ key: 'wrongMarkRange', params: { m: 2, n: 4 } })
+    // typed values are never judged by origin
+    a.tableSetTime('pingpong', 1, 0, '0.40')
+    expect(keys(a, last(a, 'recorded'))).toEqual([])
   })
   it('stop timing reads the true edge and landing from the stop record', () => {
     const a = createApparatus('assembled', { seed: 7 })
@@ -182,7 +214,7 @@ describe('coach triggers', () => {
     off()
   })
   it('every coach key is reachable by one of the tests above', () => {
-    expect(COACH_KEYS.length).toBe(14)
+    expect(COACH_KEYS.length).toBe(18)
   })
 })
 

@@ -1,5 +1,6 @@
 // Coach toast: a dismissible status message at the bottom of the screen. Never traps focus, never blocks the lab.
 import type { Strings, ViewContext } from '../views/view.ts'
+import type { Lang } from '../i18n.ts'
 import { button, el } from '../views/dom.ts'
 import { CoachGate, trackCoach, type EventSource, type Nudge } from './coach.ts'
 import { fmt } from './dom.ts'
@@ -18,6 +19,8 @@ export interface CoachDef<A extends EventSource<E>, E, K extends string> {
   strings: Strings<CoachStrings<K>>
   /** Nudges (in priority order) that an event deserves; empty for events that are never coached. */
   candidates(app: A, e: E): readonly Nudge<K>[]
+  /** Optional: turn language-free params (for example a ball id) into text before they are substituted. */
+  localise?(params: Record<string, string | number>, lang: Lang): Record<string, string | number>
 }
 
 export function mountCoach<A extends EventSource<E>, E, K extends string>(ctx: ViewContext<A>, def: CoachDef<A, E, K>): { relabel(): void; destroy(): void } {
@@ -36,7 +39,7 @@ export function mountCoach<A extends EventSource<E>, E, K extends string>(ctx: V
     const T = strings[ctx.lang()]
     tag.textContent = T.label
     close.setAttribute('aria-label', T.dismiss)
-    if (current) text.textContent = fmt(T.nudges[current.key], localiseParams(current.params, ctx.lang()))
+    if (current) text.textContent = fmt(T.nudges[current.key], localiseParams(def.localise ? def.localise(current.params, ctx.lang()) : current.params, ctx.lang()))
   }
   function hide(dismissed: boolean): void {
     if (dismissed && current) gate.dismiss(current.key, ctx.now())

@@ -2,10 +2,11 @@ import type { Strings } from '../../views/view.ts'
 import type { CoachStrings as CoreCoachStrings } from '../../../../core/pedagogy/coachView.ts'
 import type { CoachKey } from '../coach.ts'
 
-export type CoachStrings = CoreCoachStrings<CoachKey>
+export type CoachStrings = CoreCoachStrings<CoachKey> & { balls: Record<'marble' | 'pingpong', string> }
 
 export const strings: Strings<CoachStrings> = {
   es: {
+    balls: { marble: 'canica', pingpong: 'pelota de ping-pong' },
     label: 'Sugerencia',
     dismiss: 'Descartar la sugerencia',
     nudges: {
@@ -19,13 +20,18 @@ export const strings: Strings<CoachStrings> = {
       offPaper: 'La bola cayó fuera del papel bond o del carbón y no dejó marca. Centra los papeles en la zona de aterrizaje (mira dónde cayó) y repite el lanzamiento.',
       tooFaint: 'La marca salió demasiado tenue para verse. La pelota de ping-pong es liviana y deja marcas débiles: repite el lanzamiento, o apoya mejor el papel carbón.',
       startedAtRelease: 'Parece que arrancaste el cronómetro unos {s} s antes de que la bola llegara al borde. El tiempo de vuelo empieza al pasar el borde, no al soltarla: así estás midiendo también el rodar.',
-      startedLate: 'Arrancaste el cronómetro unos {s} s después de que la bola pasó el borde, así que se perdió parte de la caída. Prepárate y presiona justo cuando salga de la mesa.',
+      startedLate: 'Arrancaste el cronómetro unos {s} s después de que la bola pasó el borde, así que se perdió parte de la caída; y tu reacción al parar también se retrasa: lo que importa es que ambos retrasos se parezcan. Prepárate y presiona justo cuando salga de la mesa.',
       timeFar: 'Un tiempo de {t} s está lejos de lo que cabe esperar para caer desde una mesa (cerca de 0,4 s). Revisa en qué momento presionaste inicio y alto.',
       rangeFromTip: 'Ese alcance coincide con medir desde la punta de la riel ({cm} cm antes del borde). Mídelo desde la proyección del borde en el piso, como pide la guía.',
+      wrongBallTime: 'Ese tiempo es de un lanzamiento de la {ball}, pero la celda es de la otra bola.',
+      wrongMarkTime: 'Ese lanzamiento salió de la marca {m}; la celda activa es la No. {n}.',
+      wrongBallRange: 'Ese alcance es de un lanzamiento de la {ball}, pero la celda es de la otra bola.',
+      wrongMarkRange: 'Ese alcance es de un lanzamiento que salió de la marca {m}; la celda activa es la No. {n}.',
       launchHeightMissing: 'Ya tienes varios datos pero no has medido la altura de lanzamiento (del piso a la mesa). La necesitas para el tiempo esperado y la rapidez final.',
     },
   },
   en: {
+    balls: { marble: 'marble', pingpong: 'ping-pong ball' },
     label: 'Hint',
     dismiss: 'Dismiss the hint',
     nudges: {
@@ -39,9 +45,13 @@ export const strings: Strings<CoachStrings> = {
       offPaper: 'The ball landed off the bond paper or the carbon and left no mark. Centre the papers on the landing zone (watch where it fell) and repeat the launch.',
       tooFaint: 'The dot was too faint to see. The ping-pong ball is light and leaves weak marks: repeat the launch, or press the carbon paper down better.',
       startedAtRelease: 'It looks like you started the stopwatch about {s} s before the ball reached the edge. The flight time starts when it passes the edge, not at the release: this way you also time the roll.',
-      startedLate: 'You started the stopwatch about {s} s after the ball passed the edge, so part of the fall is missing. Get ready and press just as it leaves the table.',
+      startedLate: 'You started the stopwatch about {s} s after the ball passed the edge, so part of the fall is missing; and your stop press lags too: what matters is that both lags are similar. Get ready and press just as it leaves the table.',
       timeFar: 'A time of {t} s is far from what to expect for a fall from a table (about 0.4 s). Check when you pressed start and stop.',
       rangeFromTip: 'That range matches measuring from the tip of the rail ({cm} cm before the edge). Measure it from the edge projection on the floor, as the guide asks.',
+      wrongBallTime: 'That time is from a launch of the {ball}, but the cell belongs to the other ball.',
+      wrongMarkTime: 'That launch started from mark {m}; the active cell is No. {n}.',
+      wrongBallRange: 'That range is from a launch of the {ball}, but the cell belongs to the other ball.',
+      wrongMarkRange: 'That range is from a launch that started from mark {m}; the active cell is No. {n}.',
       launchHeightMissing: 'You have several data points but have not measured the launch height (floor to table). You need it for the expected time and the final speed.',
     },
   },

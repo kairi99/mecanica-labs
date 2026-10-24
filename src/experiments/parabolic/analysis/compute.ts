@@ -10,6 +10,9 @@
 //  * Range of a trial: x_bar = mean; Delta x = sqrt(uA^2 + uTape^2 + uProj^2): Type A, tape reading Type B (analog, 1 mm
 //    division, core typeBAnalog) and the placement of the edge projection point on the floor (ASSUMED 2 mm, the same value the
 //    bench draws; a common, systematic start of every range). The tape MPE is reported in the help, not applied (as in Practica 1).
+//  * Comparisons between marks or between balls (task 3 spread and bars, task 8) use `uStat_t_s` and `uStat_v0_mps` (no reaction
+//    bias): the same hand and the same lag shift every time equally, so the bias cancels in a difference. Task 6 (a measured time
+//    against the expected one) keeps the full Delta t, because there the bias does not cancel.
 //  * Launch speed: v0 = x_bar / t_bar (task 4), Delta v = v0 sqrt((Dx/x)^2 + (Dt/t)^2) (GUM 5.1.2, independent inputs;
 //    core meanVelocity with x1 = t1 = 0). The shared reaction bias makes the v0 of different trials correlated.
 //  * Expected flight time (task 5): t = sqrt(2H/g), u_t = t/2 sqrt((u_H/H)^2 + (u_g/g)^2). H is typed by the student from the
@@ -51,6 +54,8 @@ export interface TrialStat {
   u_x_m: number | null
   v0_mps: number | null
   u_v0_mps: number | null
+  /** Delta v built from uStat_t_s (no shared reaction bias): used to compare two balls, where that bias cancels. */
+  uStat_v0_mps: number | null
 }
 
 export interface BallAnalysis {
@@ -80,14 +85,15 @@ export function analyseBall(t_s: readonly (readonly (number | null)[])[], x_m: r
     const uStat = tBar === null ? null : combinedUncertainty(uAT, uRes)
     const ut = tBar === null ? null : combinedUncertainty(uAT, uRes, uReact)
     const ux = xBar === null ? null : combinedUncertainty(uAX, uTape, EDGE_PROJECTION_SIGMA_m)
-    let v0: number | null = null, uv: number | null = null
+    let v0: number | null = null, uv: number | null = null, uvStat: number | null = null
     if (tBar !== null && xBar !== null && tBar > 0) {
       const v = meanVelocity(0, 0, xBar, tBar, 0, ux!, 0, ut!)
       v0 = v.v_mps; uv = v.sigma_v_mps
+      uvStat = meanVelocity(0, 0, xBar, tBar, 0, ux!, 0, uStat!).sigma_v_mps
     }
     trials.push({
       trial: i, n_t: ts.length, n_x: xs.length, t_s: tBar, sd_t_s: sdT, uA_t_s: uAT, uRes_s: uRes, uReact_s: uReact, uStat_t_s: uStat, u_t_s: ut,
-      x_m: xBar, sd_x_m: sdX, uA_x_m: uAX, uTape_m: uTape, uProj_m: EDGE_PROJECTION_SIGMA_m, u_x_m: ux, v0_mps: v0, u_v0_mps: uv,
+      x_m: xBar, sd_x_m: sdX, uA_x_m: uAX, uTape_m: uTape, uProj_m: EDGE_PROJECTION_SIGMA_m, u_x_m: ux, v0_mps: v0, u_v0_mps: uv, uStat_v0_mps: uvStat,
     })
   }
   const all = trials.flatMap((_, i) => present(t_s[i] ?? []))
@@ -133,7 +139,11 @@ export function finalSpeed(v0_mps: number, u_v0_mps: number, exp: ExpectedTime, 
   }
 }
 
-/** Task 8: difference of two independent results in units of the combined standard uncertainty (null if either is missing). */
+/**
+ * Task 8: difference of two independent results in units of the combined standard uncertainty (null if either is missing).
+ * Callers comparing the two balls pass the scatter-based uncertainties (no reaction bias): the same hand times both balls, so
+ * that bias is common and cancels in a difference (Taylor ch. 4; GUM 5.2 correlated inputs with correlation +1).
+ */
 export function differenceInSigma(a: number | null, ua: number | null, b: number | null, ub: number | null): { diff: number; u: number; sigma: number } | null {
   if (a === null || ua === null || b === null || ub === null) return null
   const u = Math.hypot(ua, ub)
@@ -193,9 +203,9 @@ export function fullAnalysis(inp: FullInput): FullAnalysis {
   const compare = balls.marble.trials.map((m, i) => {
     const p = balls.pingpong.trials[i]!
     return {
-      v0: differenceInSigma(m.v0_mps, m.u_v0_mps, p.v0_mps, p.u_v0_mps),
+      v0: differenceInSigma(m.v0_mps, m.uStat_v0_mps, p.v0_mps, p.uStat_v0_mps),
       x: differenceInSigma(m.x_m, m.u_x_m, p.x_m, p.u_x_m),
-      t: differenceInSigma(m.t_s, m.u_t_s, p.t_s, p.u_t_s),
+      t: differenceInSigma(m.t_s, m.uStat_t_s, p.t_s, p.uStat_t_s),
       v0Ratio: m.v0_mps !== null && p.v0_mps !== null && p.v0_mps > 0 ? m.v0_mps / p.v0_mps : null,
       xRatio: m.x_m !== null && p.x_m !== null && p.x_m > 0 ? m.x_m / p.x_m : null,
     }

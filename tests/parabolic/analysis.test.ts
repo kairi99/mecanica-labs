@@ -42,6 +42,23 @@ describe('Tabla 2.1 means and uncertainty', () => {
     const rel = Math.hypot(r.u_x_m! / 0.5, r.u_t_s! / 0.4)
     expect(r.u_v0_mps).toBeCloseTo((0.5 / 0.4) * rel, 10)
   })
+  it('the scatter-only uncertainties leave the common reaction bias out', () => {
+    expect(r.uStat_t_s).toBeCloseTo(Math.hypot(r.uA_t_s, typeBDigital(0.01)), 12)
+    expect(r.uStat_t_s!).toBeLessThan(r.u_t_s!)
+    const rel = Math.hypot(r.u_x_m! / 0.5, r.uStat_t_s! / 0.4)
+    expect(r.uStat_v0_mps).toBeCloseTo((0.5 / 0.4) * rel, 10)
+    expect(r.uStat_v0_mps!).toBeLessThan(r.u_v0_mps!)
+  })
+  it('task 8 compares the balls with the scatter-only uncertainties: a 0.1 s common lag cancels in the difference', () => {
+    const tm = grid([[0.40, 0.41, 0.39, 0.40, 0.40]]), tp = grid([[0.40, 0.41, 0.39, 0.40, 0.40]])
+    const x = grid([[0.5, 0.5, 0.5, 0.5, 0.5]])
+    const lag = (g: (number | null)[][]): (number | null)[][] => g.map((row) => row.map((v) => (v === null ? null : v + 0.1)))
+    const a = fullAnalysis({ tables: { marble: { t_s: tm, x_m: x }, pingpong: { t_s: lag(tp), x_m: x } }, H_m: null })
+    const c = a.compare[0]!
+    expect(c.t!.u).toBeCloseTo(Math.hypot(a.balls.marble.trials[0]!.uStat_t_s!, a.balls.pingpong.trials[0]!.uStat_t_s!), 12)
+    expect(c.t!.u).toBeLessThan(Math.hypot(a.balls.marble.trials[0]!.u_t_s!, a.balls.pingpong.trials[0]!.u_t_s!) / 3)
+    expect(c.v0!.u).toBeCloseTo(Math.hypot(a.balls.marble.trials[0]!.uStat_v0_mps!, a.balls.pingpong.trials[0]!.uStat_v0_mps!), 12)
+  })
   it('handles empty trials and a single repetition without NaN', () => {
     const a = analyseBall(grid([[0.4]]), grid([[0.5]]))
     expect(a.trials[1]!.t_s).toBeNull()
@@ -161,6 +178,13 @@ describe('teacher key', () => {
     expect(md).toContain('sqrt(2H/g)')
     expect(md).toContain('Bias b (s)')
     expect(md).toContain('A simulated careful student')
+  })
+  it('gives expected answers and common mistakes for tasks 1, 4, 7, 8 and 9, with the ratio computed from the model', () => {
+    for (const h of ['### Task 1', '### Task 4', '### Task 7', '### Task 8', '### Task 9']) expect(md).toContain(h)
+    expect(md).toContain('Common mistakes')
+    const ratio = md.match(/ratio (\d\.\d{3})\. Ideal/)
+    expect(ratio).not.toBeNull()
+    expect(Number(ratio![1])).toBeGreaterThan(1)
   })
   it('run spread of the flight time is far smaller than that of the range (time does not depend on v0)', () => {
     const s = spread(BALLS.marble, 0.8, 1, 300)

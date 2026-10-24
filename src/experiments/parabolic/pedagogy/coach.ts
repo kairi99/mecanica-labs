@@ -13,7 +13,7 @@ import { FLIGHT_EXPECTED_s, READING_FAR_s, START_EARLY_s, START_LATE_s, stopTimi
 
 export const COACH_KEYS = [
   'marksLowerHalf', 'noCarbon', 'paperMoved', 'riseOff', 'gapSmall', 'gapLarge', 'noEdgeProjection', 'offPaper', 'tooFaint',
-  'startedAtRelease', 'startedLate', 'timeFar', 'rangeFromTip', 'launchHeightMissing',
+  'startedAtRelease', 'startedLate', 'timeFar', 'rangeFromTip', 'wrongBallTime', 'wrongMarkTime', 'wrongBallRange', 'wrongMarkRange', 'launchHeightMissing',
 ] as const
 export type CoachKey = (typeof COACH_KEYS)[number]
 export type Nudge = CoreNudge<CoachKey>
@@ -78,6 +78,16 @@ export function coachCandidates(app: ParabolicApparatus, e: ApparatusEvent): Nud
     case 'recorded': {
       if (e.column === 'time' && Math.abs(e.value - FLIGHT_EXPECTED_s) > READING_FAR_s) push('timeFar', { t: Math.round(e.value * 100) / 100 })
       if (e.column === 'range' && e.source === 'typed' && rangeLooksFromTip(app, e.ball, e.value)) push('rangeFromTip', { cm: Math.round((app.getState().gap_mm / 10)) })
+      if (e.source === 'copied' && e.runId !== null) {
+        // Copying stays permissive (the student places the ball by hand), but a value from another ball or mark is worth a word.
+        const run = app.getRun(e.runId)
+        const cell = e.column === 'time' ? 'Time' : 'Range'
+        if (run && run.ball !== e.ball) push(`wrongBall${cell}`, { ball: run.ball })
+        else if (run && run.markId !== null) {
+          const rank = [...app.getMarks()].sort((a, b) => a.s_m - b.s_m).findIndex((m) => m.id === run.markId)
+          if (rank >= 0 && rank !== e.trial) push(`wrongMark${cell}`, { m: rank + 1, n: e.trial + 1 })
+        }
+      }
       const p = app.procedure()
       if (!p.measured.launchHeight && p.tableFilled.marble + p.tableFilled.pingpong >= 2 * TABLE_REPS) push('launchHeightMissing')
       break
@@ -95,6 +105,10 @@ export function trackCoach(app: ParabolicApparatus, gate: CoachGate<CoachKey>, n
   return trackCoreCoach(app, (e: ApparatusEvent) => (e.type === 'loaded' || e.type === 'presetApplied' ? [] : coachCandidates(app, e)), gate, now, onNudge)
 }
 
-export const COACH_DEF: CoachDef<ParabolicApparatus, ApparatusEvent, CoachKey> = { strings, candidates: coachCandidates }
+export const COACH_DEF: CoachDef<ParabolicApparatus, ApparatusEvent, CoachKey> = {
+  strings, candidates: coachCandidates,
+  // The ball id in a nudge becomes the localised ball name.
+  localise: (params, lang) => (typeof params.ball === 'string' ? { ...params, ball: strings[lang].balls[params.ball as BallId] } : params),
+}
 
 export function mountCoach(ctx: ViewContext): { relabel(): void; destroy(): void } { return mountCoreCoach(ctx, COACH_DEF) }

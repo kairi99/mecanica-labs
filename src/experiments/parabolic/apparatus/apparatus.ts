@@ -771,7 +771,7 @@ export class ParabolicApparatus {
     if (!p.ok) return this.refuse('tableSetTime', p.reason)
     const c = this.tables[ball][trial]![rep]!
     c.t_s = p.value_s; c.timeRunId = null; c.timeStopId = null
-    this.emit({ type: 'recorded', ball, trial, rep, column: 'time', value: p.value_s, source: 'typed' })
+    this.emit({ type: 'recorded', ball, trial, rep, column: 'time', value: p.value_s, source: 'typed', runId: null })
     return { ok: true, value_s: p.value_s }
   }
   /** Type a range (m) into a cell; decimal point or comma, at most 3 decimals (the tape is read to the millimetre). */
@@ -781,7 +781,7 @@ export class ParabolicApparatus {
     if (!p.ok) return this.refuse('tableSetRange', p.reason)
     const c = this.tables[ball][trial]![rep]!
     c.x_m = p.value_m; c.rangeCarbonId = null; c.rangeRunId = null
-    this.emit({ type: 'recorded', ball, trial, rep, column: 'range', value: p.value_m, source: 'typed' })
+    this.emit({ type: 'recorded', ball, trial, rep, column: 'range', value: p.value_m, source: 'typed', runId: null })
     return { ok: true, value_m: p.value_m }
   }
   /** Copy the stopped stopwatch display into a cell, remembering which run and stop it came from. */
@@ -795,7 +795,7 @@ export class ParabolicApparatus {
     const v = this.stopwatchDisplay_s(t_ms)
     const c = this.tables[ball][trial]![rep]!
     c.t_s = v; c.timeRunId = stop.runId; c.timeStopId = stop.id
-    this.emit({ type: 'recorded', ball, trial, rep, column: 'time', value: v, source: 'copied' }, t_ms)
+    this.emit({ type: 'recorded', ball, trial, rep, column: 'time', value: v, source: 'copied', runId: stop.runId }, t_ms)
     return { ok: true, value_s: v }
   }
   /** Copy the last range read with the tape (to the millimetre) into a cell, remembering the carbon mark it came from. */
@@ -804,7 +804,7 @@ export class ParabolicApparatus {
     if (!this.lastRange) return this.refuse('tableCopyRange', 'noTapeReading')
     const c = this.tables[ball][trial]![rep]!
     c.x_m = this.lastRange.reading_m; c.rangeCarbonId = this.lastRange.carbonId; c.rangeRunId = this.lastRange.runId
-    this.emit({ type: 'recorded', ball, trial, rep, column: 'range', value: c.x_m, source: 'copied' })
+    this.emit({ type: 'recorded', ball, trial, rep, column: 'range', value: c.x_m, source: 'copied', runId: this.lastRange.runId })
     return { ok: true, value_m: c.x_m }
   }
   tableClearCell(ball: BallId, trial: number, rep: number): Result {

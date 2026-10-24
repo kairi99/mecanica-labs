@@ -2,7 +2,7 @@
 // scripts/teacher-key.ts writes the result to docs/teacher-key-parabolic.md. Every number comes from the physics layer, the
 // apparatus (for the simulated careful student) and the analysis layer.
 import {
-  BALLS, DEFAULT_SETUP, G_QUITO_mps2, mean, mulberry32, reactionBiasTypeB_s, sampleRun, sampleSd, simulateLaunch, ZERO_RUN, type BallSpec,
+  BALLS, DEFAULT_SETUP, G_QUITO_mps2, VACUUM_EFFECTS, effectiveInertiaFactor, mean, mulberry32, reactionBiasTypeB_s, sampleRun, sampleSd, simulateLaunch, ZERO_RUN, type BallSpec,
 } from '../physics/index.ts'
 import { SLOWMO_FPS_hz, TABLE_HEIGHT_MAX_m, TABLE_HEIGHT_MIN_m, createApparatus } from '../apparatus/index.ts'
 import { G_UNCERTAINTY_mps2, SIGMA_H_m, expectedFlightTime, fullAnalysis } from '../analysis/compute.ts'
@@ -96,7 +96,7 @@ export function teacherKey(): string {
     '',
     '- Time of a mark: mean of 5 readings; Delta t = sqrt(uA^2 + uRes^2 + uReact^2) with uA = s/sqrt(5), uRes = 0.01 s/sqrt(12), uReact = 0.1 s/sqrt(3) (ASSUMED half-width 0.1 s).',
     `- Range of a mark: mean of 5; Delta x = sqrt(uA^2 + uTape^2 + uProj^2) with uTape = 1 mm/sqrt(12) and the edge-projection placement 2 mm (ASSUMED, the same sigma the bench draws).`,
-    '- v0 = x/t; Delta v = v0 sqrt((Dx/x)^2 + (Dt/t)^2) (GUM 5.1.2). The reaction bias is shared by all marks, so the v0 of different marks are correlated; the panel says so.',
+    '- v0 = x/t; Delta v = v0 sqrt((Dx/x)^2 + (Dt/t)^2) (GUM 5.1.2). The reaction bias is shared by all marks, so the v0 of different marks are correlated; the panel says so. Comparisons between marks or between balls (task 3 bars and spread, task 8) use the scatter-only uncertainty (Type A + resolution, no reaction bias, and the v0 uncertainty built from it): the same hand and the same lag shift every time equally, so the bias cancels in a difference. Task 6 keeps the full Delta t.',
     `- Expected time: u_t = t/2 sqrt((u_H/H)^2 + (u_g/g)^2) with u_H = sqrt(2) x 1 mm/sqrt(12) = ${f(SIGMA_H_m * 1000, 2)} mm (two tape ends) and u_g = ${G_UNCERTAINTY_mps2} m/s^2 (ASSUMED).`,
     '- Final speed: v = sqrt(v0^2 + 2 g H), u_v = sqrt((v0 u_v0)^2 + (g u_H)^2 + (H u_g)^2)/v.',
     '- Verdicts compare |t - t_theo| with the combined standard uncertainty (within 1 sigma, 1 to 2 sigma, beyond 2 sigma).',
@@ -127,6 +127,63 @@ export function teacherKey(): string {
   push(
     '',
     ...(['marble', 'pingpong'] as const).map((id) => `- ${BALL_NAMES[id]}, all 25 readings: t = ${f(a.balls[id].pooled!.t_s, 3)} s, error ${f(a.pooledError[id]!.error_pct, 1)} % (${a.pooledError[id]!.comparison.verdict}).`),
+  )
+  // ---- expected answers and common mistakes (tasks 1, 4, 7, 8, 9), all from the model -----------------------------------
+  const H0 = DEFAULT_SETUP.H_m
+  const mid = 0.8
+  const em = expectation(BALLS.marble, mid)!, ep = expectation(BALLS.pingpong, mid)!
+  const vac = (b: BallSpec): number => simulateLaunch(DEFAULT_SETUP, b, mid, ZERO_RUN, { effects: VACUUM_EFFECTS }).flight!.t_flight_s
+  const dragPct = (b: BallSpec, e: Row): number => ((e.t - vac(b)) / vac(b)) * 100
+  const kEff = (b: BallSpec): number => effectiveInertiaFactor(b.k_body, b.R_m, DEFAULT_SETUP.channelWidth_m)
+  const idealRatio = Math.sqrt((1 + kEff(BALLS.pingpong)) / (1 + kEff(BALLS.marble)))
+  push(
+    '',
+    '## Expected answers and common mistakes, tasks 1, 4, 7, 8 and 9',
+    '',
+    `Numbers use H = ${f(H0, 2)} m and the model without run variability.`,
+    '',
+    '### Task 1, the motion',
+    '',
+    `After the edge only gravity (and a little air) acts. Horizontally the motion is uniform (constant velocity, no horizontal force); vertically it is free fall from rest (uniform acceleration g = ${f(g, 2)} m/s^2). The path is a parabola. The velocity at the edge is horizontal, along the rail direction on the table. Common mistake: drawing a force "of the launch" that keeps pushing the ball forward.`,
+    '',
+    '### Task 4, launch speed per mark',
+    '',
+    '| Mark (cm) | v0 marble (m/s) | v0 ping-pong (m/s) |',
+    '|---|---|---|',
+  )
+  for (const sm of MARKS_m) {
+    const a1 = expectation(BALLS.marble, sm), a2 = expectation(BALLS.pingpong, sm)
+    push(`| ${f(sm * 100, 0)} | ${a1 ? f(a1.v, 2) : '-'} | ${a2 ? f(a2.v, 2) : '-'} |`)
+  }
+  push(
+    '',
+    'v0 = x/t with the range from the edge projection and the flight time. Common mistakes: v0 = sqrt(2 g dh) from the height drop of the rail (it ignores the rotation, the corner and the table roll, so it is too large); range measured from the rail tip instead of the edge projection; timing from the release instead of from the edge (the flight time becomes about 1 s and v0 about 0.4 of its value).',
+    '',
+    '### Task 7, final speed and angle',
+    '',
+    '| Ball | Mark (cm) | v final (m/s) | angle below horizontal (deg) |',
+    '|---|---|---|---|',
+  )
+  const vy0 = Math.sqrt(2 * g * H0)
+  for (const id of ['marble', 'pingpong'] as const) {
+    for (const sm of MARKS_m) {
+      const e = expectation(BALLS[id], sm)
+      if (e) push(`| ${BALL_NAMES[id]} | ${f(sm * 100, 0)} | ${f(Math.hypot(e.v, vy0), 2)} | ${f((Math.atan2(vy0, e.v) * 180) / Math.PI, 0)} |`)
+    }
+  }
+  push(
+    '',
+    `v = sqrt(v0^2 + 2 g H); the vertical part is ${f(vy0, 2)} m/s whatever the mark, so the final speed is set mostly by H and changes little between marks (v0 only adds in quadrature). Common mistakes: adding v0 and g t as numbers instead of as perpendicular components; taking the final speed equal to v0.`,
+    '',
+    '### Task 8, marble and ping-pong ball',
+    '',
+    `At mark ${f(mid * 100, 0)} cm: v0 marble ${f(em.v, 3)} m/s, ping-pong ${f(ep.v, 3)} m/s, ratio ${f(em.v / ep.v, 3)}. Ideal rolling without losses gives v proportional to 1/sqrt(1 + k_eff) (k_eff includes the channel of width ${f(DEFAULT_SETUP.channelWidth_m * 1000, 0)} mm), so the ratio marble/ping-pong would be sqrt((1 + k_pp)/(1 + k_marble)) = ${f(idealRatio, 3)} (k_marble = ${f(kEff(BALLS.marble), 3)}, k_pp = ${f(kEff(BALLS.pingpong), 3)}); the model value differs from it by the rolling resistance, the corner loss and the air, which hit the light ball more. The ping-pong ball therefore leaves slower and its range is shorter (${f(ep.x, 3)} m against ${f(em.x, 3)} m). The flight times are the same within hand timing (${f(em.t, 3)} s against ${f(ep.t, 3)} s, a difference far below the 0.1 s reaction uncertainty); air drag lengthens the flight by ${f(dragPct(BALLS.marble, em), 2)} % for the marble and ${f(dragPct(BALLS.pingpong, ep), 2)} % for the ping-pong ball. Common mistakes: saying the lighter ball falls slower in vacuum; explaining the range difference by mass alone (it is the rotational inertia and the losses); calling a difference real when it is below 1 sigma (the panel compares with the scatter-only uncertainty).`,
+    '',
+    '### Task 9, ideal projectile',
+    '',
+    'Conditions of the ideal model: no air drag and no Magnus lift (the model includes both, small); constant g over the fall; launch velocity exactly horizontal; the ball treated as a point (it is a sphere with spin and size); the ball leaves exactly at the table edge, with no contact with it. Expected factors of deviation: reaction bias (raises or lowers t), edge projection placement (shifts every x), drag (lengthens t and shortens x slightly, more for the ping-pong ball), a launch that is not exactly horizontal (changes t). Common mistake: listing only "human error" without saying which quantity it shifts and in which direction.',
+  )
+  push(
     '',
     '## URL flags',
     '',

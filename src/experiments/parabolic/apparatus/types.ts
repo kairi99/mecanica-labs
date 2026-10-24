@@ -105,7 +105,8 @@ export type ApparatusEventBody =
   | { type: 'stopwatchStart' }
   | { type: 'stopwatchStop'; stopId: number; reading_s: number }
   | { type: 'stopwatchReset' }
-  | { type: 'recorded'; ball: BallId; trial: number; rep: number; column: 'time' | 'range'; value: number; source: 'typed' | 'copied' }
+  /** `runId`: the launch a copied stop or range came from (null when typed or when the stop had no run). */
+  | { type: 'recorded'; ball: BallId; trial: number; rep: number; column: 'time' | 'range'; value: number; source: 'typed' | 'copied'; runId: number | null }
   | { type: 'cellCleared'; ball: BallId; trial: number; rep: number }
   | { type: 'tableCleared'; ball: BallId | 'all' }
   | { type: 'refused'; action: string; reason: Reason }

@@ -140,6 +140,12 @@ export function mountAnalysis(opts: AnalysisOptions = { reference: true }): Moun
       const hPush = (h: PlotHandle | null): void => { if (h) handles.push(h) }
       const ballName = (b: BallId): string => T.balls[b]
       const sub = (title: string): HTMLElement => el('h4', 'an-col-title', title)
+      // The formula is hidden until the student opens it, so tasks 5 and 7 stay a derivation and not a copy.
+      const checkBox = (formula: string): HTMLElement => {
+        const d = el('details', 'an-compare')
+        d.append(el('summary', undefined, T.checkExpr), el('p', 'readout-text', formula))
+        return d
+      }
 
       // task 1
       secs.t1.h.textContent = T.t1Title
@@ -182,13 +188,16 @@ export function mountAnalysis(opts: AnalysisOptions = { reference: true }): Moun
       for (const b of BALL_IDS) {
         const bt = a.balls[b]
         if (bt.timeSpread_s === null) continue
-        const us = bt.trials.map((t) => t.u_t_s).filter((v): v is number => v !== null)
+        const us = bt.trials.map((t) => t.uStat_t_s).filter((v): v is number => v !== null)
         t3.push(el('p', 'readout-text', fmt(T.t3Spread, { ball: ballName(b), s: numText(bt.timeSpread_s, 2, lang), u: numText(Math.max(...us), 2, lang) })))
       }
-      t3.push(el('p', 'note', T.t3Prompt))
+      t3.push(el('p', 'muted', T.t3Caption), el('p', 'note', T.t3Prompt))
       secs.t3.dyn.replaceChildren(...t3)
-      const pts = (b: BallId): Array<{ y: number; u: number } | null> => a.balls[b].trials.map((t) => (t.t_s !== null && t.u_t_s !== null ? { y: t.t_s, u: t.u_t_s } : null))
-      hPush(plotTrialBars(plot3, { series: [{ points: pts('marble'), shape: 'circle' }, { points: pts('pingpong'), shape: 'square' }] }, pal, { x: T.axisTrial, y: T.axisTime }))
+      // Marks are compared with each other in task 3 (the shared reaction bias cancels: scatter + resolution only); task 6 compares with the expected time (full Delta t).
+      const ptsWith = (b: BallId, key: 'uStat_t_s' | 'u_t_s'): Array<{ y: number; u: number } | null> => a.balls[b].trials.map((t) => (t.t_s !== null && t[key] !== null ? { y: t.t_s, u: t[key]! } : null))
+      const pts = (b: BallId): Array<{ y: number; u: number } | null> => ptsWith(b, 'u_t_s')
+      const pts3 = (b: BallId): Array<{ y: number; u: number } | null> => ptsWith(b, 'uStat_t_s')
+      hPush(plotTrialBars(plot3, { series: [{ points: pts3('marble'), shape: 'circle' }, { points: pts3('pingpong'), shape: 'square' }] }, pal, { x: T.axisTrial, y: T.axisTime }))
 
       // task 5
       secs.t5.h.textContent = T.t5Title
@@ -201,12 +210,7 @@ export function mountAnalysis(opts: AnalysisOptions = { reference: true }): Moun
       if (exp) {
         t5.push(el('p', 'readout-value', fmt(T.t5Result, { t: pmText(exp.t_s, exp.u_t_s, lang) })))
         t5.push(el('p', 'muted', fmt(T.t5Inputs, { H: numText(exp.H_m, 3, lang), uH: numText(exp.u_H_m, 4, lang), g: numText(exp.g_mps2, 3, lang), ug: numText(5e-3, 3, lang) })))
-        t5.push(sub(T.t5IndepTitle))
-        t5.push(table([T.colTrial, ballName('marble'), ballName('pingpong')], a.balls.marble.trials.map((m, i) => {
-          const p = a.balls.pingpong.trials[i]!
-          const cell = (v: number | null): string => (v === null ? '–' : `${numText(v, 2, lang)} → ${numText(exp.t_s, 3, lang)}`)
-          return [String(i + 1), cell(m.v0_mps), cell(p.v0_mps)]
-        })))
+        t5.push(checkBox(T.t5Formula))
       } else t5.push(el('p', 'muted', T.t5NoH))
       t5.push(el('p', 'note', T.t5Prompt))
       secs.t5.dyn.replaceChildren(...t5)
@@ -244,10 +248,11 @@ export function mountAnalysis(opts: AnalysisOptions = { reference: true }): Moun
             box.append(el('p', 'muted', fmt(T.t6RefCompare, { diff: `${d >= 0 ? '+' : '−'}${numText(Math.abs(d), 2, lang)}`, pct: `${d >= 0 ? '+' : '−'}${numText(Math.abs((d / ref.t_s) * 100), 0, lang)}` })))
           }
         }
-        box.append(el('p', 'muted', T.t6RefNote))
+        const ratios = BALL_IDS.map((b) => { const r = slowmoReference(app, b), pl = a.balls[b].pooled; return r && pl ? pl.u_s / Math.max(r.u_s, 0.0005) : null }).filter((v): v is number => v !== null)
+        if (ratios.length) box.append(el('p', 'muted', fmt(T.t6RefNote, { ratio: String(Math.round(Math.min(...ratios) / 5) * 5) })))
         t6.push(box)
       }
-      t6.push(el('p', 'note', T.t6Prompt))
+      t6.push(el('p', 'muted', opts.reference ? T.t6SigmaNote : T.t6SigmaNoteSlow), el('p', 'note', T.t6Prompt))
       secs.t6.dyn.replaceChildren(...t6)
       if (exp && plot6) hPush(plotTrialBars(plot6, { series: [{ points: pts('marble'), shape: 'circle' }, { points: pts('pingpong'), shape: 'square' }], ref: { y: exp.t_s, u: exp.u_t_s } }, pal, { x: T.axisTrial, y: T.axisTime }))
 
@@ -255,6 +260,7 @@ export function mountAnalysis(opts: AnalysisOptions = { reference: true }): Moun
       secs.t7.h.textContent = T.t7Title
       const t7: HTMLElement[] = [el('p', 'muted', T.t7Intro)]
       if (exp) {
+        t7.push(checkBox(T.t7Formula))
         for (const b of BALL_IDS) {
           t7.push(sub(ballName(b)))
           t7.push(a.balls[b].pooled === null ? el('p', 'muted', T.needData) : table([T.colTrial, T.colV, T.colVf, T.colAngle], a.balls[b].trials.map((t, i) => {

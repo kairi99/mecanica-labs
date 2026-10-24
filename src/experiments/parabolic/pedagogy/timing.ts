@@ -7,7 +7,7 @@ export const FLIGHT_EXPECTED_s = 0.39
 /** A start press this much before the ball passes the edge counts as "started at the release" (the roll is included), s. */
 export const START_EARLY_s = 0.3
 /** A start press this much after the edge misses a good part of the flight, s. */
-export const START_LATE_s = 0.45
+export const START_LATE_s = 0.30
 /** A reading farther than this from the expected flight time is implausible for a stopwatch used at the edge, s. */
 export const READING_FAR_s = 0.3
 

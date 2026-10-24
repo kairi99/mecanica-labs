@@ -65,7 +65,7 @@ Typical student errors the coach looks for: starting the watch at the release ad
 
 - Time of a mark: mean of 5 readings; Delta t = sqrt(uA^2 + uRes^2 + uReact^2) with uA = s/sqrt(5), uRes = 0.01 s/sqrt(12), uReact = 0.1 s/sqrt(3) (ASSUMED half-width 0.1 s).
 - Range of a mark: mean of 5; Delta x = sqrt(uA^2 + uTape^2 + uProj^2) with uTape = 1 mm/sqrt(12) and the edge-projection placement 2 mm (ASSUMED, the same sigma the bench draws).
-- v0 = x/t; Delta v = v0 sqrt((Dx/x)^2 + (Dt/t)^2) (GUM 5.1.2). The reaction bias is shared by all marks, so the v0 of different marks are correlated; the panel says so.
+- v0 = x/t; Delta v = v0 sqrt((Dx/x)^2 + (Dt/t)^2) (GUM 5.1.2). The reaction bias is shared by all marks, so the v0 of different marks are correlated; the panel says so. Comparisons between marks or between balls (task 3 bars and spread, task 8) use the scatter-only uncertainty (Type A + resolution, no reaction bias, and the v0 uncertainty built from it): the same hand and the same lag shift every time equally, so the bias cancels in a difference. Task 6 keeps the full Delta t.
 - Expected time: u_t = t/2 sqrt((u_H/H)^2 + (u_g/g)^2) with u_H = sqrt(2) x 1 mm/sqrt(12) = 0.41 mm (two tape ends) and u_g = 0.005 m/s^2 (ASSUMED).
 - Final speed: v = sqrt(v0^2 + 2 g H), u_v = sqrt((v0 u_v0)^2 + (g u_H)^2 + (H u_g)^2)/v.
 - Verdicts compare |t - t_theo| with the combined standard uncertainty (within 1 sigma, 1 to 2 sigma, beyond 2 sigma).
@@ -89,6 +89,51 @@ Preset `assembled` (seed 1), 50 simulated launches with both ranges and times (s
 
 - Marble, all 25 readings: t = 0.409 s, error 4.1 % (within1).
 - Ping-pong ball, all 25 readings: t = 0.413 s, error 5.1 % (within1).
+
+## Expected answers and common mistakes, tasks 1, 4, 7, 8 and 9
+
+Numbers use H = 0.76 m and the model without run variability.
+
+### Task 1, the motion
+
+After the edge only gravity (and a little air) acts. Horizontally the motion is uniform (constant velocity, no horizontal force); vertically it is free fall from rest (uniform acceleration g = 9.77 m/s^2). The path is a parabola. The velocity at the edge is horizontal, along the rail direction on the table. Common mistake: drawing a force "of the launch" that keeps pushing the ball forward.
+
+### Task 4, launch speed per mark
+
+| Mark (cm) | v0 marble (m/s) | v0 ping-pong (m/s) |
+|---|---|---|
+| 60 | 1.20 | 1.09 |
+| 70 | 1.30 | 1.17 |
+| 80 | 1.39 | 1.25 |
+| 90 | 1.47 | 1.32 |
+| 100 | 1.55 | 1.39 |
+
+v0 = x/t with the range from the edge projection and the flight time. Common mistakes: v0 = sqrt(2 g dh) from the height drop of the rail (it ignores the rotation, the corner and the table roll, so it is too large); range measured from the rail tip instead of the edge projection; timing from the release instead of from the edge (the flight time becomes about 1 s and v0 about 0.4 of its value).
+
+### Task 7, final speed and angle
+
+| Ball | Mark (cm) | v final (m/s) | angle below horizontal (deg) |
+|---|---|---|---|
+| Marble | 60 | 4.04 | 73 |
+| Marble | 70 | 4.07 | 71 |
+| Marble | 80 | 4.10 | 70 |
+| Marble | 90 | 4.13 | 69 |
+| Marble | 100 | 4.16 | 68 |
+| Ping-pong ball | 60 | 4.00 | 74 |
+| Ping-pong ball | 70 | 4.03 | 73 |
+| Ping-pong ball | 80 | 4.05 | 72 |
+| Ping-pong ball | 90 | 4.07 | 71 |
+| Ping-pong ball | 100 | 4.10 | 70 |
+
+v = sqrt(v0^2 + 2 g H); the vertical part is 3.85 m/s whatever the mark, so the final speed is set mostly by H and changes little between marks (v0 only adds in quadrature). Common mistakes: adding v0 and g t as numbers instead of as perpendicular components; taking the final speed equal to v0.
+
+### Task 8, marble and ping-pong ball
+
+At mark 80 cm: v0 marble 1.389 m/s, ping-pong 1.250 m/s, ratio 1.111. Ideal rolling without losses gives v proportional to 1/sqrt(1 + k_eff) (k_eff includes the channel of width 10 mm), so the ratio marble/ping-pong would be sqrt((1 + k_pp)/(1 + k_marble)) = 1.012 (k_marble = 0.656, k_pp = 0.697); the model value differs from it by the rolling resistance, the corner loss and the air, which hit the light ball more. The ping-pong ball therefore leaves slower and its range is shorter (0.473 m against 0.546 m). The flight times are the same within hand timing (0.395 s against 0.400 s, a difference far below the 0.1 s reaction uncertainty); air drag lengthens the flight by 0.08 % for the marble and 1.46 % for the ping-pong ball. Common mistakes: saying the lighter ball falls slower in vacuum; explaining the range difference by mass alone (it is the rotational inertia and the losses); calling a difference real when it is below 1 sigma (the panel compares with the scatter-only uncertainty).
+
+### Task 9, ideal projectile
+
+Conditions of the ideal model: no air drag and no Magnus lift (the model includes both, small); constant g over the fall; launch velocity exactly horizontal; the ball treated as a point (it is a sphere with spin and size); the ball leaves exactly at the table edge, with no contact with it. Expected factors of deviation: reaction bias (raises or lowers t), edge projection placement (shifts every x), drag (lengthens t and shortens x slightly, more for the ping-pong ball), a launch that is not exactly horizontal (changes t). Common mistake: listing only "human error" without saying which quantity it shifts and in which direction.
 
 ## URL flags
 
