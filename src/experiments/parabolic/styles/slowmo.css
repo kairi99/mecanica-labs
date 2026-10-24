@@ -3,9 +3,18 @@
 .sm-stage { min-width: 0; }
 .sm-frame { font-variant-numeric: tabular-nums; }
 .sm-controls { align-items: stretch; }
-.sm-marks { position: relative; height: 2.6rem; margin: 0 10px; }
-.sm-mark { position: absolute; top: 0; transform: translateX(-50%); font: var(--text-caption); color: var(--label-2); max-width: 11rem; text-align: center; white-space: normal; }
-.sm-mark-launch { color: var(--accent); }
+.sm-marks { position: relative; height: 1.6rem; margin: 0 10px; }
+.sm-mark { position: absolute; top: 0; transform: translateX(-50%); font: var(--text-caption); color: var(--label-2); text-align: center; white-space: nowrap; }
+.sm-mark-launch { color: var(--accent); transform: translateX(-10px); text-align: left; }
 .sm-mark-landing { color: var(--success); transform: translateX(-100%); text-align: right; }
-.sm-mark-launch { transform: translateX(-10px); text-align: left; }
 .sm-results { display: flex; flex-direction: column; gap: var(--space-2); border-top: var(--stroke-hair) solid var(--separator); padding-top: var(--space-3); }
+
+/* Below 1080 px the slow-motion step hides the stage (main.ts sets body.pb-slowmo), so viewer, scrubber and controls fit together. */
+.sm-go-launch { align-self: flex-start; }
+@media (max-width: 1079px) {
+  body.pb-slowmo .stage-col { display: none; }
+}
+@media (min-width: 820px) and (max-width: 1079px) {
+  body.pb-slowmo .panel-col { position: static; height: auto; overflow: visible; box-shadow: none; border-top: 0; border-radius: 0; padding: var(--space-3) 0 var(--space-4); }
+  body.pb-slowmo .sheet-handle { display: none; }
+}

@@ -152,6 +152,8 @@ export interface TableModel {
   floor: THREE.Mesh
   /** Legs and floor follow the hidden table height (cm). */
   setHeight(H_cm: number): void
+  /** Opacity of the two legs on the camera side of the edge plane (z > 0); the far legs stay solid. */
+  setNearLegsOpacity(o: number): void
   dispose(): void
 }
 export function buildTable(kit: PKit): TableModel {
@@ -179,8 +181,10 @@ export function buildTable(kit: PKit): TableModel {
   root.add(strip)
   // legs
   const legs: THREE.Mesh[] = []
+  const nearLegMat = M.legs.clone()
+  nearLegMat.transparent = true
   for (const x of [TABLE.x1 - TABLE.legInset, TABLE.x0 + TABLE.legInset]) for (const z of [-TABLE.halfD + TABLE.legInset, TABLE.halfD - TABLE.legInset]) {
-    const l = new THREE.Mesh(new THREE.BoxGeometry(TABLE.legSize, 1, TABLE.legSize), M.legs)
+    const l = new THREE.Mesh(new THREE.BoxGeometry(TABLE.legSize, 1, TABLE.legSize), z > 0 ? nearLegMat : M.legs)
     l.position.set(x, 0, z)
     l.castShadow = true; l.receiveShadow = true
     root.add(l); legs.push(l)
@@ -212,6 +216,7 @@ export function buildTable(kit: PKit): TableModel {
       floor.position.y = -H
       for (const l of legs) { const h = Math.max(1, H - TABLE.thickness); l.scale.y = h; l.position.y = -TABLE.thickness - h / 2 }
     },
-    dispose() { M.table.map = null; M.floor.map = null },
+    setNearLegsOpacity(o) { nearLegMat.opacity = o; nearLegMat.depthWrite = o >= 1 },
+    dispose() { nearLegMat.dispose(); M.table.map = null; M.floor.map = null },
   }
 }

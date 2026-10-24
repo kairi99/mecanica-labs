@@ -6,7 +6,7 @@ import { EXPECTED_OFFSETS, runLaunch } from '../../src/experiments/parabolic/app
 import { projectNdc, fitView, type Vec } from '../../src/core/scene3d/framing.ts'
 import { parsePreset, PRESET_NAMES } from '../../src/experiments/parabolic/views/scene3d/presets.ts'
 import {
-  CM, STAGING, TABLE, VIEW_ANGLES, ZONE_MAX_cm, defaultFrameInput, edgePoints, floorPoints, gapFromDrag_mm, landMaxFor, markDiameter_cm,
+  CM, STAGING, TABLE, VIEW_ANGLES, ZONE_MAX_cm, defaultFrameInput, edgePoints, fovFor, floorPoints, gapFromDrag_mm, landMaxFor, markDiameter_cm,
   markLabel, overviewPoints, planTape, rackFromKnobY_mm, railFrame, railLocalToWorld, railLocalX_cm, railS_m, releasePoints, rollAngle_rad,
   sheetRectCm, tapeAngles, tapePoints, toScene, worldToRailLocal, type FrameInput, type TapeWorld,
 } from '../../src/experiments/parabolic/views/scene3d/units.ts'
@@ -131,33 +131,37 @@ describe('preset framing', () => {
       [-5, -f.H_cm, 0], // floor under the edge
     ]
     for (const aspect of ASPECTS) {
-      const pts = edgePoints(f)
+      // without paper the default landing zone is kept; with paper the view stops just past it (next test)
+      const pts = edgePoints({ ...f, sheets: [], floorPoints: [] })
       const { azimuth, elevation } = VIEW_ANGLES.edge
-      const fit = fitView(pts, azimuth, elevation, FOV, aspect, 0.04)
+      const fit = fitView(pts, azimuth, elevation, fovFor('edge'), aspect, 0.04)
       for (const p of must) {
-        const [x, y] = projectNdc(p, fit, azimuth, elevation, FOV, aspect)
+        const [x, y] = projectNdc(p, fit, azimuth, elevation, fovFor('edge'), aspect)
         expect(Math.abs(x), `x ${p} aspect ${aspect}`).toBeLessThanOrEqual(1)
         expect(Math.abs(y), `y ${p} aspect ${aspect}`).toBeLessThanOrEqual(1)
       }
     }
   })
-  it('edge view keeps the table feet and stops just beyond the far end of the paper', () => {
+  it('edge view keeps the far table feet and stops just beyond the far end of the paper', () => {
     const g = { ...frameOf(a), sheets: [{ x0: 30, x1: 58, z0: -14, z1: 14 }] }
     const pts = edgePoints(g)
     const { azimuth, elevation } = VIEW_ANGLES.edge
     for (const aspect of [0.95, 4 / 3, 1.32, 0.46]) {
-      const fit = fitView(pts, azimuth, elevation, FOV, aspect, 0.04)
-      for (const p of [[-8, -g.H_cm, TABLE.halfD - TABLE.legInset], [-8, -g.H_cm, -TABLE.halfD + TABLE.legInset], [58, -g.H_cm, 0]] as Vec[]) {
-        const [x, y] = projectNdc(p, fit, azimuth, elevation, FOV, aspect)
+      const fit = fitView(pts, azimuth, elevation, fovFor('edge'), aspect, 0.04)
+      for (const p of [[-8, -g.H_cm, -TABLE.halfD + TABLE.legInset], [58, -g.H_cm, 0]] as Vec[]) {
+        const [x, y] = projectNdc(p, fit, azimuth, elevation, fovFor('edge'), aspect)
         expect(Math.abs(x), `x ${p} aspect ${aspect}`).toBeLessThanOrEqual(1)
         expect(Math.abs(y), `y ${p} aspect ${aspect}`).toBeLessThanOrEqual(1)
       }
     }
     expect(Math.max(...pts.map((p) => p[0]))).toBeLessThan(90)
   })
-  it('edge view looks perpendicular to the launch plane (azimuth 0, nearly level)', () => {
+  it('edge view looks perpendicular to the launch plane (azimuth 0, nearly level, narrow FOV)', () => {
     expect(VIEW_ANGLES.edge.azimuth).toBe(0)
-    expect(VIEW_ANGLES.edge.elevation).toBeLessThan(15)
+    expect(VIEW_ANGLES.edge.elevation).toBeGreaterThanOrEqual(5)
+    expect(VIEW_ANGLES.edge.elevation).toBeLessThanOrEqual(9)
+    expect(fovFor('edge')).toBeLessThanOrEqual(25)
+    expect(fovFor('overview')).toBe(FOV)
   })
   it('edge view also holds a far-out rail tip', () => {
     const g = createApparatus('assembled', { seed: 7 })
@@ -165,6 +169,13 @@ describe('preset framing', () => {
     const ff = frameOf(g)
     for (const aspect of ASPECTS) expect(framed([...edgePoints(ff), [-600 / 10, 0, 0]], 0, VIEW_ANGLES.edge.elevation, aspect)).toBe(true)
     expect(Math.min(...edgePoints(ff).map((p) => p[0]))).toBeLessThanOrEqual(-60)
+  })
+  it('edge view keeps the rail low end in frame and ignores the near leg feet', () => {
+    const g = createApparatus('assembled', { seed: 7 })
+    const ff = frameOf(g)
+    const pts = edgePoints(ff)
+    expect(Math.min(...pts.map((p) => p[0]))).toBeLessThanOrEqual(ff.tipX_cm! - 5 + 1e-9)
+    expect(pts.some((p) => p[1] === -ff.H_cm && p[2] > 4)).toBe(false)
   })
   it('floor view contains the paper sheets and the marks', () => {
     const g = createApparatus('assembled', { seed: 7 })

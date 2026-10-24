@@ -171,14 +171,18 @@ export const mountTimingBar: MountView = (root, ctx): View => {
     const s = app.getState()
     const can = app.canRelease(ctx.now())
     const back = ballDone()
-    const key = `${can.ok}|${can.reasons.join()}|${back}|${s.ball.selected}|${ctx.lang()}`
+    // only the next action is accent-filled: start/stop while the ball runs or the watch counts, otherwise the release (or the return)
+    const ph = app.ballStatus(ctx.now()).phase
+    const startNext = s.stopwatch.running || (s.ball.released && (ph === 'rolling' || ph === 'flying'))
+    const key = `${can.ok}|${can.reasons.join()}|${back}|${startNext}|${s.ball.selected}|${ctx.lang()}`
     if (key === releaseKey) return
     releaseKey = key
     const name = s.ball.selected ? T.releaseBall[s.ball.selected] : T.release
     release.text.textContent = back ? T.returnStart : name
     release.kbd.hidden = false
     const blocked = !can.ok && !back
-    release.b.classList.toggle('ready', can.ok)
+    release.b.classList.toggle('ready', (can.ok || back) && !startNext)
+    start.b.classList.toggle('secondary', !startNext)
     if (blocked) release.b.setAttribute('aria-disabled', 'true'); else release.b.removeAttribute('aria-disabled')
     release.b.title = back ? T.returnStart : can.ok ? T.readyHint : can.reasons.map((r) => blockText(ctx.lang(), r)).join(' ')
   }

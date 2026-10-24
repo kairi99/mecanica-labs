@@ -85,7 +85,6 @@ export const mountSide2d: MountView = (root, ctx): View => {
     add(svg('line', { x1: X(0), y1: Y(0), x2: X(0), y2: Y(-H_cm), class: 's2d-edge' }))
     add(svg('text', { x: X(0) + 6 * kPx, y: Y(0) - 7 * kPx, class: 's2d-label s2d-edge-label' }, t.edge))
     add(svg('text', { x: vb.x0 + 6 * kPx, y: Y(0) - 7 * kPx, class: 's2d-label' }, t.table))
-    legendItems.push({ cls: 's2d-table', text: t.table })
 
     // paper on the floor, the plumb point and the carbon marks
     if (st.paper.bond) {
@@ -119,27 +118,26 @@ export const mountSide2d: MountView = (root, ctx): View => {
     const clampH = geo ? geo.clampHeight_m * CM : (0.06 + st.rack_mm / 1000) * CM
     if (it.base) {
       add(svg('rect', { x: X(standX) - 8 * S, y: Y(0.7), width: 16 * S, height: 0.7 * S, rx: 2, class: 's2d-metal' }))
-      legendItems.push({ cls: 's2d-metal', text: t.base })
     }
     if (it.rackStand) {
       add(svg('rect', { x: X(standX) - 0.6 * S, y: Y(38), width: 1.2 * S, height: 38 * S, class: 's2d-metal-hi' }))
       add(svg('rect', { x: X(standX) - 2.2 * S, y: Y(clampH) - 1 * S, width: 4.4 * S, height: 3.6 * S, rx: 2, class: 's2d-clamp' }))
+      add(svg('text', { x: X(standX) + 4 * S + 3 * kPx, y: Y(clampH * 0.4) + 4 * kPx, class: 's2d-label' }, t.rack))
       add(svg('circle', { cx: X(standX) + 3.4 * S, cy: Y(clampH) + 1 * S, r: Math.max(1.5 * S, 5 * kPx), class: 's2d-blue' }))
-      legendItems.push({ cls: 's2d-metal-hi', text: t.rack })
     }
 
     // two-leg stand
     if (it.twoLeg && geo && st.joints.twoLegStand) {
       const tx = X(geo.pose.twoLeg.x_m * CM), ty = Y(geo.legHeight_m * CM - RAIL.height)
+      add(svg('text', { x: tx, y: Y(0) + TABLE.thickness * S + 13 * kPx, class: 's2d-label', 'text-anchor': 'middle' }, t.twoLeg))
       add(svg('line', { x1: tx, y1: ty, x2: tx - 3 * S, y2: Y(0), class: 's2d-leg' }), svg('line', { x1: tx, y1: ty, x2: tx + 3 * S, y2: Y(0), class: 's2d-leg' }))
-      legendItems.push({ cls: 's2d-leg-sw', text: t.twoLeg })
     }
 
     // rail
     if (it.rail && geo && frame) {
       const a = railLocalToWorld(frame, [0, -RAIL.height / 2, 0]), b = railLocalToWorld(frame, [RAIL.length, -RAIL.height / 2, 0])
       add(svg('line', { x1: X(a[0]), y1: Y(a[1]), x2: X(b[0]), y2: Y(b[1]), class: 's2d-rail' }))
-      legendItems.push({ cls: 's2d-rail-sw', text: t.rail })
+      add(svg('text', { x: X(a[0] * 0.3 + b[0] * 0.7), y: Y(a[1] * 0.3 + b[1] * 0.7) - 8 * kPx, class: 's2d-label', 'text-anchor': 'middle' }, t.rail))
       // marks: yellow flags above the rail, staggered so neighbouring labels never overlap
       const sorted = [...st.marks].sort((p, q) => p.s_m - q.s_m)
       sorted.forEach((m, i) => {
@@ -161,7 +159,6 @@ export const mountSide2d: MountView = (root, ctx): View => {
         const lv = svg('g', { transform: `translate(${X(p[0])} ${Y(p[1])}) rotate(${-deg})` })
         lv.append(svg('rect', { x: -5 * S, y: -1.6 * S, width: 10 * S, height: 1.6 * S, rx: 3, class: 's2d-level' }), svg('ellipse', { cx: 0, cy: -0.8 * S, rx: 1.2 * S, ry: 0.5 * S, class: 's2d-bubble' }))
         add(lv)
-        legendItems.push({ cls: 's2d-level', text: t.level })
       }
     }
 

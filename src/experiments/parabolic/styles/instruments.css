@@ -43,3 +43,34 @@
 
 /* Empty status lines take no room (they are filled in only when there is something to say). */
 .card-body .why:empty, .card-body .readout-text:empty, .card-body .muted:empty, .card-body .readout:empty { display: none; }
+
+/* step-2 readouts: the number is the value (big), its words are a small label above it */
+.card-adjust .readout { display: flex; flex-direction: column; }
+.readout-label { font: var(--text-footnote); font-weight: 400; color: var(--label-2); }
+.readout-num { font: var(--text-value); font-variant-numeric: tabular-nums; }
+
+/* timing bar (parabolic only: the bar with the mark/repetition target). Only the next action is accent-filled. */
+.timing:has(.tb-target) .tb-start.secondary:not(.running) { background: var(--device-hi); color: var(--device-ink); }
+.timing:has(.tb-target) .tb-release.ready { background: var(--accent-fill); color: var(--on-accent); }
+.timing:has(.tb-target) .tb-release .tb-text { overflow: hidden; text-overflow: ellipsis; }
+@media (max-width: 819px) {
+  .timing:has(.tb-target) { align-items: stretch; }
+  .timing:has(.tb-target) .tb-row2 > .tb-btn { white-space: nowrap; font: var(--text-footnote); font-weight: 600; }
+}
+/* desktop: the bar is as wide as the stage (about 580 to 950 px); below that it needs two rows */
+.timing-host:has(.tb-target) { container-type: inline-size; }
+@media (min-width: 1080px) {
+  @container (max-width: 62rem) {
+    .timing:has(.tb-target) { grid-template-columns: auto minmax(8rem, 1fr) auto auto auto; }
+    .timing:has(.tb-target) .tb-copy { grid-column: 5; }
+    .timing:has(.tb-target) .tb-copy .tb-text, .timing:has(.tb-target) .tb-kbd { display: none; }
+    .timing:has(.tb-target) .tb-start { grid-column: 4; min-width: 0; }
+    .timing:has(.tb-target) .tb-release { grid-column: 1 / -1; grid-row: 2; }
+    .timing:has(.tb-target) .tb-caption { grid-row: 3; }
+  }
+}
+@media (max-width: 399px) {
+  .timing:has(.tb-target) .lcd-digits { letter-spacing: 0; }
+  .timing:has(.tb-target) .tb-lcd { padding-inline: var(--space-1); }
+  .timing:has(.tb-target) .tb-select { max-width: 3rem; }
+}

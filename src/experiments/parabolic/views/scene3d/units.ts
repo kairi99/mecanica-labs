@@ -120,12 +120,14 @@ export const wheelStep = (deltaY: number): number => (deltaY < 0 ? 1 : -1)
 export const VIEW_ANGLES: Record<Exclude<PresetName, 'tape'>, { azimuth: number; elevation: number }> = {
   overview: { azimuth: -24, elevation: 24 },
   release: { azimuth: -22, elevation: 16 },
-  edge: { azimuth: 0, elevation: 14 },
+  edge: { azimuth: 0, elevation: 8 },
   floor: { azimuth: 0, elevation: 88 },
 }
 /** Edge view: slack kept beyond the paper's far end, and the least extent when paper sits close to the table. */
 const EDGE_PAPER_MARGIN_cm = 10
 const EDGE_MIN_RIGHT_cm = 60
+/** Room under the floor line: the 3D/2D toggle floats over the bottom corner of a phone stage and must not cover the paper. */
+const EDGE_FLOOR_SLACK_cm = 16
 /** Everything a preset needs to know about the current bench (cm). */
 export interface FrameInput {
   H_cm: number
@@ -141,6 +143,10 @@ export interface FrameInput {
   /** Points on the floor that must stay visible (marks, the plumb cross). */
   floorPoints: [number, number][]
 }
+/** Vertical field of view (deg) per preset. The edge view is nearly telephoto so perspective does not blow up the near table legs. */
+export const FOV_DEFAULT_deg = 35
+export const FOV_EDGE_deg = 20
+export const fovFor = (name: PresetName): number => (name === 'edge' ? FOV_EDGE_deg : FOV_DEFAULT_deg)
 export const defaultFrameInput = (H_cm: number): FrameInput => ({
   H_cm, tipX_cm: null, highEnd: null, clamp: null, frame: null, landMax_cm: ZONE_MAX_cm, sheets: [], floorPoints: [],
 })
@@ -170,13 +176,13 @@ export function releasePoints(f: FrameInput): Vec[] {
   return pts
 }
 /**
- * Edge: the timing view, a side profile perpendicular to the launch plane. Frames the rail's low end on the table, the table edge
- * (with its near corner) and the floor out to slightly beyond the far end of the paper (or the marks); with no paper laid yet it
+ * Edge: the timing view, a side profile perpendicular to the launch plane (narrow FOV, the near legs fade out in the scene). Frames the
+ * rail's low end on the table, the table edge (with its near corner) and the floor out to slightly beyond the far end of the paper (or the marks); with no paper laid yet it
  * keeps the whole default landing zone. Tighter than the zone on purpose: on a narrow phone stage the empty floor beyond the
  * paper would shrink everything the student has to watch.
  */
 export function edgePoints(f: FrameInput): Vec[] {
-  const left = Math.min(-34, f.tipX_cm !== null ? f.tipX_cm - 20 : -34)
+  const left = f.tipX_cm !== null ? Math.min(-20, f.tipX_cm - 5) : -34
   let right = f.landMax_cm
   if (f.sheets.length > 0) {
     right = EDGE_MIN_RIGHT_cm
@@ -184,10 +190,8 @@ export function edgePoints(f: FrameInput): Vec[] {
     for (const p of f.floorPoints) right = Math.max(right, p[0] + EDGE_PAPER_MARGIN_cm)
     right = Math.min(right, f.landMax_cm)
   }
-  const pts: Vec[] = boxCorners([left, -f.H_cm - 2, -4], [right, 20, 4])
+  const pts: Vec[] = boxCorners([left, -f.H_cm - EDGE_FLOOR_SLACK_cm, -4], [right, 20, 4])
   pts.push(...boxCorners([-3, -TABLE.thickness, -TABLE.halfD], [0, 0, TABLE.halfD]))
-  // the legs stand nearer to the camera than the edge plane: their feet must fit too, or perspective pushes them out of the frame
-  pts.push(...boxCorners([-TABLE.legInset - TABLE.legSize, -f.H_cm, -TABLE.halfD + TABLE.legInset], [-TABLE.legInset, -f.H_cm, TABLE.halfD - TABLE.legInset]))
   return pts
 }
 /** Floor: top-down view of the paper and the marks (or the default landing zone), with the plumb cross when it exists. */

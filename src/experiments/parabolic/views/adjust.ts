@@ -32,6 +32,15 @@ function buildVial(): { svg: SVGSVGElement; set: (bubble_mm: number | null) => v
   }
 }
 
+/** A readout: only the number (with its unit) in the big value style, the words of the template small above it. */
+function setReadout(out: HTMLElement, tpl: string, n: string | number): void {
+  const m = /^(.*?)[:\s]*\{n\}(.*)$/.exec(tpl)
+  const label = m ? m[1]!.trim() : ''
+  const value = `${n}${m ? m[2]! : ''}`
+  const num = el('span', 'readout-num', value)
+  out.replaceChildren(...(label ? [el('span', 'readout-label', label), num] : [num]))
+}
+
 const fill = (tpl: string, vars: Record<string, string | number>): string => tpl.replace(/\{(\w+)\}/g, (_m, k: string) => String(vars[k] ?? ''))
 
 export const mountAdjust: MountView = (root, ctx): View => {
@@ -264,18 +273,18 @@ export const mountAdjust: MountView = (root, ctx): View => {
     const s = app.getState()
     // heights, foot, gap
     rack.input.value = String(s.rack_mm)
-    rack.read.textContent = fill(T.rackReading, { n: s.rack_mm })
+    setReadout(rack.read, T.rackReading, s.rack_mm)
     rack.enable(s.items.rackStand)
     rack.why.textContent = s.items.rackStand ? '' : T.rackNeed
     leg.input.value = String(s.leg_mm)
-    leg.read.textContent = fill(T.legReading, { n: s.leg_mm })
+    setReadout(leg.read, T.legReading, s.leg_mm)
     leg.enable(s.items.twoLeg)
     leg.why.textContent = s.items.twoLeg ? '' : T.legNeed
     foot.input.value = String(s.foot_mm)
-    foot.read.textContent = fill(T.footReading, { n: `${s.foot_mm > 0 ? '+' : s.foot_mm < 0 ? '−' : ''}${formatNum(Math.abs(s.foot_mm), 2, L())}` })
+    setReadout(foot.read, T.footReading, `${s.foot_mm > 0 ? '+' : s.foot_mm < 0 ? '−' : ''}${formatNum(Math.abs(s.foot_mm), 2, L())}`)
     foot.enable(s.items.twoLeg)
     gap.input.value = String(s.gap_mm)
-    gap.read.textContent = fill(T.gapReading, { n: formatNum(s.gap_mm / 10, 1, L()) })
+    setReadout(gap.read, T.gapReading, formatNum(s.gap_mm / 10, 1, L()))
     gap.enable(s.items.rail)
     gap.why.textContent = s.items.rail ? '' : T.gapNeed
     // level

@@ -4,6 +4,7 @@ export interface SlowmoStrings {
   title: string
   intro: string
   noRuns: string
+  goLaunch: string
   noFlight: string
   runLabel: string
   runOption: string
@@ -44,6 +45,7 @@ export const strings: Strings<SlowmoStrings> = {
     title: 'Cámara lenta',
     intro: 'Una cámara de 240 fotogramas por segundo filmó el lanzamiento. Avanza fotograma a fotograma para medir el tiempo de vuelo y la rapidez en el borde sin depender de tu reacción.',
     noRuns: 'Todavía no hay lanzamientos. Suelta la bola en el paso 3.',
+    goLaunch: 'Ir al paso 3',
     noFlight: 'Este lanzamiento no tiene vuelo (la bola se detuvo en la mesa o salió rodando), así que no hay nada que ver en cámara lenta.',
     runLabel: 'Lanzamiento',
     runOption: 'Lanzamiento {n} · {ball} · {mark} · {rep} · {time}',
@@ -77,6 +79,7 @@ export const strings: Strings<SlowmoStrings> = {
     title: 'Slow motion',
     intro: 'A 240 frames-per-second camera filmed the launch. Step frame by frame to measure the flight time and the speed at the edge without depending on your reaction.',
     noRuns: 'There are no launches yet. Release the ball in step 3.',
+    goLaunch: 'Go to step 3',
     noFlight: 'This launch has no flight (the ball stopped on the table or rolled off), so there is nothing to see in slow motion.',
     runLabel: 'Launch',
     runOption: 'Launch {n} · {ball} · {mark} · {rep} · {time}',

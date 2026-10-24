@@ -16,7 +16,8 @@ const VIEW_RIGHT_PAD_m = 0.1
 
 interface RunRow { run: RunRecord; mark: number | null; trial: number | null; rep: number | null; reading_s: number | null }
 
-export const mountSlowmo: MountView = (root, ctx): View => {
+/** `goToLaunch` leads the student from the empty state back to the launches step. */
+export const mountSlowmo = (opts: { goToLaunch: () => void }): MountView => (root, ctx): View => {
   const app = ctx.apparatus
   const S = () => strings[ctx.lang()]
   const L = () => ctx.lang()
@@ -30,6 +31,8 @@ export const mountSlowmo: MountView = (root, ctx): View => {
   const selLabel = el('label', 'field-label', undefined, { for: selId })
   const sel = el('select', 'select', undefined, { id: selId })
   const empty = el('p', 'readout-text')
+  const goLaunch = button('', 'btn btn-quiet sm-go-launch', () => opts.goToLaunch())
+  goLaunch.hidden = true
 
   const stageBox = el('div', 'sm-stage')
   const canvas = el('canvas', 'slowmo-canvas', undefined, { role: 'img' })
@@ -65,7 +68,7 @@ export const mountSlowmo: MountView = (root, ctx): View => {
   results.append(resTitle, resFlight, resFrames, resSpeed, resSpeedNote, resYour, resCompare, resNote)
 
   slider.addEventListener('input', () => { pause(); setFrame(Number(slider.value)) })
-  c.body.append(intro, selLabel, sel, empty, stageBox, frameText, sliderLabel, slider, marks, controls, playNote, results)
+  c.body.append(intro, selLabel, sel, empty, goLaunch, stageBox, frameText, sliderLabel, slider, marks, controls, playNote, results)
 
   // ---- state ---------------------------------------------------------------------------------------------------------------------
   let rows: RunRow[] = []
@@ -224,6 +227,7 @@ export const mountSlowmo: MountView = (root, ctx): View => {
     sliderLabel.textContent = T.slider
     prevBtn.setAttribute('aria-label', T.prev); prevBtn.title = T.prev
     nextBtn.setAttribute('aria-label', T.next); nextBtn.title = T.next
+    goLaunch.textContent = T.goLaunch
     toLaunch.textContent = T.toLaunch; toLanding.textContent = T.toLanding
     canvas.setAttribute('aria-label', T.canvasAria)
     resTitle.textContent = T.resultsTitle
@@ -255,6 +259,9 @@ export const mountSlowmo: MountView = (root, ctx): View => {
     }
     lastCount = rows.length
     sel.disabled = rows.length === 0
+    // no runs: no empty select, a quiet way back to the launches step instead
+    sel.hidden = selLabel.hidden = rows.length === 0
+    goLaunch.hidden = rows.length !== 0
     const has = clip !== null
     for (const x of [stageBox, frameText, sliderLabel, slider, marks, controls, playNote, results]) x.hidden = !has
     if (!clip || runId === null) return

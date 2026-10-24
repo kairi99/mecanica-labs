@@ -114,7 +114,7 @@ export function mountTape(panel: string): MountView {
       else if (list[0]) { tSel.value = list[0].key; setTape(list[0].target) } // the chosen mark is gone: fall back to the first target
       for (const x of [tSel, measureBtn, zIn, zOut]) (x as HTMLButtonElement).disabled = !has
       why.textContent = has ? '' : T.needTape
-      bWrap.hidden = !has
+      bWrap.hidden = !has || !reading // nothing to read or zoom until the student has measured
       status.textContent = !has ? '' : reading ? T.measuring.replace('{x}', readingLabel) : T.prompt
       hint.textContent = has && getTape().kind === 'range' ? T.rangeHint : ''
       tolerance.textContent = reading ? T.tolerance.replace('{x}', formatNum(reading.mpe_m * 1000, 1, L())) : ''
@@ -128,7 +128,7 @@ export function mountTape(panel: string): MountView {
           bScroll.append(drawBlade(L_mm, zoom))
           // centre the measured edge in the visible strip
           bScroll.scrollLeft = Math.max(0, (WIN_BEFORE_MM + (L_mm - Math.floor(L_mm))) * PX_BASE * zoom - (bScroll.clientWidth || 300) / 2)
-        } else if (has) bScroll.append(el('p', 'muted pad', T.prompt))
+        }
       }
     }
 

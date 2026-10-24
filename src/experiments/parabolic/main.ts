@@ -94,11 +94,12 @@ const slots: ShellSlot<ParabolicApparatus>[] = [
   { id: 'inventory', step: 1, mount: mountInventory },
   { id: 'adjust', step: 2, mount: mountAdjust },
   { id: 'tape', step: 2, mount: mountTape('tape') },
+  // Tabla 2.1 first (the record of the step, as Table 1.1 in MRUV), then the launches, then the tape for the ranges
+  { id: 'table', step: LAUNCH_STEP, mount: mountTable },
   { id: 'launch', step: LAUNCH_STEP, mount: mountLaunch({ autoEdge }) },
   { id: 'tapeRange', step: LAUNCH_STEP, mount: mountTape('tapeRange') },
-  { id: 'table', step: LAUNCH_STEP, mount: mountTable },
 ]
-if (showReference) slots.push({ id: 'slowmo', step: stepOf('slowmo'), mount: mountSlowmo })
+if (showReference) slots.push({ id: 'slowmo', step: stepOf('slowmo'), mount: mountSlowmo({ goToLaunch: () => shell.setStep(LAUNCH_STEP) }) })
 if (showAnalysis) slots.push({ id: 'analysis', step: stepOf('analysis'), mount: mountAnalysis })
 /** Which lab step holds each panel (data-panel); 0: always visible. Switched-off steps have no entry. */
 const PANEL_STEP: Record<string, number> = { inventory: 1, adjust: 2, tape: 2, launch: LAUNCH_STEP, tapeRange: LAUNCH_STEP, table: LAUNCH_STEP, stage: 0, procedure: 0 }
@@ -162,6 +163,11 @@ const load3d = async (): Promise<Stage3DModule<ParabolicApparatus>> => {
   }
 }
 
+/** Below 1080 px the slow-motion step hides the stage (styles/slowmo.css), so the viewer, scrubber and controls fit together. */
+function markSlowmoStep(step: number): void {
+  document.body.classList.toggle('pb-slowmo', showReference && step === stepOf('slowmo'))
+}
+
 // ---- go --------------------------------------------------------------------------------------------------------------------------
 shell = mountShell<ParabolicApparatus, ApparatusEvent>({
   apparatus: app,
@@ -185,6 +191,7 @@ shell = mountShell<ParabolicApparatus, ApparatusEvent>({
   save: () => saveSnapshot(app.snapshot()),
   // On a phone the launches step uses the side-on view; other steps go back to the overview (unless ?cam fixes the camera).
   onStepChanged(step) {
+    markSlowmoStep(step)
     if (cam || !phoneQuery.matches) return
     setCamera(step === LAUNCH_STEP ? 'edge' : 'overview')
   },
@@ -195,3 +202,4 @@ shell = mountShell<ParabolicApparatus, ApparatusEvent>({
   coach: mountCoach,
   params: shellParams,
 })
+markSlowmoStep(shell.currentStep())

@@ -7,7 +7,7 @@ import { OrbitControls } from 'three/addons/controls/OrbitControls.js'
 import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js'
 import { SCREWS_TOTAL, sheetToFloor, type BallId, type ParabolicApparatus, type TapeTarget } from '../../apparatus/index.ts'
 import type { CardInfo } from '../../../../core/scene3d/types.ts'
-import { fitView, type Vec } from '../../../../core/scene3d/framing.ts'
+import { boxCorners, fitView, type Vec } from '../../../../core/scene3d/framing.ts'
 import {
   buildBase, buildLevel, buildRackStand, buildRail, buildStopwatch, buildTapeMeasure, buildTwoLeg, screwHead, screwPile, type TapeMode,
 } from '../../../../core/scene3d/models.ts'
@@ -19,7 +19,7 @@ import { createMaterials, createOutlineMaterial } from './materials.ts'
 import { SHEET_THICK_cm, buildBall, buildMarkDot, buildPlumb, buildSheet, buildTable, railFlag, tag, type BallModel, type PKit, box } from './models.ts'
 import { PRESET_NAMES, type PresetName } from './presets.ts'
 import {
-  CM, RAIL, STAGING, TABLE, VIEW_ANGLES, defaultFrameInput, edgePoints, floorPoints, landMaxFor, markDiameter_cm, markLabel, overviewPoints,
+  CM, FOV_DEFAULT_deg, RAIL, STAGING, TABLE, VIEW_ANGLES, fovFor, defaultFrameInput, edgePoints, floorPoints, landMaxFor, markDiameter_cm, markLabel, overviewPoints,
   planTape, railFrame, railLocalToWorld, railLocalX_cm, releasePoints, rollAngle_rad, sheetRectCm, tapeAngles, tapePoints, toScene, ballToScene,
   type FrameInput, type RailFrame, type TapePlan, type V3,
 } from './units.ts'
@@ -27,7 +27,7 @@ import {
 export { PRESET_NAMES }
 export type { PresetName, Tool }
 
-const FOV = 35
+const FOV = FOV_DEFAULT_deg
 const TRANSITION_MS = 450
 const ROD_Z = -3.4
 
@@ -199,13 +199,15 @@ export function createScene(container: HTMLElement, ctx: ViewContext, opts: Scen
     f.landMax_cm = landMaxFor(f.sheets, f.floorPoints)
     return f
   }
-  const poseFor = (name: PresetName): { target: THREE.Vector3; pos: THREE.Vector3; key: string } => {
+  type Pose = { target: THREE.Vector3; pos: THREE.Vector3; key: string; fov: number }
+  const poseFor = (name: PresetName): Pose => {
     const aspect = camera.aspect
-    const fromFit = (pts: readonly Vec[], az: number, el: number, margin: number): { target: THREE.Vector3; pos: THREE.Vector3; key: string } => {
-      const fit = fitView(pts, az, el, FOV, aspect, margin)
+    const fromFit = (pts: readonly Vec[], az: number, el: number, margin: number): Pose => {
+      const fov = fovFor(name)
+      const fit = fitView(pts, az, el, fov, aspect, margin)
       let key = ''
       for (const p of pts) key += `${Math.round(p[0] / 8)},${Math.round(p[1] / 8)},${Math.round(p[2] / 8)};`
-      return { target: new THREE.Vector3(...fit.target), pos: new THREE.Vector3(...fit.position), key }
+      return { target: new THREE.Vector3(...fit.target), pos: new THREE.Vector3(...fit.position), key, fov }
     }
     if (name === 'tape') {
       let box: { min: V3; max: V3 } | null = null
@@ -219,16 +221,29 @@ export function createScene(container: HTMLElement, ctx: ViewContext, opts: Scen
     }
     const f = frameInput()
     switch (name) {
-      case 'overview': return fromFit(overviewPoints(f), VIEW_ANGLES.overview.azimuth, VIEW_ANGLES.overview.elevation, 0.06)
+      case 'overview': {
+        // a narrow (phone) stage: raise the view so the depth of the bench fills the height, and keep the whole table in frame
+        const narrow = aspect < 1.2
+        const pts = narrow ? [...overviewPoints(f), ...boxCorners([TABLE.x0, -TABLE.thickness, -TABLE.halfD], [0, 0, TABLE.halfD])] : overviewPoints(f)
+        return fromFit(pts, VIEW_ANGLES.overview.azimuth, narrow ? VIEW_ANGLES.overview.elevation + 14 : VIEW_ANGLES.overview.elevation, 0.04)
+      }
       case 'release': return fromFit(releasePoints(f), VIEW_ANGLES.release.azimuth, VIEW_ANGLES.release.elevation, 0.05)
       case 'edge': return fromFit(edgePoints(f), VIEW_ANGLES.edge.azimuth, VIEW_ANGLES.edge.elevation, 0.05)
       case 'floor': return fromFit(floorPoints(f), VIEW_ANGLES.floor.azimuth, VIEW_ANGLES.floor.elevation, 0.06)
     }
   }
   let preset: PresetName | null = null
+  const setFov = (fov: number): void => {
+    if (Math.abs(camera.fov - fov) < 1e-6) return
+    camera.fov = fov
+    camera.updateProjectionMatrix()
+  }
+  /** In the side-on edge view the legs nearer to the camera than the edge plane fade so they do not hide the arc. */
+  const fadeNearLegs = (on: boolean): void => { table.setNearLegsOpacity(on ? 0.25 : 1); requestRender() }
   let followKey = ''
-  let anim: { t0: number; fromT: THREE.Vector3; toT: THREE.Vector3; fromP: THREE.Vector3; toP: THREE.Vector3 } | null = null
-  const applyPose = (pose: { target: THREE.Vector3; pos: THREE.Vector3 }): void => {
+  let anim: { t0: number; fromT: THREE.Vector3; toT: THREE.Vector3; fromP: THREE.Vector3; toP: THREE.Vector3; fromFov: number; toFov: number } | null = null
+  const applyPose = (pose: { target: THREE.Vector3; pos: THREE.Vector3; fov: number }): void => {
+    setFov(pose.fov)
     controls.target.copy(pose.target)
     camera.position.copy(pose.pos)
     camera.lookAt(pose.target)
@@ -238,14 +253,15 @@ export function createScene(container: HTMLElement, ctx: ViewContext, opts: Scen
   const setPreset = (name: PresetName): void => {
     preset = name
     trailWanted = name === 'edge'
+    fadeNearLegs(name === 'edge')
     const pose = poseFor(name)
     followKey = pose.key
     if (ctx.reducedMotion()) { anim = null; applyPose(pose); return }
-    anim = { t0: performance.now(), fromT: controls.target.clone(), toT: pose.target, fromP: camera.position.clone(), toP: pose.pos }
+    anim = { t0: performance.now(), fromT: controls.target.clone(), toT: pose.target, fromP: camera.position.clone(), toP: pose.pos, fromFov: camera.fov, toFov: pose.fov }
     requestRender()
   }
   // after the student orbits by hand the trail stays if the view started as 'edge'
-  const userTookOver = (): void => { anim = null; preset = null }
+  const userTookOver = (): void => { anim = null; preset = null; fadeNearLegs(false) }
   controls.addEventListener('start', userTookOver)
   controls.addEventListener('change', requestRender)
 
@@ -685,6 +701,7 @@ export function createScene(container: HTMLElement, ctx: ViewContext, opts: Scen
         const e = easeOut(k)
         controls.target.lerpVectors(anim.fromT, anim.toT, e)
         camera.position.lerpVectors(anim.fromP, anim.toP, e)
+        setFov(anim.fromFov + (anim.toFov - anim.fromFov) * e)
         camera.lookAt(controls.target)
         if (k >= 1) anim = null
         needsRender = true
