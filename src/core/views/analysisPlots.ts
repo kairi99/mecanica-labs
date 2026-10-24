@@ -135,3 +135,49 @@ export function plotResiduals(host: HTMLElement, d: ResInput, p: Palette, labels
     hooks: { draw: [bars] },
   }), toData(rows, 2))
 }
+
+export interface TrialBarsInput {
+  /** One entry per series (for example one per ball); `points[i]` is trial i + 1 (null: no data). */
+  series: Array<{ points: Array<{ y: number; u: number } | null>; shape: 'circle' | 'square' }>
+  /** Optional horizontal reference (an expected value) with its uncertainty band. */
+  ref?: { y: number; u: number } | null
+}
+/** Values with uncertainty bars against a trial number (1..n); series are offset a little and use different marker shapes. */
+export function plotTrialBars(host: HTMLElement, d: TrialBarsInput, p: Palette, labels: { x: string; y: string }): PlotHandle | null {
+  const n = Math.max(1, ...d.series.map((s) => s.points.length))
+  const xs = Array.from({ length: n }, (_, i) => i + 1)
+  const all = d.series.flatMap((s) => s.points.filter((q): q is { y: number; u: number } => q !== null))
+  const top = Math.max(1e-9, ...all.map((q) => q.y + q.u), d.ref ? d.ref.y + d.ref.u : 0)
+  const colors = [p.pos, p.vel]
+  const draw = (u: uPlot): void => {
+    const c = u.ctx, k = dpr()
+    c.save()
+    if (d.ref) {
+      const y0 = u.valToPos(d.ref.y - d.ref.u, 'y', true), y1 = u.valToPos(d.ref.y + d.ref.u, 'y', true), yc = u.valToPos(d.ref.y, 'y', true)
+      const xa = u.valToPos(0.5, 'x', true), xb = u.valToPos(n + 0.5, 'x', true)
+      c.fillStyle = withAlpha(p.accent, 0.18); c.fillRect(xa, y1, xb - xa, y0 - y1)
+      c.strokeStyle = p.accent; c.lineWidth = 2 * k; c.setLineDash([6 * k, 4 * k]); c.beginPath(); c.moveTo(xa, yc); c.lineTo(xb, yc); c.stroke(); c.setLineDash([])
+    }
+    d.series.forEach((s, si) => {
+      const off = d.series.length > 1 ? (si - (d.series.length - 1) / 2) * 0.16 : 0
+      c.strokeStyle = colors[si % colors.length]!; c.fillStyle = colors[si % colors.length]!; c.lineWidth = 1.5 * k
+      s.points.forEach((q, i) => {
+        if (!q) return
+        const x = u.valToPos(i + 1 + off, 'x', true), y = u.valToPos(q.y, 'y', true), ya = u.valToPos(q.y - q.u, 'y', true), yb = u.valToPos(q.y + q.u, 'y', true)
+        c.beginPath(); c.moveTo(x, ya); c.lineTo(x, yb); c.moveTo(x - 4 * k, ya); c.lineTo(x + 4 * k, ya); c.moveTo(x - 4 * k, yb); c.lineTo(x + 4 * k, yb); c.stroke()
+        if (s.shape === 'circle') { c.beginPath(); c.arc(x, y, 4.5 * k, 0, Math.PI * 2); c.fill() } else c.fillRect(x - 4 * k, y - 4 * k, 8 * k, 8 * k)
+      })
+    })
+    c.restore()
+  }
+  return make(host, (w) => ({
+    width: w, height: height(w), legend: { show: false }, cursor: { drag: { x: false, y: false } },
+    scales: { x: { time: false, range: () => [0.5, n + 0.5] }, y: { range: () => [0, top * 1.1] } },
+    axes: [
+      { ...axes(p, labels.x, labels.y)[0]!, splits: () => xs, values: (_u, v) => v.map((q) => String(q)) },
+      axes(p, labels.x, labels.y)[1]!,
+    ],
+    series: [{}, { paths: () => null, points: { show: false } }],
+    hooks: { draw: [draw] },
+  }), [xs, xs.map(() => null)] as unknown as uPlot.AlignedData)
+}

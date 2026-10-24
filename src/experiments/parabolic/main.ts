@@ -7,6 +7,7 @@ import '../../core/styles/panels.css'
 import './styles/instruments.css'
 import './styles/slowmo.css'
 import '../../core/styles/pedagogy.css'
+import '../../core/styles/analysis.css'
 import { ParabolicApparatus, type ApparatusEvent } from './apparatus/index.ts'
 import { mountShell } from '../../core/shell/mountShell.ts'
 import { readShellParams } from '../../core/shell/params.ts'
@@ -32,7 +33,7 @@ import { mountTour } from './pedagogy/tour.ts'
 import { mountSide2d } from './views/side2d.ts'
 import { PRESETS, type PresetName, type Scene3DView } from './views/stage.ts'
 import type { ViewContext } from './views/view.ts'
-import { clearSnapshot, loadSnapshot, saveSnapshot, store } from './persist.ts'
+import { clearAnalysisState, clearSnapshot, loadSnapshot, saveSnapshot, store } from './persist.ts'
 import { rebaseSnapshotTime } from './restore.ts'
 
 const params = new URLSearchParams(location.search)
@@ -100,7 +101,7 @@ const slots: ShellSlot<ParabolicApparatus>[] = [
   { id: 'tapeRange', step: LAUNCH_STEP, mount: mountTape('tapeRange') },
 ]
 if (showReference) slots.push({ id: 'slowmo', step: stepOf('slowmo'), mount: mountSlowmo({ goToLaunch: () => shell.setStep(LAUNCH_STEP) }) })
-if (showAnalysis) slots.push({ id: 'analysis', step: stepOf('analysis'), mount: mountAnalysis })
+if (showAnalysis) slots.push({ id: 'analysis', step: stepOf('analysis'), mount: mountAnalysis({ reference: showReference }) })
 /** Which lab step holds each panel (data-panel); 0: always visible. Switched-off steps have no entry. */
 const PANEL_STEP: Record<string, number> = { inventory: 1, adjust: 2, tape: 2, launch: LAUNCH_STEP, tapeRange: LAUNCH_STEP, table: LAUNCH_STEP, stage: 0, procedure: 0 }
 if (showReference) PANEL_STEP.slowmo = stepOf('slowmo')
@@ -187,7 +188,7 @@ shell = mountShell<ParabolicApparatus, ApparatusEvent>({
   timingBar: mountTimingBar,
   stage: { mount2d: mountSide2d, load3d },
   refusalText: (e, lang) => (e.type === 'refused' ? reasonText(lang, e.reason) : null),
-  reset() { clearSnapshot(); app.preset('empty'); setCell(0, 0); setNote('') },
+  reset() { clearSnapshot(); clearAnalysisState(); app.preset('empty'); setCell(0, 0); setNote('') },
   save: () => saveSnapshot(app.snapshot()),
   // On a phone the launches step uses the side-on view; other steps go back to the overview (unless ?cam fixes the camera).
   onStepChanged(step) {
@@ -197,7 +198,7 @@ shell = mountShell<ParabolicApparatus, ApparatusEvent>({
   },
   tour: {
     mount: (ctx, hooks) => mountTour(ctx, hooks),
-    stepOf: { inventory: 1, adjust: 2, timing: LAUNCH_STEP, table: LAUNCH_STEP },
+    stepOf: { inventory: 1, adjust: 2, timing: LAUNCH_STEP, table: LAUNCH_STEP, ...(showReference ? { slowmo: stepOf('slowmo') } : {}), ...(showAnalysis ? { analysis: stepOf('analysis') } : {}) },
   },
   coach: mountCoach,
   params: shellParams,

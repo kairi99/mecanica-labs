@@ -1,5 +1,5 @@
 // Tabla 2.1 panel: one table per ball, 5 trials (No. = rail mark) x 5 repetitions of time t [s] and range x [m]. Cells are inputs;
-// values go through the apparatus table methods. The mean / error / speed columns are filled in the Analysis phase (placeholders).
+// values go through the apparatus table methods. The mean / error / speed columns come from the pure analysis layer (analysis/compute.ts).
 import { BALL_IDS, TABLE_REPS, TABLE_TRIALS, type BallId } from '../apparatus/index.ts'
 import type { MountView, View } from './view.ts'
 import { button, card, el, watch } from '../../../core/views/dom.ts'
@@ -9,6 +9,8 @@ import { formatRange, formatTime, tableCsv } from './format.ts'
 import { reasonText } from './reasons.ts'
 import { getBall, getRep, getTrial, onUiState, setBall, setCell } from './uistate.ts'
 import { strings } from './strings/table.ts'
+import { ballAnalysis } from '../analysis/fromApparatus.ts'
+import { pmText } from '../../../core/views/format.ts'
 
 type Col = 'time' | 'range'
 const fill = (tpl: string, vars: Record<string, string | number>): string => tpl.replace(/\{(\w+)\}/g, (_m, k: string) => String(vars[k] ?? ''))
@@ -55,6 +57,7 @@ export const mountTable: MountView = (root, ctx): View => {
   thead.append(hr1, hr2)
   const tbody = el('tbody')
   const inputs: HTMLInputElement[][] = [] // [trial][col 0..9]
+  const calcCells: HTMLElement[][] = [] // [trial][t_bar, x_bar, v0]
   const rowEls: HTMLElement[] = []
   const rowHeads: HTMLElement[] = []
   const colOf = (j: number): { col: Col; rep: number } => (j < TABLE_REPS ? { col: 'time', rep: j } : { col: 'range', rep: j - TABLE_REPS })
@@ -76,7 +79,8 @@ export const mountTable: MountView = (root, ctx): View => {
       tr.append(td)
       inputs[r]![j] = inp
     }
-    for (let k = 0; k < 3; k++) tr.append(el('td', 'calc-cell', '—', { 'aria-hidden': 'true' }))
+    calcCells[r] = []
+    for (let k = 0; k < 3; k++) { const td = el('td', 'calc-cell', '—'); calcCells[r]![k] = td; tr.append(td) }
     tbody.append(tr)
   }
   table.append(caption, thead, tbody)
@@ -221,6 +225,13 @@ export const mountTable: MountView = (root, ctx): View => {
       inp.classList.toggle('copied', copied)
       if (copied) inp.title = T.copiedMark; else inp.removeAttribute('title')
     }
+    const an = ballAnalysis(app, getBall())
+    an.trials.forEach((t, r) => {
+      const set = (k: number, text: string | null): void => { calcCells[r]![k]!.textContent = text ?? '—' }
+      set(0, t.t_s !== null && t.u_t_s !== null ? pmText(t.t_s, t.u_t_s, L()) : null)
+      set(1, t.x_m !== null && t.u_x_m !== null ? pmText(t.x_m, t.u_x_m, L()) : null)
+      set(2, t.v0_mps !== null && t.u_v0_mps !== null ? pmText(t.v0_mps, t.u_v0_mps, L()) : null)
+    })
     filled.textContent = fill(T.filled, { n, total: TABLE_TRIALS * TABLE_REPS * 2 })
     cellAria()
     paintActive()

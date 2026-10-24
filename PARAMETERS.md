@@ -112,5 +112,11 @@ Device and bench values of the Practica 2 apparatus layer. Date of all rows: 202
 | Slow-motion video | 240 fps, 3 frames before launch and after landing | - | ASSUMED (typical phone slow motion). Frame positions carry no tracker noise (sub-pixel centre). Video phase of each run is a seeded draw in [0, 1) frame. |
 | Tabla 2.1 | 5 trials x 5 repetitions per ball; times <= 30 s, 2 decimals; ranges <= 3 m, 3 decimals | - | Guide layout; limits ASSUMED (stopwatch 0.01 s, tape 1 mm). |
 | Roll-over tail | 0.5 | s | Animation only: a ball that rolls over the edge instead of leaving horizontally is followed this long. |
+| Analysis: reaction bias half-width | 0.1 (u = 0.1/sqrt(3) = 0.058) | s | ASSUMED, as in Practica 1 (`reactionBiasTypeB_s`). Common to all readings of Tabla 2.1; included in Delta t. |
+| Analysis: uncertainty of local g | 0.005 | m/s^2 | ASSUMED: the free-air formula has no Bouguer or anomaly term (a few 1e-3 m/s^2). Only enters the uncertainty of the expected time and the final speed. |
+| Analysis: uncertainty of the typed launch height | sqrt(2) x 1 mm / sqrt(12) = 0.41 | mm | Two tape ends to place (floor and table top), tape division 1 mm; the tape MPE (0.3 + 0.2 L mm) is reported, not applied. |
+| Analysis: edge-projection term of Delta x | 2 | mm | ASSUMED, the same sigma the bench draws for the projection point (`EDGE_PROJECTION_SIGMA_m`); common to every range. |
+| Analysis: slow-motion reference uncertainty | frame / sqrt(6) = 1.7 | ms | Launch and landing frames each fall uniformly within one 1/240 s frame. |
+| Coach thresholds (timing) | start press < 0.3 s before or > 0.45 s after the edge; reading > 0.3 s from 0.39 s | s | ASSUMED teaching thresholds, not physics. Typed range within 2 cm of (true range + gap) counts as measured from the rail tip. |
 
 Simplifications: no longitudinal table tilt; the table is long enough for any rail position; heights are vertical and distances along the rail (small-angle bookkeeping for the two-leg lift); after the first bounce the ball is not followed; marks are the first contact only. With the physics rolling resistance (`c_rr` 1.5e-3 and 5e-3) a ball does not stop on a 0.6 m gap: only a nearly flat rail stops it.
