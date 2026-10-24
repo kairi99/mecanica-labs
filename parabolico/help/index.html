@@ -11,8 +11,133 @@
 <div class="bar"><a class="pill accent" href="../index.html">Volver al laboratorio</a><nav class="pills" aria-label="Idioma"><a class="pill" href="en.html" hreflang="en">English</a></nav></div>
 <main>
 <h1>Guía de ayuda: movimiento parabólico</h1>
-<p class="lede">Acompañante del laboratorio virtual de la Práctica 2.</p>
-<p>Lanzas una canica y una pelota de ping-pong desde el borde de una mesa después de hacerlas rodar por una riel inclinada. Cronometras el vuelo con tus propias pulsaciones, mides el alcance con la cinta métrica sobre la marca del papel carbón y llenas la Tabla 2.1. La guía de ayuda completa (teoría del lanzamiento horizontal, uso de los instrumentos e incertidumbres) llegará en una próxima versión.</p>
+<p class="lede">Un complemento del laboratorio virtual de la Práctica 2: la teoría del lanzamiento horizontal, cómo se corresponde el procedimiento de la guía con el simulador, cómo leer la cinta y la marca del carbón, cómo se calculan las incertidumbres y por qué cronometrar a mano un vuelo de 0,4 s es tan impreciso.</p>
+<nav class="toc" aria-label="Contenido">
+<a href="#teoria">Teoría</a><a href="#uso">Uso del laboratorio</a><a href="#lectura">Cinta y marca</a><a href="#cronometro">Cronómetro</a><a href="#incertidumbre">Incertidumbre</a><a href="#camara">Cámara lenta</a><a href="#modelo">Modelo honesto</a><a href="#teclas">Teclas</a><a href="#creditos">Créditos</a>
+</nav>
+
+<section id="teoria"><h2>1. Teoría del lanzamiento horizontal</h2>
+<p>Un cuerpo que sale de una mesa con velocidad horizontal <em>v</em><sub>0</sub> y queda solo bajo la gravedad hace dos movimientos independientes. En horizontal no hay fuerza: la velocidad se mantiene (MRU). En vertical actúa <em>g</em> y parte sin velocidad vertical: es una caída libre desde la altura <em>H</em>. Con el origen en el borde de la mesa y <em>y</em> hacia arriba:</p>
+<div class="eq">x(t) = v₀·t<br>y(t) = H − ½·g·t²</div>
+<p>Eliminando <em>t</em> queda <em>y</em> = <em>H</em> − <em>g</em>·<em>x</em>²/(2·<em>v</em><sub>0</sub>²): una parábola. De ahí el nombre del movimiento, y la razón de que la trayectoria no sea una recta aunque la velocidad horizontal sea constante.</p>
+<figure><svg viewBox="0 0 640 220" role="img" aria-labelledby="tr-t tr-d" class="fig"><title id="tr-t">Trayectoria de un lanzamiento horizontal</title><desc id="tr-d">Una mesa a la izquierda, la bola sale del borde con velocidad horizontal y cae describiendo una parábola hasta el piso, donde deja una marca a una distancia x del punto bajo el borde.</desc>
+<line x1="20" y1="190" x2="620" y2="190" stroke="currentColor" stroke-width="2"/>
+<rect x="20" y="60" width="150" height="10" fill="currentColor" opacity="0.25" stroke="currentColor"/>
+<line x1="170" y1="70" x2="170" y2="190" stroke="currentColor" stroke-dasharray="4 4" opacity="0.6"/>
+<path d="M170 56 Q 330 56 470 186" fill="none" stroke="currentColor" stroke-width="2.5"/>
+<circle cx="170" cy="56" r="5" fill="currentColor"/>
+<line x1="170" y1="56" x2="230" y2="56" stroke="currentColor" stroke-width="2"/><polygon points="230,56 222,52 222,60" fill="currentColor"/>
+<text x="236" y="52" font-size="13" fill="currentColor">v₀</text>
+<text x="176" y="136" font-size="13" fill="currentColor">H</text>
+<line x1="170" y1="204" x2="470" y2="204" stroke="currentColor"/><text x="300" y="218" font-size="13" fill="currentColor">x</text>
+<circle cx="470" cy="190" r="4" fill="currentColor"/>
+</svg><figcaption>La bola sale del borde con <em>v</em><sub>0</sub> horizontal y cae una altura <em>H</em> mientras avanza una distancia <em>x</em>.</figcaption></figure>
+<h3>Tiempo de vuelo y alcance</h3>
+<p>La bola toca el piso cuando <em>y</em> = 0. De la ecuación vertical sale el tiempo de vuelo, y de la horizontal el alcance:</p>
+<div class="eq">t = √(2·H / g)<br>x = v₀·t = v₀·√(2·H / g)</div>
+<p>Fíjate en qué falta en la primera fórmula: <em>v</em><sub>0</sub>. El tiempo de vuelo depende de la altura y de la gravedad, no de la rapidez de salida. Con <em>H</em> entre 0,74 y 0,78 m y <em>g</em> = 9,77 m/s² en Quito, <em>t</em> vale unos 0,39 a 0,40 s. En cambio, el alcance sí crece con <em>v</em><sub>0</sub>. Son las preguntas 3 y 5 del análisis.</p>
+<h3>Rapidez justo antes del piso</h3>
+<p>La componente horizontal sigue siendo <em>v</em><sub>0</sub> y la vertical vale <em>g</em>·<em>t</em> = √(2·<em>g</em>·<em>H</em>). Por tanto:</p>
+<div class="eq">v = √(v₀² + 2·g·H)</div>
+<p>Con <em>v</em><sub>0</sub> de poco más de 1 m/s y una caída de tres cuartos de metro, la rapidez final es de unos 4 m/s y casi toda es vertical. Es la tarea 7.</p>
+</section>
+
+<section id="uso"><h2>2. Cómo usar el laboratorio</h2>
+<p>El laboratorio va en cinco pasos, que ves en la barra de arriba: 1 Montaje, 2 Ajustes y marcas, 3 Lanzamientos y Tabla 2.1, 4 Cámara lenta, 5 Análisis. Con <code>?reference=0</code> o <code>?analysis=0</code> en la dirección se ocultan los pasos 4 y 5 (los demás se renumeran). El «Procedimiento» sigue la guía y, con «Muéstramelo», te lleva al panel que necesitas.</p>
+<ol>
+<li><b>Montaje (2.3.2).</b> Pon en la mesa la riel, los soportes, la base, los tornillos, el nivelador, la cinta, el cronómetro, las dos bolas y los papeles. El soporte con cremallera va sobre su base y sujeta el extremo alto de la riel; el de dos patas queda cerca del extremo bajo.</li>
+<li><b>Altura de 20 cm.</b> Sube el extremo alto hasta que quede 20 cm sobre la mesa y el otro extremo descanse en ella. Mídelo con la cinta (opción «Altura de la pinza sobre la mesa»).</li>
+<li><b>Separación de unos 5 cm.</b> Corre la riel hasta que su punta quede a unos 5 cm del borde. Una separación mayor no detiene la bola (la resistencia a la rodadura es pequeña), solo la frena un poco y la hace menos repetible; una muy corta la deja salir todavía patinando.</li>
+<li><b>Nivelación.</b> Con el nivelador sobre la riel, gira el pie del soporte de dos patas hasta centrar la burbuja. Una riel torcida de lado manda la bola ligeramente hacia un costado y cambia el alcance.</li>
+<li><b>Cinco marcas (2.3.3).</b> Marca 5 posiciones en la mitad superior de la riel (de 60 a 120 cm desde la punta baja). Cada una es un lanzamiento distinto: otra rapidez de salida.</li>
+<li><b>Papel en el piso.</b> Pon la hoja bond donde cae la bola y el papel carbón encima. Marca en el piso, con una plomada o una escuadra, el punto justo bajo el borde de la mesa: la proyección del borde.</li>
+<li><b>Lanzar.</b> Coloca la bola en la primera marca y suéltala sin empujarla (<kbd>S</kbd>). Pulsa <kbd>Espacio</kbd> cuando pase el borde y otra vez cuando toque el piso; <kbd>Enter</kbd> copia el tiempo a la tabla. Mide el alcance con la cinta antes de mover el papel y cópialo.</li>
+<li><b>Cinco repeticiones por marca</b>, primero con la canica y luego con la pelota de ping-pong. Al final, mide la altura de lanzamiento <em>H</em> (del piso a la mesa).</li>
+<li><b>Análisis.</b> El panel calcula las tareas 2 a 9 con tu tabla y se actualiza solo. Las respuestas con palabras las escribes tú.</li>
+</ol>
+<p class="note">La marca del carbón aparece cuando la bola cae. Una bola que cae fuera del papel, o una pelota de ping-pong que pega muy suave, puede no dejar marca legible: se repite el lanzamiento.</p>
+</section>
+
+<section id="lectura"><h2>3. Leer la cinta y la marca del carbón</h2>
+<h3>Qué mides</h3>
+<p>El alcance <em>x</em> es la distancia horizontal desde el borde de la mesa hasta el punto donde la bola toca el piso. En el piso eso es la distancia desde la proyección del borde hasta la marca. <b>No</b> se mide desde la punta de la riel: eso añadiría la separación de unos 5 cm y falsearía <em>v</em><sub>0</sub> = <em>x</em>/<em>t</em>.</p>
+<h3>El centro de la marca</h3>
+<p>El carbón deja un punto de unos milímetros, no un punto geométrico. Apunta al centro del punto, no a su borde cercano ni al lejano. Cada marca nueva aparece en la lista del panel «Cinta métrica»: elígela y mide.</p>
+<h3>Cómo leer la cinta</h3>
+<ol>
+<li>Pon el cero de la cinta en la proyección del borde y tiéndela recta hacia la marca.</li>
+<li>Lee el número de centímetro que queda a la izquierda del centro del punto.</li>
+<li>Cuenta las marcas de milímetro hasta el centro y anota la más cercana: la cinta se aprecia a 1 mm.</li>
+</ol>
+<p>El panel «Cinta métrica» muestra una vista ampliada de la lámina; puedes acercarla. Después de leer, copia el alcance a la celda activa de la tabla.</p>
+<h3>No muevas el papel</h3>
+<p>Las marcas solo sirven mientras la hoja siga donde estaba cuando cayó la bola. Si la mueves o la giras, el laboratorio lo detecta: las marcas ya no corresponden a la proyección del borde. Mide primero, luego cambia o retira el papel.</p>
+</section>
+
+<section id="cronometro"><h2>4. El cronómetro y por qué 0,4 s sale tan mal</h2>
+<h3>Qué cronometras</h3>
+<p>El tiempo de vuelo empieza cuando la bola pasa el borde y termina cuando toca el piso. Si arrancas el cronómetro al soltar la bola, también mides el rodar por la riel y por la mesa (más de un segundo): la lectura sale muy por encima de 0,4 s. El entrenador te avisa si pasa.</p>
+<h3>Error aleatorio y sistemático</h3>
+<p>Al arrancar y al detener el cronómetro reaccionas con retraso. Si los dos retrasos fueran iguales se cancelarían; no lo son. Su diferencia tiene una parte que cambia en cada intento (error aleatorio, que se promedia) y una parte media que no cambia (sesgo sistemático, que no se promedia). Un sesgo de solo 0,1 s sobre un vuelo de 0,4 s es un error del 25 %. Con 25 repeticiones sigue ahí.</p>
+<h3>Por qué importa tanto aquí</h3>
+<p>En el MRUV los tiempos eran de varios segundos y el mismo sesgo pesaba poco. En este experimento el tiempo es corto: el error relativo de la mano, de décimas de segundo sobre 0,4 s, es del orden de 15 a 25 %, mucho mayor que el de la cinta (milímetros sobre medio metro, 0,5 %). La velocidad <em>v</em><sub>0</sub> = <em>x</em>/<em>t</em> hereda ese error.</p>
+</section>
+
+<section id="incertidumbre"><h2>5. Incertidumbre</h2>
+<h3>Tipo A y tipo B</h3>
+<p>La incertidumbre de tipo A sale de la dispersión de las repeticiones: <em>u</em><sub>A</sub> = <em>s</em>/√<em>n</em>. La de tipo B sale de lo que sabes del instrumento. Para una lectura que solo conoces hasta una división <em>d</em> (cronómetro de 0,01 s, cinta de 1 mm), el valor está en ±<em>d</em>/2 con igual probabilidad y <em>u</em> = <em>d</em>/√12.</p>
+<h3>Convenciones del laboratorio</h3>
+<ul>
+<li><b>Tiempo de una marca:</b> promedio de las 5 repeticiones. Δ<em>t</em> = √(<em>u</em><sub>A</sub>² + <em>u</em><sub>res</sub>² + <em>u</em><sub>reac</sub>²), con <em>u</em><sub>res</sub> = 0,01/√12 s y <em>u</em><sub>reac</sub> = 0,1/√3 s (sesgo de reacción, supuesto, común a todas las lecturas).</li>
+<li><b>Alcance de una marca:</b> promedio de 5. Δ<em>x</em> = √(<em>u</em><sub>A</sub>² + <em>u</em><sub>cinta</sub>² + <em>u</em><sub>proy</sub>²), con <em>u</em><sub>cinta</sub> = 1/√12 mm y <em>u</em><sub>proy</sub> = 2 mm (dónde pusiste la proyección del borde, supuesto).</li>
+<li><b>Altura de lanzamiento:</b> la lees con la cinta; <em>u</em><sub>H</sub> = √2·1/√12 mm por colocar los dos extremos. La gravedad local en Quito (9,77 m/s²) tiene una incertidumbre supuesta de 0,005 m/s².</li>
+</ul>
+<p>El error máximo permisible de una cinta clase II (0,3 mm + 0,2 mm por metro) se informa, pero no se suma.</p>
+<h3>Propagación</h3>
+<p>Para <em>v</em><sub>0</sub> = <em>x</em>/<em>t</em>, con <em>x</em> y <em>t</em> medidos de forma independiente (GUM 5.1.2):</p>
+<div class="eq">Δv = v₀ · √( (Δx/x)² + (Δt/t)² )</div>
+<p>Para el tiempo esperado, <em>t</em> = √(2<em>H</em>/<em>g</em>): Δ<em>t</em> = (<em>t</em>/2)·√((Δ<em>H</em>/<em>H</em>)² + (Δ<em>g</em>/<em>g</em>)²). Para la rapidez final, <em>v</em> = √(<em>v</em><sub>0</sub>² + 2<em>gH</em>): Δ<em>v</em> = √((<em>v</em><sub>0</sub>Δ<em>v</em><sub>0</sub>)² + (<em>g</em>Δ<em>H</em>)² + (<em>H</em>Δ<em>g</em>)²) / <em>v</em>.</p>
+<h3>Cifras significativas y veredicto</h3>
+<p>La incertidumbre se da con 1 o 2 cifras y el valor se redondea a la misma posición decimal. El error porcentual de la tarea 6 se compara con la incertidumbre combinada del tiempo medido y del esperado: dentro de 1σ las dos cifras son compatibles; más allá de 2σ hay algo que explicar.</p>
+<h3>El sesgo de reacción es común</h3>
+<p>El mismo retraso afecta a las cinco marcas: los valores de <em>v</em><sub>0</sub> de filas distintas no son independientes. Por eso el panel lo dice y no trata las diferencias de las filas como independientes.</p>
+</section>
+
+<section id="camara"><h2>6. La cámara lenta como referencia</h2>
+<p>El paso 4 reproduce un video a 240 cuadros por segundo de cualquier lanzamiento. Cuenta los cuadros desde el primero en que la bola ya pasó el borde hasta el primero en que ya tocó el piso. Cada cuadro dura 1/240 s = 4,2 ms, así que el tiempo contado tiene una incertidumbre de unos 2 ms: cien veces menor que la de tu cronómetro. El análisis (tarea 6) muestra ese tiempo por bola y su error porcentual frente al esperado, y compara tu cronómetro con él. La diferencia es, casi toda, tu retraso de reacción.</p>
+</section>
+
+<section id="modelo"><h2>7. Un modelo honesto</h2>
+<p>El simulador no cuenta que todo es ideal. Los valores están en <code>PARAMETERS.md</code> (la mayoría son supuestos, no datos de la mesa real).</p>
+<ul>
+<li><b>La velocidad de salida está por debajo de √(2<em>g</em>Δ<em>h</em>).</b> Una bola que rueda guarda parte de la energía como giro: la canica (maciza) convierte 5/7 en traslación; la pelota de ping-pong (hueca) solo unos 0,6. Además hay resistencia a la rodadura y pérdidas en la unión entre la riel y la mesa.</li>
+<li><b>La unión riel-mesa.</b> Al pasar de la pendiente a la mesa la bola choca con el cambio de dirección, pierde algo de energía y puede patinar un tramo antes de volver a rodar.</li>
+<li><b>El aire.</b> La pelota de ping-pong es liviana y grande: el aire la frena y alarga un poco su vuelo. La canica casi no lo nota.</li>
+<li><b>La marca.</b> La pelota de ping-pong pega suave y deja marcas tenues; a veces rebota sin marcar.</li>
+<li><b>Variabilidad.</b> La posición de suelta, un pequeño empujón, la pérdida en la unión y el ángulo lateral cambian en cada lanzamiento. Por eso las 5 repeticiones no dan el mismo alcance.</li>
+</ul>
+<p>Condiciones del proyectil ideal (tarea 9): piensa en cuáles se cumplen aquí y cuáles no. El panel de análisis te las pregunta, una por una, sin darte la respuesta.</p>
+</section>
+
+<section id="teclas"><h2>8. Atajos de teclado</h2>
+<table>
+<thead><tr><th>Tecla</th><th>Acción</th></tr></thead>
+<tbody>
+<tr><td><kbd>S</kbd></td><td>Soltar la bola</td></tr>
+<tr><td><kbd>Espacio</kbd></td><td>Iniciar o detener el cronómetro (cuenta el instante de la pulsación)</td></tr>
+<tr><td><kbd>R</kbd></td><td>Reiniciar el cronómetro</td></tr>
+<tr><td><kbd>Enter</kbd></td><td>Copiar la lectura detenida a la Tabla 2.1</td></tr>
+<tr><td><kbd>Flechas</kbd></td><td>En la Tabla 2.1: moverse entre casillas</td></tr>
+<tr><td><kbd>Tab</kbd></td><td>Recorrer los controles. Todo se puede operar con el teclado; los atajos no se activan sobre botones, casillas ni campos de texto</td></tr>
+<tr><td><kbd>Esc</kbd></td><td>Cerrar el recorrido inicial</td></tr>
+</tbody></table>
+</section>
+
+<section id="creditos"><h2>9. Créditos</h2>
+<p>Este laboratorio virtual está basado en la guía «Práctica 2: Movimiento parabólico» del Laboratorio de Física de la Escuela Politécnica Nacional (Quito). Es un proyecto independiente y de código abierto, <b>sin afiliación con la EPN ni con PHYWE</b>. Los parámetros de las bolas y de la mesa son supuestos documentados en <code>PARAMETERS.md</code>.</p>
+<p>Métodos: GUM (JCGM 100) y J. R. Taylor, <em>An Introduction to Error Analysis</em>. Código bajo licencia MIT y contenido educativo bajo CC BY 4.0.</p>
+</section>
+<p class="credits"><a href="../index.html">Volver al laboratorio</a></p>
 </main>
 </body>
 </html>

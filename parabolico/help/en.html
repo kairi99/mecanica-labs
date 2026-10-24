@@ -11,8 +11,133 @@
 <div class="bar"><a class="pill accent" href="../index.html">Back to the lab</a><nav class="pills" aria-label="Language"><a class="pill" href="index.html" hreflang="es">Español</a></nav></div>
 <main>
 <h1>Help guide: projectile motion</h1>
-<p class="lede">Companion of the virtual lab for Practice 2.</p>
-<p>You launch a marble and a ping-pong ball from the edge of a table after rolling them down an inclined rail. You time the flight with your own presses, measure the range with the tape measure from the carbon-paper mark and fill Table 2.1. The full help guide (theory of the horizontal launch, how to use the instruments and uncertainties) will come in a later version.</p>
+<p class="lede">A companion of the virtual lab for Practice 2: the theory of the horizontal launch, how the guide's procedure maps to the simulator, how to read the tape and the carbon mark, how the uncertainties are computed and why timing a 0.4 s flight by hand is so imprecise.</p>
+<nav class="toc" aria-label="Contents">
+<a href="#theory">Theory</a><a href="#use">Using the lab</a><a href="#reading">Tape and mark</a><a href="#stopwatch">Stopwatch</a><a href="#uncertainty">Uncertainty</a><a href="#slowmo">Slow motion</a><a href="#model">Honest model</a><a href="#keys">Keys</a><a href="#credits">Credits</a>
+</nav>
+
+<section id="theory"><h2>1. Theory of the horizontal launch</h2>
+<p>A body that leaves a table with horizontal velocity <em>v</em><sub>0</sub> and is then under gravity alone makes two independent motions. Horizontally there is no force: the velocity stays constant (uniform motion). Vertically <em>g</em> acts and the body starts with no vertical velocity: a free fall from height <em>H</em>. With the origin at the table edge and <em>y</em> pointing up:</p>
+<div class="eq">x(t) = v₀·t<br>y(t) = H − ½·g·t²</div>
+<p>Eliminating <em>t</em> gives <em>y</em> = <em>H</em> − <em>g</em>·<em>x</em>²/(2·<em>v</em><sub>0</sub>²): a parabola. That is why the path is not a straight line even though the horizontal velocity is constant.</p>
+<figure><svg viewBox="0 0 640 220" role="img" aria-labelledby="tr-t tr-d" class="fig"><title id="tr-t">Path of a horizontal launch</title><desc id="tr-d">A table on the left; the ball leaves the edge with horizontal velocity and falls along a parabola to the floor, where it leaves a mark at a distance x from the point below the edge.</desc>
+<line x1="20" y1="190" x2="620" y2="190" stroke="currentColor" stroke-width="2"/>
+<rect x="20" y="60" width="150" height="10" fill="currentColor" opacity="0.25" stroke="currentColor"/>
+<line x1="170" y1="70" x2="170" y2="190" stroke="currentColor" stroke-dasharray="4 4" opacity="0.6"/>
+<path d="M170 56 Q 330 56 470 186" fill="none" stroke="currentColor" stroke-width="2.5"/>
+<circle cx="170" cy="56" r="5" fill="currentColor"/>
+<line x1="170" y1="56" x2="230" y2="56" stroke="currentColor" stroke-width="2"/><polygon points="230,56 222,52 222,60" fill="currentColor"/>
+<text x="236" y="52" font-size="13" fill="currentColor">v₀</text>
+<text x="176" y="136" font-size="13" fill="currentColor">H</text>
+<line x1="170" y1="204" x2="470" y2="204" stroke="currentColor"/><text x="300" y="218" font-size="13" fill="currentColor">x</text>
+<circle cx="470" cy="190" r="4" fill="currentColor"/>
+</svg><figcaption>The ball leaves the edge with horizontal <em>v</em><sub>0</sub> and falls a height <em>H</em> while moving a distance <em>x</em>.</figcaption></figure>
+<h3>Flight time and range</h3>
+<p>The ball reaches the floor when <em>y</em> = 0. The vertical equation gives the flight time, the horizontal one the range:</p>
+<div class="eq">t = √(2·H / g)<br>x = v₀·t = v₀·√(2·H / g)</div>
+<p>Notice what is missing from the first formula: <em>v</em><sub>0</sub>. The flight time depends on the height and on gravity, not on the launch speed. With <em>H</em> between 0.74 and 0.78 m and <em>g</em> = 9.77 m/s² in Quito, <em>t</em> is about 0.39 to 0.40 s. The range, on the other hand, grows with <em>v</em><sub>0</sub>. These are questions 3 and 5 of the analysis.</p>
+<h3>Speed just before the floor</h3>
+<p>The horizontal component is still <em>v</em><sub>0</sub> and the vertical one is <em>g</em>·<em>t</em> = √(2·<em>g</em>·<em>H</em>). Therefore:</p>
+<div class="eq">v = √(v₀² + 2·g·H)</div>
+<p>With <em>v</em><sub>0</sub> a little above 1 m/s and a fall of three quarters of a metre, the final speed is about 4 m/s and almost all of it is vertical. This is task 7.</p>
+</section>
+
+<section id="use"><h2>2. How to use the lab</h2>
+<p>The lab runs in five steps, shown in the bar above: 1 Assembly, 2 Settings and marks, 3 Launches and Table 2.1, 4 Slow motion, 5 Analysis. With <code>?reference=0</code> or <code>?analysis=0</code> in the address, steps 4 and 5 are hidden (the others renumber). The "Procedure" follows the guide and its "Show me" button takes you to the panel you need.</p>
+<ol>
+<li><b>Assembly (2.3.2).</b> Put the rail, the stands, the base, the screws, the level, the tape, the stopwatch, both balls and the papers on the table. The rack-and-pinion stand sits on its base and holds the high end of the rail; the two-leg stand goes near the low end.</li>
+<li><b>20 cm rise.</b> Raise the high end until it is 20 cm above the table and the other end rests on it. Measure it with the tape ("Height of the clamp above the table" option).</li>
+<li><b>About 5 cm gap.</b> Slide the rail until its tip is about 5 cm from the edge. A bigger gap does not stop the ball (rolling resistance is small); it only slows it a little and makes it less repeatable. A very short gap lets it leave still slipping.</li>
+<li><b>Levelling.</b> With the level on the rail, turn the foot of the two-leg stand until the bubble is centred. A rail twisted sideways sends the ball slightly to one side and changes the range.</li>
+<li><b>Five marks (2.3.3).</b> Mark 5 positions in the upper half of the rail (60 to 120 cm from the low tip). Each one is a different launch: another launch speed.</li>
+<li><b>Paper on the floor.</b> Lay the bond sheet where the ball lands and the carbon paper on top. Mark on the floor, with a plumb line or a set square, the point right below the table edge: the edge projection.</li>
+<li><b>Launch.</b> Put the ball on the first mark and release it without pushing (<kbd>S</kbd>). Press <kbd>Space</kbd> when it passes the edge and again when it touches the floor; <kbd>Enter</kbd> copies the time to the table. Measure the range with the tape before moving the paper and copy it.</li>
+<li><b>Five repetitions per mark</b>, first with the marble and then with the ping-pong ball. At the end, measure the launch height <em>H</em> (floor to table).</li>
+<li><b>Analysis.</b> The panel computes tasks 2 to 9 from your table and updates by itself. The answers in words are yours to write.</li>
+</ol>
+<p class="note">The carbon mark appears when the ball lands. A ball that falls off the paper, or a ping-pong ball that lands very softly, may leave no readable dot: repeat the launch.</p>
+</section>
+
+<section id="reading"><h2>3. Reading the tape and the carbon mark</h2>
+<h3>What you measure</h3>
+<p>The range <em>x</em> is the horizontal distance from the table edge to where the ball touches the floor. On the floor that is the distance from the edge projection to the mark. It is <b>not</b> measured from the tip of the rail: that would add the gap of about 5 cm and spoil <em>v</em><sub>0</sub> = <em>x</em>/<em>t</em>.</p>
+<h3>The centre of the mark</h3>
+<p>The carbon leaves a dot a few millimetres wide, not a geometric point. Aim at the centre of the dot, not at its near or far edge. Each new mark appears in the list of the "Tape measure" panel: choose it and measure.</p>
+<h3>How to read the tape</h3>
+<ol>
+<li>Put the zero of the tape at the edge projection and lay it straight toward the mark.</li>
+<li>Read the centimetre number to the left of the centre of the dot.</li>
+<li>Count the millimetre marks up to the centre and write down the nearest one: the tape reads to 1 mm.</li>
+</ol>
+<p>The "Tape measure" panel shows a magnified view of the blade; you can zoom. After reading, copy the range to the active cell of the table.</p>
+<h3>Do not move the paper</h3>
+<p>The marks are only useful while the sheet is where it was when the ball fell. If you move or turn it, the lab notices: the marks no longer match the edge projection. Measure first, then change or remove the paper.</p>
+</section>
+
+<section id="stopwatch"><h2>4. The stopwatch and why 0.4 s comes out so badly</h2>
+<h3>What you time</h3>
+<p>The flight time starts when the ball passes the edge and ends when it touches the floor. If you start the watch at the release you also time the roll along the rail and the table (more than one second): the reading comes out well above 0.4 s. The coach warns you if that happens.</p>
+<h3>Random and systematic error</h3>
+<p>When you start and stop the watch you react late. If both delays were equal they would cancel; they are not. Their difference has a part that changes at each attempt (random error, which averages out) and a mean part that does not change (systematic bias, which does not average out). A bias of just 0.1 s on a 0.4 s flight is a 25 % error. With 25 repetitions it is still there.</p>
+<h3>Why it matters so much here</h3>
+<p>In MRUV the times were several seconds and the same bias weighed little. In this experiment the time is short: the relative error of the hand, tenths of a second over 0.4 s, is of the order of 15 to 25 %, much larger than that of the tape (millimetres over half a metre, 0.5 %). The speed <em>v</em><sub>0</sub> = <em>x</em>/<em>t</em> inherits that error.</p>
+</section>
+
+<section id="uncertainty"><h2>5. Uncertainty</h2>
+<h3>Type A and Type B</h3>
+<p>Type A uncertainty comes from the scatter of the repetitions: <em>u</em><sub>A</sub> = <em>s</em>/√<em>n</em>. Type B comes from what you know about the instrument. For a reading known only down to a division <em>d</em> (0.01 s stopwatch, 1 mm tape), the value lies within ±<em>d</em>/2 with equal probability and <em>u</em> = <em>d</em>/√12.</p>
+<h3>Conventions of the lab</h3>
+<ul>
+<li><b>Time of a mark:</b> mean of the 5 repetitions. Δ<em>t</em> = √(<em>u</em><sub>A</sub>² + <em>u</em><sub>res</sub>² + <em>u</em><sub>react</sub>²), with <em>u</em><sub>res</sub> = 0.01/√12 s and <em>u</em><sub>react</sub> = 0.1/√3 s (reaction bias, assumed, common to all readings).</li>
+<li><b>Range of a mark:</b> mean of 5. Δ<em>x</em> = √(<em>u</em><sub>A</sub>² + <em>u</em><sub>tape</sub>² + <em>u</em><sub>proj</sub>²), with <em>u</em><sub>tape</sub> = 1/√12 mm and <em>u</em><sub>proj</sub> = 2 mm (where you put the edge projection, assumed).</li>
+<li><b>Launch height:</b> read with the tape; <em>u</em><sub>H</sub> = √2·1/√12 mm for placing both ends. Local gravity in Quito (9.77 m/s²) has an assumed uncertainty of 0.005 m/s².</li>
+</ul>
+<p>The maximum permissible error of a class II tape (0.3 mm + 0.2 mm per metre) is reported, but not added.</p>
+<h3>Propagation</h3>
+<p>For <em>v</em><sub>0</sub> = <em>x</em>/<em>t</em>, with <em>x</em> and <em>t</em> measured independently (GUM 5.1.2):</p>
+<div class="eq">Δv = v₀ · √( (Δx/x)² + (Δt/t)² )</div>
+<p>For the expected time, <em>t</em> = √(2<em>H</em>/<em>g</em>): Δ<em>t</em> = (<em>t</em>/2)·√((Δ<em>H</em>/<em>H</em>)² + (Δ<em>g</em>/<em>g</em>)²). For the final speed, <em>v</em> = √(<em>v</em><sub>0</sub>² + 2<em>gH</em>): Δ<em>v</em> = √((<em>v</em><sub>0</sub>Δ<em>v</em><sub>0</sub>)² + (<em>g</em>Δ<em>H</em>)² + (<em>H</em>Δ<em>g</em>)²) / <em>v</em>.</p>
+<h3>Significant figures and verdict</h3>
+<p>The uncertainty is given with 1 or 2 digits and the value is rounded to the same decimal place. The percent error of task 6 is compared with the combined uncertainty of the measured and the expected time: within 1σ the two figures are compatible; beyond 2σ something needs explaining.</p>
+<h3>The reaction bias is common</h3>
+<p>The same delay affects the five marks: the <em>v</em><sub>0</sub> values of different rows are not independent. The panel says so and does not treat the row differences as independent.</p>
+</section>
+
+<section id="slowmo"><h2>6. Slow motion as a reference</h2>
+<p>Step 4 replays a 240 frames-per-second video of any launch. Count the frames from the first one where the ball has passed the edge to the first one where it has touched the floor. Each frame lasts 1/240 s = 4.2 ms, so the counted time has an uncertainty of about 2 ms: a hundred times smaller than your stopwatch. The analysis (task 6) shows that time for each ball and its percent error against the expected one, and compares your stopwatch with it. The difference is almost entirely your reaction delay.</p>
+</section>
+
+<section id="model"><h2>7. An honest model</h2>
+<p>The simulator does not pretend everything is ideal. The values are in <code>PARAMETERS.md</code> (most are assumptions, not data of the real bench).</p>
+<ul>
+<li><b>The launch speed is below √(2<em>g</em>Δ<em>h</em>).</b> A rolling ball keeps part of the energy as spin: the marble (solid) turns 5/7 into translation; the ping-pong ball (hollow) only about 0.6. There is also rolling resistance and a loss at the joint between the rail and the table.</li>
+<li><b>The rail-to-table joint.</b> Passing from the slope to the table the ball hits the change of direction, loses some energy and may slip for a stretch before rolling again.</li>
+<li><b>Air.</b> The ping-pong ball is light and large: air slows it and lengthens its flight a little. The marble hardly notices.</li>
+<li><b>The mark.</b> The ping-pong ball lands softly and leaves faint dots; sometimes it bounces without marking.</li>
+<li><b>Variability.</b> The release position, a slight push, the loss at the joint and the lateral angle change at every launch. That is why the 5 repetitions do not give the same range.</li>
+</ul>
+<p>Conditions of the ideal projectile (task 9): think about which hold here and which do not. The analysis panel asks you each one without giving the answer.</p>
+</section>
+
+<section id="keys"><h2>8. Keyboard shortcuts</h2>
+<table>
+<thead><tr><th>Key</th><th>Action</th></tr></thead>
+<tbody>
+<tr><td><kbd>S</kbd></td><td>Release the ball</td></tr>
+<tr><td><kbd>Space</kbd></td><td>Start or stop the stopwatch (the moment of the press counts)</td></tr>
+<tr><td><kbd>R</kbd></td><td>Reset the stopwatch</td></tr>
+<tr><td><kbd>Enter</kbd></td><td>Copy the stopped reading into Table 2.1</td></tr>
+<tr><td><kbd>Arrows</kbd></td><td>In Table 2.1: move between cells</td></tr>
+<tr><td><kbd>Tab</kbd></td><td>Move through the controls. Everything can be operated with the keyboard; the shortcuts do not fire on buttons, checkboxes or text fields</td></tr>
+<tr><td><kbd>Esc</kbd></td><td>Close the first-visit tour</td></tr>
+</tbody></table>
+</section>
+
+<section id="credits"><h2>9. Credits</h2>
+<p>This virtual lab is based on the guide "Práctica 2: Movimiento parabólico" of the Laboratorio de Física, Escuela Politécnica Nacional (Quito). It is an independent open-source project, <b>not affiliated with EPN or PHYWE</b>. The ball and table parameters are assumptions documented in <code>PARAMETERS.md</code>.</p>
+<p>Methods: GUM (JCGM 100) and J. R. Taylor, <em>An Introduction to Error Analysis</em>. Code under the MIT licence and educational content under CC BY 4.0.</p>
+</section>
+<p class="credits"><a href="../index.html">Back to the lab</a></p>
 </main>
 </body>
 </html>
