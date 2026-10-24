@@ -71,14 +71,3 @@
 @media (prefers-reduced-motion: reduce) { .scene3d-card, .scene3d-menu-pop { animation: none; } }
 @media (max-width: 819px) { .scene3d-stage { aspect-ratio: 4 / 3; } }
 
-/* release button: bottom right of the stage, acts on pointerdown. Quiet (not hidden) while the ball cannot be released. */
-.scene3d-release {
-  position: absolute; right: var(--space-2); bottom: var(--space-2); z-index: 4; min-height: var(--touch); padding-inline: var(--space-4);
-  border: none; border-radius: var(--radius-full); background: var(--accent-fill); color: var(--on-accent); font: var(--text-callout); font-weight: 600;
-  cursor: pointer; display: inline-flex; align-items: center; gap: var(--space-2); box-shadow: var(--shadow-1); touch-action: manipulation;
-  transition: opacity var(--dur-base) var(--ease-out);
-}
-.scene3d-release-dot { width: 10px; height: 10px; border-radius: var(--radius-full); background: currentColor; }
-.scene3d-release[aria-disabled='true'] { opacity: 0.5; background: color-mix(in srgb, var(--surface) 90%, transparent); color: var(--label-2); }
-.scene3d-release:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
-@media (prefers-reduced-motion: reduce) { .scene3d-release { transition: none; } }

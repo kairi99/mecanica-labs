@@ -33,12 +33,6 @@
 .s2d-ball.marble { fill: #7ec4d2; stroke: var(--stage-white); stroke-width: calc(1px * var(--k)); }
 .s2d-ball.pingpong { fill: var(--stage-white); stroke: var(--stage-black); stroke-width: calc(1px * var(--k)); }
 .s2d-trail { stroke: var(--stage-blue); stroke-width: calc(2.5px * var(--k)); stroke-dasharray: 0 calc(7px * var(--k)); stroke-linecap: round; opacity: 0.8; }
-.s2d-release {
-  align-self: flex-end; margin-right: var(--space-3); min-height: var(--touch); padding-inline: var(--space-4); border: none; border-radius: var(--radius-full);
-  background: var(--accent-fill); color: var(--on-accent); font: var(--text-callout); font-weight: 600; cursor: pointer; touch-action: manipulation;
-}
-.s2d-release[aria-disabled='true'] { opacity: 0.5; }
-.s2d-release:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
 .s2d-legend { list-style: none; margin: 0; padding: 0 var(--space-3); display: flex; flex-wrap: wrap; gap: var(--space-1) var(--space-3); font: var(--text-footnote); color: var(--stage-ink-2); }
 .s2d-legend-item { display: inline-flex; align-items: center; gap: var(--space-1); }
 .s2d-swatch { width: 16px; height: 12px; }

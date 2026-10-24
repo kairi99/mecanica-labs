@@ -636,6 +636,10 @@ export function createScene(container: HTMLElement, ctx: ViewContext, opts: Scen
   anim = null
   applyPose(poseFor(opts.initialPreset))
   onTheme()
+  // Compile the shaders without blocking: the first render() otherwise stalls the main thread for seconds on slow GPUs, and keys
+  // pressed meanwhile (S, Space, Enter) would only be handled after it. Frames wait for the programs, then draw.
+  let compiled = false
+  void renderer.compileAsync(scene, camera).catch(() => undefined).then(() => { compiled = true; needsRender = true })
 
   // debug hook (?debug3d=1): client coordinates of handles, for scripted pointer tests in the dev harness
   if (new URLSearchParams(location.search).get('debug3d') === '1') {
@@ -686,7 +690,7 @@ export function createScene(container: HTMLElement, ctx: ViewContext, opts: Scen
         needsRender = true
       }
       if (controls.update()) needsRender = true
-      if (needsRender) {
+      if (needsRender && compiled) {
         needsRender = false
         renderer.render(scene, camera)
       }

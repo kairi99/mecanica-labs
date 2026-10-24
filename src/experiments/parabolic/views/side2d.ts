@@ -1,14 +1,12 @@
 // 2D side view (SVG): the table in profile with its edge, the inclined rail on its stands, the ball animated along the same
 // trajectory as the 3D scene (it only renders ballStatus / the stored flight samples), the dotted trail of the last flight, the
 // floor with the paper, the carbon marks and the tape measure when a target was measured. Used when WebGL2 is missing, when the 3D view
-// fails, and when the student picks 2D. The release button calls the same ParabolicApparatus action as the 3D one.
+// fails, and when the student picks 2D.
 import '../styles/side2d.css'
 import { sheetToFloor, type ApparatusEvent, type TapeTarget } from '../apparatus/index.ts'
 import { el, svg, watch } from '../../../core/views/dom.ts'
-import { onPress } from '../../../core/views/press.ts'
 import type { MountView, View } from './view.ts'
 import { strings } from './strings/side2d.ts'
-import { strings as sceneStrings } from './strings/scene3d.ts'
 import { CM, RAIL, STAGING, TABLE, landMaxFor, markLabel, planTape, railFrame, railLocalToWorld, railLocalX_cm, sheetRectCm } from './scene3d/units.ts'
 
 /** Viewbox units per cm: the whole bench, rack stand to landing zone, is about 260 cm wide. */
@@ -25,8 +23,7 @@ export const mountSide2d: MountView = (root, ctx): View => {
   g.append(staticLayer, dynLayer)
   const legend = el('ul', 's2d-legend')
   const note = el('p', 'stage-note')
-  const release = el('button', 's2d-release', '', { type: 'button' })
-  wrap.append(g, release, legend, note)
+  wrap.append(g, legend, note)
   root.append(wrap)
 
   const X = (x_cm: number): number => x_cm * S
@@ -235,29 +232,10 @@ export const mountSide2d: MountView = (root, ctx): View => {
     }
   }
 
-  const syncRelease = (): void => {
-    const t = T()
-    const ok = app.canRelease(ctx.now()).ok
-    release.textContent = t.release
-    release.setAttribute('aria-label', ok ? t.release : t.releaseBlocked)
-    if (ok) release.removeAttribute('aria-disabled'); else release.setAttribute('aria-disabled', 'true')
-  }
-  let relOk: boolean | null = null
-  onPress(release, (ts) => {
-    const res = app.release(ts)
-    if (!res.ok) {
-      const R = sceneStrings[ctx.lang()].refused as Record<string, string>
-      note.textContent = R[res.reason] ?? sceneStrings[ctx.lang()].refusedGeneric
-    } else note.textContent = T().scaleNote
-    ctx.changed()
-    relOk = null
-  })
-
   function labels(): void {
     const t = T()
     g.setAttribute('aria-label', t.aria)
     note.textContent = t.scaleNote
-    relOk = null
   }
   labels()
   return {
@@ -266,8 +244,6 @@ export const mountSide2d: MountView = (root, ctx): View => {
       app.tick(now)
       if (app.getState().paper.bond && app.paperMarks(now).length !== lastMarks) w.touch()
       if (w.dirty()) { w.clear(); drawStatic(); ballKey = '' }
-      const ok = app.canRelease(now).ok
-      if (ok !== relOk) { relOk = ok; syncRelease() }
       drawBall()
     },
     relabel() { labels(); w.touch() },

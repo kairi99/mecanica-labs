@@ -5,7 +5,6 @@ import type { TapeTarget } from '../../apparatus/index.ts'
 import type { CardInfo } from '../../../../core/scene3d/types.ts'
 import { webgl2Available } from '../../../../core/scene3d/webgl.ts'
 import { createMenu } from '../../../../core/scene3d/menu.ts'
-import { onPress } from '../../../../core/views/press.ts'
 import { TOOLS, type PresetName, type Scene3DOptions, type Scene3DView, type Tool } from '../stage.ts'
 import type { ViewContext } from '../view.ts'
 import { strings } from '../strings/scene3d.ts'
@@ -17,7 +16,6 @@ export type { PresetName, Scene3DOptions, Scene3DView, Tool as Scene3DTool }
 
 export function mountScene3D(root: HTMLElement, ctx: ViewContext, opts: Scene3DOptions = {}): Scene3DView {
   const S = () => strings[ctx.lang()]
-  const a = ctx.apparatus
   const camParam = parsePreset(new URLSearchParams(location.search).get('cam'))
   // a portrait phone has no room for the whole bench: start on the side profile of the table edge (the timing view)
   const portraitPhone = matchMedia('(max-width: 819px) and (orientation: portrait)').matches
@@ -61,16 +59,7 @@ export function mountScene3D(root: HTMLElement, ctx: ViewContext, opts: Scene3DO
   card.hidden = true
   card.setAttribute('aria-live', 'polite')
   stack.append(status, card)
-  // release overlay: acts at the instant of the press (pointerdown / keydown), quiet while the ball cannot be released
-  const releaseBtn = document.createElement('button')
-  releaseBtn.type = 'button'
-  releaseBtn.className = 'scene3d-release'
-  const releaseIcon = document.createElement('span')
-  releaseIcon.className = 'scene3d-release-dot'
-  releaseIcon.setAttribute('aria-hidden', 'true')
-  const releaseText = document.createElement('span')
-  releaseBtn.append(releaseIcon, releaseText)
-  stage.append(topLeft, topRight, stack, releaseBtn)
+  stage.append(topLeft, topRight, stack)
   wrap.append(stage)
   root.append(wrap)
 
@@ -81,7 +70,6 @@ export function mountScene3D(root: HTMLElement, ctx: ViewContext, opts: Scene3DO
   let pendingFocus: string[] | null = null
   let pendingTarget: TapeTarget | null | undefined
   let cardInfo: CardInfo | null = null
-  let releaseOk: boolean | null = null
 
   const showCard = (c: CardInfo | null): void => {
     cardInfo = c
@@ -145,24 +133,6 @@ export function mountScene3D(root: HTMLElement, ctx: ViewContext, opts: Scene3DO
     if (!scene) status.textContent = S().toolHint[t]
   }
 
-  const syncRelease = (force = false): void => {
-    const ok = a.canRelease(ctx.now()).ok
-    if (!force && ok === releaseOk) return
-    releaseOk = ok
-    const s = S()
-    releaseText.textContent = s.release
-    releaseBtn.setAttribute('aria-label', ok ? s.release : s.releaseBlocked)
-    if (ok) releaseBtn.removeAttribute('aria-disabled')
-    else releaseBtn.setAttribute('aria-disabled', 'true')
-  }
-  onPress(releaseBtn, (ts) => {
-    const res = a.release(ts)
-    if (res.ok) { status.textContent = ''; showCard(null) }
-    else showCard({ title: '', text: (S().refused as Record<string, string>)[res.reason] ?? S().refusedGeneric, actions: [], panel: null, alert: true })
-    ctx.changed()
-    syncRelease(true)
-  })
-
   const relabel = (): void => {
     const s = S()
     stage.setAttribute('aria-label', s.figure)
@@ -176,13 +146,15 @@ export function mountScene3D(root: HTMLElement, ctx: ViewContext, opts: Scene3DO
     toolBtns.forEach((b, i) => { b.textContent = s.tools[TOOLS[i]!] })
     syncPresets()
     syncTools()
-    syncRelease(true)
     scene?.relabel()
     showCard(cardInfo)
   }
   relabel()
 
-  import('./scene.ts').then(({ createScene }) => {
+  // Building the scene (renderer, shaders, environment map) blocks the main thread for a while. Yield one task first so keys and
+  // taps already queued (S, Space, Enter on the timing bar) are handled at their own time stamps before that stall begins.
+  import('./scene.ts').then(async ({ createScene }) => {
+    await new Promise<void>((r) => setTimeout(r, 0))
     if (destroyed) return
     try {
       scene = createScene(stage, ctx, {
@@ -207,7 +179,6 @@ export function mountScene3D(root: HTMLElement, ctx: ViewContext, opts: Scene3DO
 
   return {
     update() {
-      syncRelease()
       scene?.update()
     },
     relabel,

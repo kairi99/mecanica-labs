@@ -116,13 +116,16 @@ export function gapFromDrag_mm(startGap_mm: number, dx_cm: number): number {
 export const wheelStep = (deltaY: number): number => (deltaY < 0 ? 1 : -1)
 
 // ---- Camera framing ------------------------------------------------------------------------------------------------------
-/** Azimuth and elevation (deg) of every preset. Edge looks perpendicular to the launch plane. */
+/** Azimuth and elevation (deg) of every preset. Edge looks perpendicular to the launch plane, raised enough to show the table top. */
 export const VIEW_ANGLES: Record<Exclude<PresetName, 'tape'>, { azimuth: number; elevation: number }> = {
   overview: { azimuth: -24, elevation: 24 },
   release: { azimuth: -22, elevation: 16 },
-  edge: { azimuth: 0, elevation: 7 },
+  edge: { azimuth: 0, elevation: 14 },
   floor: { azimuth: 0, elevation: 88 },
 }
+/** Edge view: slack kept beyond the paper's far end, and the least extent when paper sits close to the table. */
+const EDGE_PAPER_MARGIN_cm = 10
+const EDGE_MIN_RIGHT_cm = 60
 /** Everything a preset needs to know about the current bench (cm). */
 export interface FrameInput {
   H_cm: number
@@ -167,13 +170,24 @@ export function releasePoints(f: FrameInput): Vec[] {
   return pts
 }
 /**
- * Edge: the timing view, a side profile perpendicular to the launch plane. Frames the table edge (with its near corner), the
- * tip of the rail and the whole landing zone on the floor, together with the floor level.
+ * Edge: the timing view, a side profile perpendicular to the launch plane. Frames the rail's low end on the table, the table edge
+ * (with its near corner) and the floor out to slightly beyond the far end of the paper (or the marks); with no paper laid yet it
+ * keeps the whole default landing zone. Tighter than the zone on purpose: on a narrow phone stage the empty floor beyond the
+ * paper would shrink everything the student has to watch.
  */
 export function edgePoints(f: FrameInput): Vec[] {
-  const left = Math.min(-34, f.tipX_cm !== null ? f.tipX_cm - 14 : -34)
-  const pts: Vec[] = boxCorners([left, -f.H_cm - 2, -4], [f.landMax_cm, 20, 4])
+  const left = Math.min(-34, f.tipX_cm !== null ? f.tipX_cm - 20 : -34)
+  let right = f.landMax_cm
+  if (f.sheets.length > 0) {
+    right = EDGE_MIN_RIGHT_cm
+    for (const r of f.sheets) right = Math.max(right, r.x1 + EDGE_PAPER_MARGIN_cm)
+    for (const p of f.floorPoints) right = Math.max(right, p[0] + EDGE_PAPER_MARGIN_cm)
+    right = Math.min(right, f.landMax_cm)
+  }
+  const pts: Vec[] = boxCorners([left, -f.H_cm - 2, -4], [right, 20, 4])
   pts.push(...boxCorners([-3, -TABLE.thickness, -TABLE.halfD], [0, 0, TABLE.halfD]))
+  // the legs stand nearer to the camera than the edge plane: their feet must fit too, or perspective pushes them out of the frame
+  pts.push(...boxCorners([-TABLE.legInset - TABLE.legSize, -f.H_cm, -TABLE.halfD + TABLE.legInset], [-TABLE.legInset, -f.H_cm, TABLE.halfD - TABLE.legInset]))
   return pts
 }
 /** Floor: top-down view of the paper and the marks (or the default landing zone), with the plumb cross when it exists. */

@@ -19,8 +19,6 @@ export interface Side2dStrings {
   tapeLegend: string
   level: string
   trail: string
-  release: string
-  releaseBlocked: string
   plumb: string
 }
 
@@ -44,8 +42,6 @@ export const strings: Strings<Side2dStrings> = {
     tapeLegend: 'Cinta: distancia a la punta (cm)',
     level: 'Nivelador',
     trail: 'Última trayectoria',
-    release: 'Soltar la bola',
-    releaseBlocked: 'Soltar la bola (aún no se puede)',
     plumb: 'Proyección del borde',
   },
   en: {
@@ -67,8 +63,6 @@ export const strings: Strings<Side2dStrings> = {
     tapeLegend: 'Tape: distance from the tip (cm)',
     level: 'Level',
     trail: 'Last trajectory',
-    release: 'Release the ball',
-    releaseBlocked: 'Release the ball (not possible yet)',
     plumb: 'Edge projection',
   },
 }

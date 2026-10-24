@@ -141,6 +141,20 @@ describe('preset framing', () => {
       }
     }
   })
+  it('edge view keeps the table feet and stops just beyond the far end of the paper', () => {
+    const g = { ...frameOf(a), sheets: [{ x0: 30, x1: 58, z0: -14, z1: 14 }] }
+    const pts = edgePoints(g)
+    const { azimuth, elevation } = VIEW_ANGLES.edge
+    for (const aspect of [0.95, 4 / 3, 1.32, 0.46]) {
+      const fit = fitView(pts, azimuth, elevation, FOV, aspect, 0.04)
+      for (const p of [[-8, -g.H_cm, TABLE.halfD - TABLE.legInset], [-8, -g.H_cm, -TABLE.halfD + TABLE.legInset], [58, -g.H_cm, 0]] as Vec[]) {
+        const [x, y] = projectNdc(p, fit, azimuth, elevation, FOV, aspect)
+        expect(Math.abs(x), `x ${p} aspect ${aspect}`).toBeLessThanOrEqual(1)
+        expect(Math.abs(y), `y ${p} aspect ${aspect}`).toBeLessThanOrEqual(1)
+      }
+    }
+    expect(Math.max(...pts.map((p) => p[0]))).toBeLessThan(90)
+  })
   it('edge view looks perpendicular to the launch plane (azimuth 0, nearly level)', () => {
     expect(VIEW_ANGLES.edge.azimuth).toBe(0)
     expect(VIEW_ANGLES.edge.elevation).toBeLessThan(15)
