@@ -2,21 +2,40 @@
 
 A browser-based, physics-driven, educational simulation of the Newtonian-mechanics lab **"Práctica 1: Movimiento
 Rectilíneo Uniformemente Variado (MRUV)"**: a PHYWE DigiCart rolling down a metal rail inclined at 1.30 degrees.
-Spanish first (English available), mobile first, light and dark themes, keyboard accessible.
+Spanish first (English available), mobile first, light and dark themes, keyboard accessible. It now also hosts
+**Práctica 2, projectile motion** (see Experiments).
 
 **Live:** https://kairi99.github.io/digicart-mruv-sim/
 
 ## Experiments
 
-The site opens on a **landing page** where students pick an experiment (`?exp=mruv` jumps straight into one). Each
-experiment is its own page and JavaScript chunk.
+The site is a small **multi-experiment lab**. It opens on a landing page where students pick a practice (`?exp=mruv` or
+`?exp=parabolic` jumps straight into one and keeps the other query parameters). Each experiment is its own page and its own
+JavaScript chunk; three.js is loaded lazily by the 3D stage, so a page only downloads what it uses.
 
-| Guide | Experiment | Page | Status |
-| --- | --- | --- | --- |
-| Práctica 1 | MRUV: DigiCart on an inclined rail | `mruv/` | ready |
-| Práctica 2 | Projectile motion: a marble and a ping-pong ball leave the table edge | `parabolico/` | coming soon |
+| Guide | Experiment | Path | Code | Status |
+| --- | --- | --- | --- | --- |
+| Práctica 1 | MRUV: a DigiCart rolls down an inclined rail | `/mruv/` | `src/experiments/mruv` | ready |
+| Práctica 2 | Projectile motion: a marble and a ping-pong ball leave the table edge after rolling down an inclined rail | `/parabolico/` | `src/experiments/parabolic` | ready |
 
-The rest of this README describes the MRUV experiment.
+Both follow the same flow: assemble the setup from an inventory, set it up (heights, level, marks), take your own
+measurements with virtual instruments (stopwatch driven by your own presses, tape measure), fill the guide's table and do its
+analysis tasks. Help pages: `/mruv/help/` and `/parabolico/help/` (Spanish, with `en.html` in English). The teacher keys
+are generated: [docs/teacher-key.md](docs/teacher-key.md) (MRUV) and [docs/teacher-key-parabolic.md](docs/teacher-key-parabolic.md)
+(projectile), both by `npm run teacher-key`.
+
+### Add an experiment
+
+1. Folder `src/experiments/<id>/` with `physics/` (pure), `apparatus/`, `analysis/`, `views/`, `pedagogy/`, `styles/` and `main.ts`
+   (see [docs/architecture.md](docs/architecture.md), "Multi-experiment layout"; shared code lives in `src/core`).
+2. Manifest `src/experiments/<id>/experiment.ts` (`id`, `slug`, `guide`, `title`, `summary`, `page`, `help`, `thumb`, `status`).
+3. Registry entry in `src/experiments/registry.ts` (this drives the landing cards and the Vite inputs), and a thumbnail
+   drawing in `src/landing/thumbs.ts` if it needs a new one.
+4. HTML entries: `<slug>/index.html` (a `#app` div and the script of `main.ts`) plus `<slug>/help/index.html` and `en.html`.
+5. Tests in `tests/<id>/`, and its rows in `PARAMETERS.md`.
+
+The rest of this README describes the MRUV experiment in detail; the projectile experiment follows the same pattern
+(see its help pages and `docs/architecture.md`).
 
 ## What it is
 
@@ -78,9 +97,16 @@ npm run teacher-key   # regenerate docs/teacher-key.md from the model
 
 ## Credits and licence
 
-Based on the lab guide "Práctica 1: MRUV" of the Laboratorio de Física, Escuela Politécnica Nacional (EPN), Quito. This is
-an independent project and is **not affiliated with EPN or PHYWE**; DigiCart and PHYWE are trademarks of their owners and are
-used descriptively. The guide and the equipment photos are copyrighted and are not included here, and no guide text is
-copied (facts are paraphrased). Code: MIT ([LICENSE](LICENSE)). Educational content: CC BY 4.0 ([LICENSE-CONTENT](LICENSE-CONTENT)).
-Dependencies: three.js (MIT), uPlot (MIT), Vite, Vitest, TypeScript. Method references: GUM (JCGM 100), J. R. Taylor,
-*An Introduction to Error Analysis*, Orear (1982) effective variance, WGS84 gravity formula.
+Both experiments are based on lab guides of the Laboratorio de Física, Escuela Politécnica Nacional (EPN), Quito:
+"Práctica 1: MRUV" and "Práctica 2: Movimiento parabólico". The guides are **paraphrased** (objectives, assembly,
+procedure, table layouts, analysis tasks); their text, figures and the equipment photos are copyrighted and are not included.
+This is an independent project and is **not affiliated with EPN or PHYWE**; DigiCart and PHYWE are trademarks of their
+owners and are used descriptively.
+
+Literature values behind the model (each cited in [PARAMETERS.md](PARAMETERS.md) next to its number, otherwise marked
+ASSUMED): ITTF Handbook (ping-pong ball size and mass), White, *Fluid Mechanics* (smooth-sphere drag curve), Tanaka et al.
+(1990) and Oesterle & Bui Dinh (1998) (Magnus lift of spheres), Moritz (1980) gravity formula and WGS84 for g in Quito, GUM
+(JCGM 100), J. R. Taylor, *An Introduction to Error Analysis*, Orear (1982) effective variance.
+
+Licences: code MIT ([LICENSE](LICENSE)); educational content CC BY 4.0 ([LICENSE-CONTENT](LICENSE-CONTENT)). Dependencies:
+three.js (MIT), uPlot (MIT), Vite, Vitest, TypeScript.

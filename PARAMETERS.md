@@ -35,6 +35,19 @@ Date of all rows: 2026-10-22.
 | Drag coefficient `Cd` | 0.45 (marble), 0.42 (ping-pong) | - | Standard smooth-sphere curve (White, Fluid Mechanics, Fig. 7.16): C_d ~ 0.47 at Re = 1e3, ~ 0.40 at Re = 3e3 to 1e4. Reynolds number Re = v 2R rho/mu with rho = 0.869 kg/m^3 and dynamic viscosity of air 1.8e-5 Pa s (ASSUMED), i.e. nu = 2.07e-5 m^2/s: marble Re ~ 930 (v = 1.2 m/s at the edge) to ~ 3200 (impact, 4.1 m/s); ping-pong Re ~ 2100 (1.1 m/s) to ~ 7500 (impact, 3.9 m/s), 2.5e3 at 1.3 m/s. One constant value per ball, picked in the middle of each range (the curve is flat to about 10 % there); held constant along slope, gap and flight. |
 | Restitution `e` on paper over the floor | 0.5 (marble), 0.8 (ping-pong) | - | ASSUMED. Only used for the animation of the first bounce, never for measured quantities. Context: the ITTF bounce rule (23-25 cm rebound from 30.5 cm onto steel, impact 2.4 m/s) gives e = 0.87-0.91 at low speed; the ball lands at ~3.7 m/s on paper over a floor, where e is lower, so 0.8 is kept as ASSUMED. |
 
+## Balls (`MARBLE`, `PING_PONG`, Practica 2)
+
+Date of all rows in this section: 2026-10-24 (values unchanged since the model was written; the rows were missing). Cd and restitution are in the Cart table above (they carry both balls).
+
+| Parameter | Marble | Ping-pong | Unit | Source |
+|---|---|---|---|---|
+| Radius `R_m` | 8 | 20 | mm | Marble: d = 16 mm, a common size, ASSUMED (the guide does not give it). Ping-pong: d = 40 mm (ITTF Handbook, Laws 2.3.1). |
+| Mass `m_kg` | 5.5 | 2.7 | g | Marble: glass 2.5 g/cm^3 gives 5.4 g, taken as 5.5 g, ASSUMED (not weighed). Ping-pong: 2.7 g (ITTF Handbook, Laws 2.3.2; leaflet T3 allows 2.67-2.77 g). |
+| Inertia factor `k_body` = I/(m R^2) | 0.4 | 0.6535 | - | Marble: solid sphere. Ping-pong: hollow shell, `hollowShellInertiaFactor(R, t)` = 0.4 (1 - q^5)/(1 - q^3), q = (R - t)/R, with t below. |
+| Ping-pong shell thickness `PING_PONG_SHELL_THICKNESS_m` | - | 0.4 | mm | ASSUMED (regulation balls are about 0.35-0.45 mm; not measured). |
+| Rolling-resistance coefficient `c_rr` | 1.5e-3 | 5e-3 | - | ASSUMED. Hard sphere on hard surface 1e-3 to 2e-3; larger for the soft, light, large ball. |
+| Kinetic friction on the table `mu_k` | 0.30 | 0.35 | - | ASSUMED (glass, and celluloid/ABS, on laminate). Used only while the ball slips after the rail tip. |
+
 ## Rail, supports and table (`DEFAULT_SETUP`)
 
 | Parameter | Value | Unit | Source |
@@ -104,6 +117,7 @@ Device and bench values of the Practica 2 apparatus layer. Date of all rows: 202
 | Level sensitivity / bubble end / centred tolerance | 20 / 6 / 0.5 | mm/deg, mm, mm | ASSUMED (same vial as Practica 1). |
 | Rail tip to edge when first put down / maximum | 0.15 / 0.60 | m | ASSUMED. 1 mm slider steps. A tip at or past the edge is refused. |
 | Rail mark: snap / student's placement error sigma / max count | 0.5 / 1 / 10 | mm, mm, - | ASSUMED. Guide: 5 marks in the upper half (s >= 0.60 m from the low tip). |
+| Paper and projection placement limit `PAPER_POS_MAX_m` | 3 | m | ASSUMED (the tape reaches 3 m; a sheet or the edge projection farther away is refused). Row added 2026-10-24. |
 | A4 sheet | 0.297 x 0.210 | m | Standard A4. 2 bond sheets, 1 carbon sheet (guide). Position snap 1 mm. |
 | Edge projection placement error sigma | 2 (per axis) | mm | ASSUMED (plumb line or set-square on the floor). |
 | Tape measure reach / division / MPE | 3 / 1 / 0.3 + 0.2 L | m, mm, mm and mm/m | Reach ASSUMED (3 m pocket tape); division and class II MPE as in Instruments above. The range reading is the Euclidean floor distance (tape laid straight). |
@@ -117,6 +131,8 @@ Device and bench values of the Practica 2 apparatus layer. Date of all rows: 202
 | Analysis: uncertainty of the typed launch height | sqrt(2) x 1 mm / sqrt(12) = 0.41 | mm | Two tape ends to place (floor and table top), tape division 1 mm; the tape MPE (0.3 + 0.2 L mm) is reported, not applied. |
 | Analysis: edge-projection term of Delta x | 2 | mm | ASSUMED, the same sigma the bench draws for the projection point (`EDGE_PROJECTION_SIGMA_m`); common to every range. |
 | Analysis: slow-motion reference uncertainty | frame / sqrt(6) = 1.7 | ms | Launch and landing frames each fall uniformly within one 1/240 s frame. |
+| Analysis: valid typed launch height `H_MIN_m`, `H_MAX_m` | 0.2 to 2 | m | ASSUMED plausibility window for a lab table; outside it the analysis ignores the typed value. Row added 2026-10-24. |
+| Coach: typed range counted "from the rail tip" `TIP_MATCH_m` | 0.02 | m | ASSUMED teaching tolerance (see the coach thresholds row). Not physics. Row added 2026-10-24. |
 | Coach thresholds (timing) | start press < 0.3 s before or > 0.45 s after the edge; reading > 0.3 s from 0.39 s | s | ASSUMED teaching thresholds, not physics. Typed range within 2 cm of (true range + gap) counts as measured from the rail tip. |
 
 Simplifications: no longitudinal table tilt; the table is long enough for any rail position; heights are vertical and distances along the rail (small-angle bookkeeping for the two-leg lift); after the first bounce the ball is not followed; marks are the first contact only. With the physics rolling resistance (`c_rr` 1.5e-3 and 5e-3) a ball does not stop on a 0.6 m gap: only a nearly flat rail stops it.

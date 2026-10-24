@@ -161,7 +161,7 @@ deletes them.
 **Add an experiment in 5 steps**
 
 1. Create `src/experiments/<id>/` with `experiment.ts` exporting the manifest (`id`, `slug`, `guide`, `title`, `summary`,
-   `page`, `help`, `status`). Add it to `src/experiments/registry.ts`. Set `status: 'ready'` when the page exists (a `soon`
+   `page`, `help`, `thumb`, `status`). Add it to `src/experiments/registry.ts`. Set `status: 'ready'` when the page exists (a `soon`
    entry is listed on the landing page but not built).
 2. Build the model: `physics/` (pure, uses `src/core/physics`), `apparatus/` (state, events, `on(listener)`; compose
    `Stopwatch` and `CountedRng` from core) and `analysis/`.
@@ -174,9 +174,44 @@ deletes them.
    (`stepCount`, `panelStep`, `slots`), `procedure`, `timingBar`, `stage.mount2d` / `stage.load3d`, `refusalText`, `reset`,
    `save`, `tour`, `coach`, `help`, `landingUrl`. `?lang ?theme ?step ?tour ?view ?teacher` are parsed by the shell.
 
+# Parabolic experiment (`src/experiments/parabolic`, page `parabolico/`)
+
+Práctica 2: a marble or a ping-pong ball rolls down the inclined rail, crosses a small gap to the table edge, flies and leaves a
+carbon mark on paper on the floor. Same layering as MRUV; only what differs is listed.
+
+```
+physics/     pure model (next section): incline, tip junction, flight, carbon mark, run variability
+apparatus/   Apparatus (state, actions, events, time passed in): inventory, rail and stands, level, marks, balls, paper and carbon,
+             tape measure, stopwatch (core Stopwatch), runs, Tabla 2.1 (5 trials x 5 repetitions per ball), slow-motion clip
+             model.ts is the only file that imports physics; BallStatus.settled marks "landed and the first hop is over" (views hide the ball)
+analysis/    Tabla 2.1 -> mean time, range and v0 per trial, the guide's tasks (compute.ts, csv.ts, fromApparatus.ts)
+pedagogy/    checklist, coach rules and timing thresholds (ASSUMED teaching values), tour, simulated readings, teacherKey.ts
+views/       inventory, adjust (steps 1-2), launch and timingbar (step 3), table, tape, slowmo (step 4), analysis (step 5),
+             side2d (SVG fallback with collision-checked labels), scene3d/ (three.js: scene, interaction, models, units)
+styles/      instruments, side2d, slowmo; the 3D overlay is core/styles/scene3d.css (shared with MRUV)
+main.ts      hands everything to mountShell(config): 5 steps (Assembly, Settings and marks, Launches and Table 2.1, Slow motion, Analysis)
+```
+
+Teacher flags are the shared ones (`?teacher`, `?seed=N`, `?preset=assembled|empty`, `?analysis=0`); `npm run teacher-key`
+writes `docs/teacher-key-parabolic.md` next to the MRUV key. Tests: `tests/parabolic/` (physics, apparatus, analysis, pedagogy,
+views, scene3d units and strings). Help pages: `parabolico/help/index.html` (es) and `en.html`.
+
+## Core and experiment boundary
+
+* `src/core` is experiment-agnostic: physics helpers (noise, statistics, fit, uncertainty), generic instruments (Stopwatch),
+  views (dom, press, menu, plots), the shell (`mountShell`, params), pedagogy mechanisms (tour, coach gate, checklist panel),
+  3D framing, materials and models shared by both benches, and the style sheets (tokens, layout, panels, scene3d, ...).
+  It never imports `src/experiments` or `src/landing` (`tests/core/boundary.test.ts`), and its physics stays free of DOM,
+  storage, timers and `Math.random`.
+* An experiment owns its model, apparatus, analysis, strings, rules and ids, and *injects* them into core mechanisms
+  (the shell config, the checklist ids, the coach rules). Core code takes dimensions and labels as options, never by importing.
+* Two experiments must not import each other. Anything both need moves to core (this is how `scene3d.css` and the 3D menu got there).
+* `src/experiments/manifest.ts` and `registry.ts` are data only, so the landing page stays tiny and never pulls experiment code.
+* Styles: tokens only (z-index `--z-stage-*`, `--text-*`, `--space-*`); no raw z-index or colours in components.
+
 # Parabolic physics (`src/experiments/parabolic/physics`)
 
-Pure model of Práctica 2 (no apparatus or views yet). Pipeline for one release:
+Pure model of Práctica 2 (the apparatus and views that use it are described in "Parabolic experiment" above). Pipeline for one release:
 incline (`incline.ts`) -> tip junction and roll over the gap (`junction.ts`) -> projectile flight (`flight.ts`) -> carbon mark (`marks.ts`), composed by `simulateLaunch(setup, ball, releaseS_m, run?, opts?)` in `launch.ts`.
 
 - `constants.ts`: ball presets (`MARBLE`, `PING_PONG`, now with `mu_k`), `hollowShellInertiaFactor` (ping-pong k = 0.6535 for a 0.4 mm shell), `DEFAULT_SETUP`, Magnus `C_L(S)` (ASSUMED form); all empirical values are in PARAMETERS.md.

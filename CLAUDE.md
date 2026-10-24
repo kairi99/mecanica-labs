@@ -7,20 +7,22 @@ student's own presses**, measures the stand heights and their separation with a 
 Table 1.1 and does the guide's analysis tasks. Public and **open source** (MIT code, CC BY 4.0 content). Spanish first.
 Not affiliated with EPN or PHYWE.
 
-Source documents live in `refs/` (gitignored, copyrighted). Use the `mruv-reference` skill instead of the PDF/photos.
+Source documents live in `refs/` (gitignored, copyrighted). Use the `mruv-reference` and `parabolic-reference` skills instead of the PDFs/photos.
 
 The repo is a **multi-experiment app**: a landing page (`index.html`, `src/landing`) lists the experiments; each one is its
-own page and chunk (`mruv/index.html`, `src/experiments/mruv`). Shared code is in `src/core` (no imports from
-`src/experiments`; a test enforces it). Next experiment: "parabolic" (Práctica 2, status `soon` in the registry).
+own page and chunk (`mruv/index.html` and `src/experiments/mruv`; `parabolico/index.html` and `src/experiments/parabolic`,
+Práctica 2, status `ready`). Shared code is in `src/core` (no imports from `src/experiments`; a test enforces it). The second
+guide has its own skill, `parabolic-reference` (paraphrased facts from "Práctica 2: Movimiento parabólico"); use it instead of the PDF.
+A new experiment is a folder, a manifest, a registry entry and an html entry (README, "Add an experiment").
 
 ## Commands
 
 ```bash
 npm install
 npm run dev      # Vite dev server
-npm test         # Vitest (tests/**/*.test.ts: tests/core, tests/mruv)
+npm test         # Vitest (tests/**/*.test.ts: tests/core, tests/mruv, tests/parabolic)
 npm run build    # tsc && vite build -> dist/
-npm run teacher-key  # regenerates docs/teacher-key.md from the model
+npm run teacher-key  # regenerates docs/teacher-key.md (MRUV) and docs/teacher-key-parabolic.md from the models
 ```
 
 ## Non-negotiable invariants
@@ -61,7 +63,8 @@ npm run teacher-key  # regenerates docs/teacher-key.md from the model
 Rules (`.claude/rules/`): `design-system`, `physics-model`, `open-source`.
 
 Skills (`.claude/skills/`):
-- `mruv-reference`: paraphrased facts from the guide (objectives, materials, assembly, procedure, tasks, equipment look).
+- `mruv-reference`: paraphrased facts from the Práctica 1 guide (objectives, materials, assembly, procedure, tasks, equipment look).
+- `parabolic-reference`: paraphrased facts from the Práctica 2 guide (marble and ping-pong ball launched horizontally from a table edge, Tabla 2.1, tasks).
 
 Agents (`.claude/agents/`, read-only reviewers; call them after meaningful changes in their area):
 `physics-reviewer`, `pedagogy-reviewer`, `design-reviewer`.
