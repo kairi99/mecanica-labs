@@ -16,9 +16,9 @@ t = sqrt(2H/g), independent of v0. With drag and spin the model flight is a litt
 
 | H (m) | sqrt(2H/g) (s) | model t, marble, mark 80 cm (s) | model t, ping-pong, mark 80 cm (s) |
 |---|---|---|---|
-| 0.74 | 0.3892 | 0.3895 | 0.3949 |
-| 0.76 | 0.3944 | 0.3947 | 0.4003 |
-| 0.78 | 0.3996 | 0.3999 | 0.4056 |
+| 0.74 | 0.3892 | 0.3338 | 0.3400 |
+| 0.76 | 0.3944 | 0.3390 | 0.3454 |
+| 0.78 | 0.3996 | 0.3441 | 0.3507 |
 
 ## Expected launch speed, time and range per mark (no run variability)
 
@@ -28,21 +28,21 @@ v0 is the speed at the table edge, from the model (incline, corner loss, roll ov
 
 | Mark (cm) | v0 (m/s) | t (s) | x (m) | v0 mean +- sd (m/s) | t mean +- sd (s) | x mean +- sd (m) |
 |---|---|---|---|---|---|---|
-| 60 | 1.144 | 0.3947 | 0.450 | 1.130 +- 0.010 | 0.3947 +- 0.0000 | 0.444 +- 0.004 |
-| 70 | 1.236 | 0.3947 | 0.486 | 1.221 +- 0.011 | 0.3947 +- 0.0000 | 0.480 +- 0.004 |
-| 80 | 1.321 | 0.3947 | 0.519 | 1.305 +- 0.012 | 0.3947 +- 0.0000 | 0.512 +- 0.005 |
-| 90 | 1.401 | 0.3947 | 0.550 | 1.383 +- 0.013 | 0.3947 +- 0.0000 | 0.543 +- 0.005 |
-| 100 | 1.476 | 0.3947 | 0.580 | 1.458 +- 0.013 | 0.3947 +- 0.0000 | 0.573 +- 0.005 |
+| 60 | 1.145 | 0.4333 | 0.494 | 1.131 +- 0.010 | 0.4328 +- 0.0003 | 0.487 +- 0.005 |
+| 70 | 1.139 | 0.3375 | 0.383 | 1.126 +- 0.012 | 0.3380 +- 0.0092 | 0.379 +- 0.013 |
+| 80 | 1.218 | 0.3390 | 0.411 | 1.203 +- 0.011 | 0.3387 +- 0.0002 | 0.405 +- 0.004 |
+| 90 | 1.291 | 0.3401 | 0.437 | 1.275 +- 0.012 | 0.3398 +- 0.0002 | 0.431 +- 0.004 |
+| 100 | 1.361 | 0.3409 | 0.461 | 1.344 +- 0.012 | 0.3407 +- 0.0001 | 0.455 +- 0.004 |
 
 ### Ping-pong ball
 
 | Mark (cm) | v0 (m/s) | t (s) | x (m) | v0 mean +- sd (m/s) | t mean +- sd (s) | x mean +- sd (m) |
 |---|---|---|---|---|---|---|
-| 60 | 1.033 | 0.4006 | 0.391 | 1.007 +- 0.019 | 0.4007 +- 0.0000 | 0.382 +- 0.007 |
-| 70 | 1.113 | 0.4005 | 0.422 | 1.085 +- 0.020 | 0.4005 +- 0.0000 | 0.411 +- 0.008 |
-| 80 | 1.187 | 0.4003 | 0.449 | 1.158 +- 0.021 | 0.4004 +- 0.0000 | 0.438 +- 0.008 |
-| 90 | 1.256 | 0.4001 | 0.475 | 1.225 +- 0.023 | 0.4002 +- 0.0001 | 0.463 +- 0.008 |
-| 100 | 1.321 | 0.4000 | 0.499 | 1.288 +- 0.024 | 0.4000 +- 0.0001 | 0.487 +- 0.009 |
+| 60 | 1.018 | 0.3421 | 0.328 | 0.998 +- 0.013 | 0.3765 +- 0.0542 | 0.354 +- 0.050 |
+| 70 | 1.097 | 0.3440 | 0.355 | 1.070 +- 0.020 | 0.3434 +- 0.0005 | 0.346 +- 0.007 |
+| 80 | 1.170 | 0.3454 | 0.380 | 1.141 +- 0.021 | 0.3449 +- 0.0004 | 0.370 +- 0.007 |
+| 90 | 1.238 | 0.3464 | 0.404 | 1.207 +- 0.022 | 0.3459 +- 0.0003 | 0.393 +- 0.008 |
+| 100 | 1.301 | 0.3471 | 0.425 | 1.269 +- 0.023 | 0.3468 +- 0.0003 | 0.414 +- 0.008 |
 
 The flight time hardly changes with the mark (it depends on H, not on v0): the range grows with v0, the time does not. This is the expected answer to tasks 3 and 5. The ping-pong ball is slower at the same mark (larger rolling inertia, more air drag and more corner loss) and its range is shorter.
 
@@ -72,23 +72,23 @@ Typical student errors the coach looks for: starting the watch at the release ad
 
 ## A simulated careful student
 
-Preset `assembled` (seed 1), 50 simulated launches with both ranges and times (start press 0.20 s after the edge, stop press 0.22 s after the landing, 0.05 s reaction scatter, so the net bias is about +0.02 s). Hidden H = 0.7541 m, tape reading 0.754 m, t_theo = **0.3928 +- 0.0001 s**. Launches that left a readable carbon dot: marble 25 of 25, ping-pong 25 of 29 (the others were repeated).
+Preset `assembled` (seed 1), 49 simulated launches with both ranges and times (start press 0.20 s after the edge, stop press 0.22 s after the landing, 0.05 s reaction scatter, so the net bias is about +0.02 s). Hidden H = 0.7541 m, tape reading 0.754 m, t_theo = **0.3928 +- 0.0001 s**. Launches that left a readable carbon dot: marble 25 of 25, ping-pong 24 of 46 (the others were repeated).
 
 | Ball | Mark | t +- Dt (s) | x (m) | v0 +- Dv (m/s) | error of t (%) | final v (m/s) |
 |---|---|---|---|---|---|---|
-| Marble | 1 | 0.400 +- 0.072 | 0.446 +- 0.004 | 1.11 +- 0.20 | 1.8 | 4.00 +- 0.06 |
-| Marble | 2 | 0.398 +- 0.070 | 0.481 +- 0.002 | 1.21 +- 0.21 | 1.3 | 4.02 +- 0.06 |
-| Marble | 3 | 0.428 +- 0.059 | 0.512 +- 0.004 | 1.20 +- 0.17 | 9.0 | 4.02 +- 0.05 |
-| Marble | 4 | 0.394 +- 0.063 | 0.545 +- 0.002 | 1.38 +- 0.22 | 0.3 | 4.08 +- 0.07 |
-| Marble | 5 | 0.424 +- 0.071 | 0.568 +- 0.004 | 1.34 +- 0.23 | 7.9 | 4.07 +- 0.07 |
-| Ping-pong ball | 1 | 0.426 +- 0.070 | 0.381 +- 0.002 | 0.89 +- 0.15 | 8.4 | 3.94 +- 0.03 |
-| Ping-pong ball | 2 | 0.426 +- 0.061 | 0.417 +- 0.003 | 0.98 +- 0.14 | 8.4 | 3.96 +- 0.03 |
-| Ping-pong ball | 3 | 0.442 +- 0.067 | 0.433 +- 0.003 | 0.98 +- 0.15 | 12.5 | 3.96 +- 0.04 |
-| Ping-pong ball | 4 | 0.394 +- 0.074 | 0.464 +- 0.003 | 1.18 +- 0.22 | 0.3 | 4.02 +- 0.06 |
-| Ping-pong ball | 5 | 0.376 +- 0.069 | 0.483 +- 0.003 | 1.29 +- 0.24 | -4.3 | 4.05 +- 0.08 |
+| Marble | 1 | 0.438 +- 0.072 | 0.489 +- 0.004 | 1.12 +- 0.18 | 11.5 | 4.00 +- 0.05 |
+| Marble | 2 | 0.342 +- 0.070 | 0.379 +- 0.002 | 1.11 +- 0.23 | -12.9 | 4.00 +- 0.06 |
+| Marble | 3 | 0.372 +- 0.059 | 0.405 +- 0.004 | 1.09 +- 0.17 | -5.3 | 3.99 +- 0.05 |
+| Marble | 4 | 0.342 +- 0.063 | 0.433 +- 0.002 | 1.27 +- 0.23 | -12.9 | 4.04 +- 0.07 |
+| Marble | 5 | 0.370 +- 0.071 | 0.452 +- 0.003 | 1.22 +- 0.23 | -5.8 | 4.03 +- 0.07 |
+| Ping-pong ball | 1 | 0.455 +- 0.084 | 0.433 +- 0.003 | 0.95 +- 0.18 | 15.8 | 3.96 +- 0.04 |
+| Ping-pong ball | 2 | 0.380 +- 0.061 | 0.348 +- 0.003 | 0.92 +- 0.15 | -3.3 | 3.95 +- 0.03 |
+| Ping-pong ball | 3 | 0.300 +- 0.067 | 0.366 +- 0.003 | 1.22 +- 0.27 | -23.6 | 4.03 +- 0.08 |
+| Ping-pong ball | 4 | 0.352 +- 0.076 | 0.388 +- 0.005 | 1.10 +- 0.24 | -10.4 | 3.99 +- 0.07 |
+| Ping-pong ball | 5 | 0.308 +- 0.070 | 0.410 +- 0.006 | 1.33 +- 0.30 | -21.6 | 4.06 +- 0.10 |
 
-- Marble, all 25 readings: t = 0.409 s, error 4.1 % (within1).
-- Ping-pong ball, all 25 readings: t = 0.413 s, error 5.1 % (within1).
+- Marble, all 25 readings: t = 0.373 s, error -5.1 % (within1).
+- Ping-pong ball, all 25 readings: t = 0.355 s, error -9.6 % (within1).
 
 ## Expected answers and common mistakes, tasks 1, 4, 7, 8 and 9
 
@@ -102,11 +102,11 @@ After the edge only gravity (and a little air) acts. Horizontally the motion is 
 
 | Mark (cm) | v0 marble (m/s) | v0 ping-pong (m/s) |
 |---|---|---|
-| 60 | 1.14 | 1.03 |
-| 70 | 1.24 | 1.11 |
-| 80 | 1.32 | 1.19 |
-| 90 | 1.40 | 1.26 |
-| 100 | 1.48 | 1.32 |
+| 60 | 1.15 | 1.02 |
+| 70 | 1.14 | 1.10 |
+| 80 | 1.22 | 1.17 |
+| 90 | 1.29 | 1.24 |
+| 100 | 1.36 | 1.30 |
 
 v0 = x/t with the range from the edge projection and the flight time. Common mistakes: v0 = sqrt(2 g dh) from the height drop of the rail (it ignores the rotation, the corner and the table roll, so it is too large); range measured from the rail tip instead of the edge projection; timing from the release instead of from the edge (the flight time becomes about 1 s and v0 about 0.4 of its value).
 
@@ -115,10 +115,10 @@ v0 = x/t with the range from the edge projection and the flight time. Common mis
 | Ball | Mark (cm) | v final (m/s) | angle below horizontal (deg) |
 |---|---|---|---|
 | Marble | 60 | 4.02 | 73 |
-| Marble | 70 | 4.05 | 72 |
-| Marble | 80 | 4.07 | 71 |
-| Marble | 90 | 4.10 | 70 |
-| Marble | 100 | 4.13 | 69 |
+| Marble | 70 | 4.02 | 74 |
+| Marble | 80 | 4.04 | 72 |
+| Marble | 90 | 4.06 | 71 |
+| Marble | 100 | 4.09 | 71 |
 | Ping-pong ball | 60 | 3.99 | 75 |
 | Ping-pong ball | 70 | 4.01 | 74 |
 | Ping-pong ball | 80 | 4.03 | 73 |
@@ -129,7 +129,7 @@ v = sqrt(v0^2 + 2 g H); the vertical part is 3.85 m/s whatever the mark, so the 
 
 ### Task 8, marble and ping-pong ball
 
-At mark 80 cm: v0 marble 1.321 m/s, ping-pong 1.187 m/s, ratio 1.113. Ideal rolling without losses gives v proportional to 1/sqrt(1 + k_eff) (k_eff includes the channel of width 10 mm), so the ratio marble/ping-pong would be sqrt((1 + k_pp)/(1 + k_marble)) = 1.012 (k_marble = 0.656, k_pp = 0.697); the model value differs from it by the rolling resistance, the corner loss and the air, which hit the light ball more. The ping-pong ball therefore leaves slower and its range is shorter (0.449 m against 0.519 m). The flight times are the same within hand timing (0.395 s against 0.400 s, a difference far below the 0.1 s reaction uncertainty); air drag lengthens the flight by 0.08 % for the marble and 1.49 % for the ping-pong ball. Common mistakes: saying the lighter ball falls slower in vacuum; explaining the range difference by mass alone (it is the rotational inertia and the losses); calling a difference real when it is below 1 sigma (the panel compares with the scatter-only uncertainty).
+At mark 80 cm: v0 marble 1.218 m/s, ping-pong 1.170 m/s, ratio 1.041. Ideal rolling without losses gives v proportional to 1/sqrt(1 + k_eff) (k_eff includes the channel of width 10 mm), so the ratio marble/ping-pong would be sqrt((1 + k_pp)/(1 + k_marble)) = 1.012 (k_marble = 0.656, k_pp = 0.697); the model value differs from it by the rolling resistance, the corner loss and the air, which hit the light ball more. The ping-pong ball therefore leaves slower and its range is shorter (0.380 m against 0.411 m). The flight times are the same within hand timing (0.339 s against 0.345 s, a difference far below the 0.1 s reaction uncertainty); air drag lengthens the flight by 0.09 % for the marble and 1.51 % for the ping-pong ball. Common mistakes: saying the lighter ball falls slower in vacuum; explaining the range difference by mass alone (it is the rotational inertia and the losses); calling a difference real when it is below 1 sigma (the panel compares with the scatter-only uncertainty).
 
 ### Task 9, ideal projectile
 

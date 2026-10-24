@@ -59,6 +59,16 @@ export const GAP_STEP_m = 0.001
 export const RAIL_END_CAP_m = 0.0035
 /** Nearest the rail tip can be set to the edge, m (whole mm above the end cap). */
 export const GAP_MIN_m = 0.004
+/**
+ * OVERHANG: the tip can also be set BEYOND the edge, from this far (m) to GAP_OVERHANG_MAX_m (gap_m = -value). Rule of the refused band:
+ * with the tip at x_tip the underside end corner is at x_tip - t sin(theta) (t = RAIL_HEIGHT_m, theta up to ~17 deg: up to 6 mm), and the
+ * end cap (RAIL_END_CAP_m) sticks out another 3.5 mm. Between GAP_MIN_m on the table side and this value on the overhang side the end corner or
+ * the end cap sits on the table corner (the rail would balance on a corner of mm size, and the cap would rock): refused. Beyond it the rail
+ * rests on the edge corner alone, stably. 10 mm = t sin(17 deg) + cap, rounded up. ASSUMED (PARAMETERS.md).
+ */
+export const GAP_OVERHANG_MIN_m = 0.01
+/** Farthest overhang, m: the two-leg stand (0.1 m from the tip) must stay on the table. ASSUMED. */
+export const GAP_OVERHANG_MAX_m = 0.09
 
 // ---- Marks on the rail -------------------------------------------------------------------------------------------
 export const MARK_SNAP_m = 0.0005

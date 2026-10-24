@@ -15,6 +15,8 @@ const only = (e: Partial<FlightEffects>): FlightEffects => ({ drag: false, magnu
 const flightOf = (b: BallSpec, v0: number, effects: FlightEffects, extra: object = {}) =>
   simulateFlight({ ball: b, v0_mps: v0, omega_radps: v0 / b.R_m, H_m: S.H_m, g_mps2: g, rho_air_kgpm3: RHO_AIR_QUITO_kgpm3, effects, ...extra })
 
+const CORNER = { tipModel: 'corner' as const } // the original inelastic-corner model, horizontal launch (junction.ts)
+
 describe('incline (rolling without slipping on two lines)', () => {
   it('ideal limit (w=0, c_rr=0): v_tip = sqrt(2 g s sin(theta) / (1 + k_body))', () => {
     for (const b of [MARBLE, PING_PONG]) for (const s of [0.6, 0.85, 1.1]) {
@@ -89,7 +91,7 @@ describe('junction (tip contact) and roll over the gap', () => {
   })
   it('v_edge is below the lossless energy limit sqrt(2 g s sin(theta)) and below v_roll (rolling resistance)', () => {
     for (const b of [MARBLE, PING_PONG]) for (const s of [0.6, 1.1]) {
-      const r = simulateLaunch(S, b, s)
+      const r = simulateLaunch(S, b, s, ZERO_RUN, CORNER)
       expect(r.v_edge_mps).toBeLessThan(Math.sqrt(2 * g * s * Math.sin(r.theta_rad)))
       expect(r.v_edge_mps).toBeLessThan(r.v_roll_mps)
       expect(r.v_edge_mps).toBeGreaterThan(0)
@@ -117,7 +119,7 @@ describe('junction (tip contact) and roll over the gap', () => {
     expect(slow.v_edge_mps ** 2).toBeLessThan(g * PING_PONG.R_m)
     expect(slow.leavesHorizontally).toBe(false)
     expect(slow.flight).toBeNull()
-    for (const s of [0.6, 1.1]) expect(simulateLaunch(S, PING_PONG, s).leavesHorizontally).toBe(true)
+    for (const s of [0.6, 1.1]) expect(simulateLaunch(S, PING_PONG, s, ZERO_RUN, CORNER).leavesHorizontally).toBe(true)
   })
 })
 
@@ -236,7 +238,7 @@ describe('launch (composition)', () => {
   // Numbers for a reviewer (default set-up, H = 0.76 m, full model | ideal): see docs/architecture.md "Parabolic physics".
   it('typical numbers (marble, H = 0.76 m): v_edge ~ 1.2-1.65 m/s, t ~ 0.39 s, x ~ 0.45-0.65 m for s = 0.60-1.10 m', () => {
     for (const b of [MARBLE, PING_PONG]) for (const s of [0.6, 0.725, 0.85, 0.975, 1.1]) {
-      const r = simulateLaunch(S, b, s)
+      const r = simulateLaunch(S, b, s, ZERO_RUN, CORNER)
       const id = simulateLaunch(flat, idealBall(b), s, ZERO_RUN, { effects: VACUUM_EFFECTS, idealJunction: true }).flight!
       if (b === MARBLE) {
         expect(r.v_edge_mps).toBeGreaterThan(1.1)
@@ -371,7 +373,7 @@ describe('corner slip phase (B1)', () => {
       expect(rel(big.v_roll_mps, inf.v_roll_mps)).toBeLessThan(1e-12)
       expect(big.slipDistance_m).toBeLessThan(1e-6)
       // whole pipeline: a ball with mu_k = Infinity reproduces the instant-rolling v_roll
-      const r = simulateLaunch(S, { ...b, mu_k: Infinity }, 0.85)
+      const r = simulateLaunch(S, { ...b, mu_k: Infinity }, 0.85, ZERO_RUN, CORNER)
       expect(rel(r.v_roll_mps / r.v_tip_mps, expected)).toBeLessThan(1e-12)
       expect(r.rollingAtEdge).toBe(true)
       expect(r.slipDistance_m).toBe(0)
@@ -380,7 +382,7 @@ describe('corner slip phase (B1)', () => {
   it('v_edge lies between v cos(theta) and v_roll (no rolling resistance, no air), for every mu_k and with or without impact friction', () => {
     for (const b of [MARBLE, PING_PONG]) for (const mu of [0.05, 0.1, 0.3, 0.6, 1.5]) for (const impact of [true, false]) for (const s of [0.6, 1.1]) {
       const ball = { ...b, c_rr: 0, mu_k: mu }
-      const r = simulateLaunch(S, ball, s, ZERO_RUN, { effects: VACUUM_EFFECTS, impactFriction: impact })
+      const r = simulateLaunch(S, ball, s, ZERO_RUN, { effects: VACUUM_EFFECTS, impactFriction: impact, tipModel: 'corner' })
       const lo = r.v_tip_mps * Math.cos(r.theta_rad)
       expect(r.v_roll_mps).toBeGreaterThan(lo)
       expect(r.v_edge_mps).toBeGreaterThanOrEqual(lo - 1e-12)
@@ -415,7 +417,7 @@ describe('corner slip phase (B1)', () => {
   })
   it('slip longer than the gap: the marble leaves the table still slipping, with its actual v and omega, and the Magnus term gets that omega', () => {
     const dec = { ...MARBLE, c_rr: 0 }
-    const r = simulateLaunch(S, dec, 1.1, ZERO_RUN, { impactFriction: false })
+    const r = simulateLaunch(S, dec, 1.1, ZERO_RUN, { impactFriction: false, tipModel: 'corner' })
     expect(r.rollingAtEdge).toBe(false)
     expect(r.slipDistance_m).toBe(S.gap_m)
     expect(r.omega_edge_radps * MARBLE.R_m).toBeGreaterThan(r.v_edge_mps) // still backspinning relative to rolling: R omega > v
@@ -659,7 +661,7 @@ describe('ball presets and typical numbers (ping-pong)', () => {
   })
   it('ping-pong, default set-up, H = 0.76 m: v_edge 1.05-1.5 m/s, t 0.399-0.401 s, x 0.40-0.56 m, below the ideal range, lands with p ~ 0.010 kg m/s', () => {
     for (const s of [0.6, 0.725, 0.85, 0.975, 1.1]) {
-      const r = simulateLaunch(S, PING_PONG, s)
+      const r = simulateLaunch(S, PING_PONG, s, ZERO_RUN, CORNER)
       const id = simulateLaunch(flat, idealBall(PING_PONG), s, ZERO_RUN, { effects: VACUUM_EFFECTS, idealJunction: true }).flight!
       expect(r.v_edge_mps).toBeGreaterThan(1.05)
       expect(r.v_edge_mps).toBeLessThan(1.5)

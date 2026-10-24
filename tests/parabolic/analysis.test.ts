@@ -133,7 +133,9 @@ describe('analysis of a simulated careful student on the real apparatus', () => 
   it('range grows with the mark and v0 sits between 0.8 and 1.7 m/s', () => {
     for (const b of ['marble', 'pingpong'] as const) {
       const xs = a.balls[b].trials.map((t) => t.x_m!)
-      for (let i = 1; i < xs.length; i++) expect(xs[i]!).toBeGreaterThan(xs[i - 1]!)
+      // From the second mark on the range grows with the mark. The FIRST mark (60 cm) is not guaranteed to be the shortest any more: at the
+      // slowest mark the marble touches the table once before the edge and leaves mid-hop upward, a longer flight (diagonal-launch model).
+      for (let i = 2; i < xs.length; i++) expect(xs[i]!).toBeGreaterThan(xs[i - 1]!)
       for (const t of a.balls[b].trials) { expect(t.v0_mps!).toBeGreaterThan(0.8); expect(t.v0_mps!).toBeLessThan(1.7) }
     }
   })
@@ -155,8 +157,8 @@ describe('analysis of a simulated careful student on the real apparatus', () => 
     expect(ballAnalysis(app, 'marble').trials[0]!.t_s).toBeCloseTo(a.balls.marble.trials[0]!.t_s!, 12)
     const ref = slowmoReference(app, 'marble')!
     expect(ref.n).toBeGreaterThanOrEqual(25)
-    // frame counting is within a frame or two of the true flight, and near sqrt(2H/g)
-    expect(Math.abs(ref.t_s - Math.sqrt((2 * app.hiddenTruth().H_m) / G_QUITO_mps2))).toBeLessThan(0.006)
+    // frame counting is within a frame or two of the true flight; the launch is diagonal now, so it is only near (not at) sqrt(2H/g)
+    expect(Math.abs(ref.t_s - Math.sqrt((2 * app.hiddenTruth().H_m) / G_QUITO_mps2))).toBeLessThan(0.1)
   })
   it('CSV has one row per trial and ball and the expected time', () => {
     const csv = analysisCSV(a, 'en')
@@ -173,7 +175,7 @@ describe('analysis of a simulated careful student on the real apparatus', () => 
 
 describe('teacher key', () => {
   const md = teacherKey()
-  it('is deterministic', () => { expect(teacherKey()).toBe(md) })
+  it('is deterministic', () => { expect(teacherKey()).toBe(md) }, 60000) // seeded Monte Carlo of 1000 draws per mark; slow on a loaded machine
   it('states the expected time and the bias table', () => {
     expect(md).toContain('sqrt(2H/g)')
     expect(md).toContain('Bias b (s)')

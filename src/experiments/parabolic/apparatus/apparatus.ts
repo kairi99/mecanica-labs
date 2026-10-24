@@ -10,7 +10,7 @@ import {
   BALL_IDS, EXPECTED_OFFSETS, GRAVITY_mps2, ballSpec, drawRunOffsets, insidePaper, markOnPaper, runLaunch, runTrajectory, settleAfterLanding, type BallId, type TrajectoryPoint,
 } from './model.ts'
 import {
-  BOND_SHEETS, EDGE_PROJECTION_SIGMA_m, FOOT_RANGE_mm, FOOT_STEP_mm, GAP_MAX_m, GAP_MIN_m, GAP_START_m, GAP_STEP_m, GAP_TARGET_m, GAP_TOLERANCE_m,
+  BOND_SHEETS, EDGE_PROJECTION_SIGMA_m, FOOT_RANGE_mm, FOOT_STEP_mm, GAP_MAX_m, GAP_MIN_m, GAP_OVERHANG_MAX_m, GAP_OVERHANG_MIN_m, GAP_START_m, GAP_STEP_m, GAP_TARGET_m, GAP_TOLERANCE_m,
   LATERAL_DRIFT_GAIN, LEG_MAX_mm, LEG_MIN_mm, LEG_STEP_mm, LEVEL_BUBBLE_MAX_mm, LEVEL_CENTERED_TOL_mm, MARK_COUNT_EXPECTED,
   MARK_MAX_COUNT, MARK_PLACEMENT_SIGMA_m, MARK_SNAP_m, MARK_UPPER_HALF_FROM_m, PAPER_POS_MAX_m, PAPER_SNAP_m, RACK_BASE_HEIGHT_m,
   RACK_MAX_mm, RACK_MIN_mm, RACK_STEP_mm, RAIL_LENGTH_m, RISE_TARGET_m, RISE_TOLERANCE_m, ROLL_OVER_TAIL_s, SCREWS_PER_JOINT, SCREWS_TOTAL,
@@ -270,14 +270,15 @@ export class ParabolicApparatus {
     return { ok: true, foot_mm: v }
   }
   /**
-   * Slide the rail along the table: distance from its low tip to the table edge, whole mm. A tip closer than the rail's end cap (4 mm) or past the edge is
-   * refused (the ball would leave from the tilted rail tip, which the horizontal-launch model does not cover). A far-away
-   * tip is allowed: the ball may stop on the table before the edge.
+   * Slide the rail along the table: distance from its low tip to the table edge, whole mm; negative = the tip overhangs the edge (rail resting on
+   * the edge corner, GAP_OVERHANG_MIN_m to GAP_OVERHANG_MAX_m). The band from -GAP_OVERHANG_MIN_m to GAP_MIN_m (end cap on the corner) is
+   * refused. A far-away tip is allowed: the ball may stop on the table before the edge.
    */
   setGap_mm(value_mm: number): Result<{ gap_mm: number }> {
     const f = this.adjustCheck('setGap', 'rail', value_mm); if (f) return f
     const v = round6(snap(value_mm / 1000, GAP_STEP_m))
-    if (v < GAP_MIN_m - 1e-9) return this.refuse('setGap', 'tipOverhangsEdge')
+    if (v < GAP_MIN_m - 1e-9 && v > -GAP_OVERHANG_MIN_m + 1e-9) return this.refuse('setGap', 'tipOverhangsEdge')
+    if (v < -GAP_OVERHANG_MAX_m - 1e-9) return this.refuse('setGap', 'outOfRange')
     if (v > GAP_MAX_m) return this.refuse('setGap', 'outOfRange')
     this.gap_m = v
     this.emit({ type: 'gapSet', gap_mm: Math.round(v * 1000) })

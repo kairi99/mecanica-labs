@@ -122,7 +122,9 @@ describe('rail position and refusals', () => {
     expect(reasonOf(a.setGap_mm(0))).toBe('tipOverhangsEdge')
     expect(reasonOf(a.setGap_mm(3))).toBe('tipOverhangsEdge') // the rail's end cap would reach the edge
     expect(a.setGap_mm(4).ok).toBe(true)
-    expect(reasonOf(a.setGap_mm(-20))).toBe('tipOverhangsEdge')
+    expect(reasonOf(a.setGap_mm(-5))).toBe('tipOverhangsEdge') // band around the edge corner: end cap on the corner
+    expect(a.setGap_mm(-20).ok).toBe(true) // overhang: the rail rests on the edge corner
+    expect(reasonOf(a.setGap_mm(-120))).toBe('outOfRange')
     expect(reasonOf(a.setGap_mm(5000))).toBe('outOfRange')
     expect(a.setGap_mm(50).ok).toBe(true)
     expect(a.procedure().gapOk).toBe(true)
@@ -254,8 +256,10 @@ describe('release, states and landing', () => {
     a.release(0)
     const r = a.getRun(1)!
     const H = a.hiddenTruth().H_m
-    expect(r.flight!.t_flight_s).toBeGreaterThan(Math.sqrt((2 * H) / 9.7717) * 0.99)
-    expect(r.flight!.t_flight_s).toBeLessThan(Math.sqrt((2 * H) / 9.7717) * 1.03) // buoyancy+drag+Magnus lengthen it slightly
+    // The ball leaves the table with a downward (or upward after a hop) velocity component now, not horizontally: the flight time from the
+    // edge is sqrt(2H/g) only for a horizontal launch (physics.test.ts checks the exact diagonal closed form). Here a coarse band.
+    expect(r.flight!.t_flight_s).toBeGreaterThan(Math.sqrt((2 * H) / 9.7717) * 0.75)
+    expect(r.flight!.t_flight_s).toBeLessThan(Math.sqrt((2 * H) / 9.7717) * 1.15)
   })
   it('only one ball moves at a time; reset puts the ball back on its mark', () => {
     const a = ready()

@@ -181,3 +181,86 @@ export function tableRoll(inp: TableRollInput): TableRollResult {
  * edge and rolls over it (circular motion about the edge, v^2 / R < g), so the horizontal-launch model does not apply.
  */
 export const leavesHorizontally = (v_edge_mps: number, R_m: number, g_mps2: number): boolean => v_edge_mps * v_edge_mps >= g_mps2 * R_m
+
+// ---- Generalisation: slip and roll from ANY state (used after the bounces on the table, tablePhase.ts) --------------------------
+
+export interface SlipState {
+  /** Duration of the slip until rolling starts, s (0 if rolling or mu = Infinity). */
+  slipTime_s: number
+  /** Centre travel during the slip, m. */
+  slipDistance_m: number
+  /** s = sgn(R omega - v). */
+  slipSign: number
+  /** Rolling speed reached, (v + k u)/(1 + k) (angular momentum about the contact line conserved), m/s. */
+  vRoll_mps: number
+}
+
+/** Slip phase of a ball in contact with the table from speed v and spin omega (same closed form as junctionTransition, see the header). */
+export function slipFromState(v_mps: number, omega_radps: number, R_m: number, k_body: number, mu_k: number, g_mps2: number): SlipState {
+  const u = R_m * omega_radps
+  const d = u - v_mps
+  const s = d > 0 ? 1 : d < 0 ? -1 : 0
+  const vRoll = (v_mps + k_body * u) / (1 + k_body)
+  if (s === 0 || !Number.isFinite(mu_k) || Math.abs(d) <= 1e-14 * (Math.abs(v_mps) + Math.abs(u))) return { slipTime_s: 0, slipDistance_m: 0, slipSign: s, vRoll_mps: vRoll }
+  const t = (Math.abs(d) * k_body) / (mu_k * g_mps2 * (1 + k_body))
+  return { slipTime_s: t, slipDistance_m: v_mps * t + 0.5 * s * mu_k * g_mps2 * t * t, slipSign: s, vRoll_mps: vRoll }
+}
+
+export interface TableRollFromInput {
+  /** Centre speed along the table, m/s (> 0). */
+  v_mps: number
+  /** Spin, rad/s (+ forward). */
+  omega_radps: number
+  /** Distance still to go to the edge, m (> 0). */
+  remaining_m: number
+  R_m: number
+  m_kg: number
+  k_body: number
+  mu_k: number
+  c_rr: number
+  g_mps2: number
+  /** Drag constant on the flat, k_d / (1 + k_body), 1/m. */
+  kappaRoll_pm: number
+}
+
+export interface TableRollFromResult extends TableRollResult {
+  /** Duration of the slip actually spent before the edge or before rolling, s. */
+  slipTime_s: number
+  /** Kinetic energy lost in the slip (up to rolling or up to the edge), J. */
+  slipEnergyLost_J: number
+  /** Kinetic energy lost to rolling resistance and drag on the rolling part, J (0 if the edge came during the slip). */
+  rollEnergyLost_J: number
+}
+
+/**
+ * Like tableRoll but from any (v, omega) state and the remaining distance to the edge: slip (closed form) then rolling with rolling
+ * resistance and drag, or the edge during the slip. `energyLostJunction_J` is the slip loss here (no corner impact). Neglects rolling
+ * resistance and drag during the slip (as the header says).
+ */
+export function tableRollFrom(inp: TableRollFromInput): TableRollFromResult {
+  const { R_m: R, k_body: k, g_mps2: g, m_kg: m } = inp
+  const mu = inp.mu_k
+  const u0 = R * inp.omega_radps
+  const ke0 = 0.5 * m * (inp.v_mps * inp.v_mps + k * u0 * u0)
+  const slip = slipFromState(inp.v_mps, inp.omega_radps, R, k, mu, g)
+  if (slip.slipTime_s > 0 && slip.slipDistance_m >= inp.remaining_m) {
+    const a = slip.slipSign * mu * g
+    const v1 = inp.v_mps
+    const t = (2 * inp.remaining_m) / (v1 + Math.sqrt(Math.max(0, v1 * v1 + 2 * a * inp.remaining_m)))
+    const v = v1 + a * t
+    const u = u0 - (a * t) / k
+    const lost = ke0 - 0.5 * m * (v * v + k * u * u)
+    return {
+      v_edge_mps: v, omega_edge_radps: u / R, t_s: t, stopped: false, rollingAtEdge: false, slipDistance_m: inp.remaining_m,
+      energyLostJunction_J: lost, slipTime_s: t, slipEnergyLost_J: lost, rollEnergyLost_J: 0,
+    }
+  }
+  const keRollStart = 0.5 * m * (1 + k) * slip.vRoll_mps * slip.vRoll_mps
+  const slipLost = ke0 - keRollStart
+  const roll = rollGap(slip.vRoll_mps, inp.remaining_m - slip.slipDistance_m, tableRollDecel_mps2(inp.c_rr, k, g), inp.kappaRoll_pm)
+  const keEdge = 0.5 * m * (1 + k) * roll.v_edge_mps * roll.v_edge_mps
+  return {
+    v_edge_mps: roll.v_edge_mps, omega_edge_radps: roll.v_edge_mps / R, t_s: slip.slipTime_s + roll.t_s, stopped: roll.stopped, rollingAtEdge: true,
+    slipDistance_m: slip.slipDistance_m, energyLostJunction_J: slipLost, slipTime_s: slip.slipTime_s, slipEnergyLost_J: slipLost, rollEnergyLost_J: keRollStart - keEdge,
+  }
+}

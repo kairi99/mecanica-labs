@@ -3,6 +3,7 @@
 //   y_m: up. Rail poses use the TABLE frame (y = 0 on the table top); ball poses use the FLOOR frame (y = 0 on the floor)
 //   z_m: lateral, across the bench; the rail axis is z = 0
 import { rad2deg } from '../../../core/physics/angles.ts'
+import { brent } from '../../../core/physics/roots.ts'
 import { inTapeRange as coreInTapeRange } from '../../../core/physics/instruments.ts'
 import type { PaperRect } from './model.ts'
 import {
@@ -28,6 +29,7 @@ export interface RailInput {
   rack_mm: number
   leg_mm: number
   foot_mm: number
+  /** Distance from the low tip (end of the top surface) to the table edge, m. NEGATIVE = the tip hangs beyond the edge (overhang). */
   gap_m: number
   tableRoll_rad: number
   /** The two-leg stand is screwed to the rail. */
@@ -40,7 +42,7 @@ export interface RailContacts {
   rack: true
   /** The two-leg stand's support touches the rail underside (it is attached and higher than the free line). */
   twoLeg: boolean
-  /** The low end of the rail rests on the table (its underside corner at the tip touches the tabletop). */
+  /** The rail rests on the table: its underside end corner touches the tabletop, or (overhang) its underside rests on the table EDGE corner. */
   table: boolean
 }
 
@@ -50,11 +52,12 @@ export interface RailGeometry {
   /** Height of the two-leg stand's support above the table, m (the rail underside rests on it when it touches). */
   legHeight_m: number
   /**
-   * Rail top surface height above the table at the low tip, m. The rail is a beam RAIL_HEIGHT_m thick, so when it rests on the
-   * table at its tip this is RAIL_HEIGHT_m cos(theta) (about 2 cm), never 0.
+   * Rail top surface height above the table TOP LEVEL at the low tip, m. The rail is a beam RAIL_HEIGHT_m thick, so when it rests on the
+   * table at its tip this is RAIL_HEIGHT_m cos(theta) (about 2 cm), never 0. With an overhang it is lower (it can be negative: the tip
+   * hangs below the table top level, beyond the edge).
    */
   tipHeight_m: number
-  /** Where the tip top surface sits when the rail stands on the table at its tip: RAIL_HEIGHT_m cos(theta), m. */
+  /** Where the tip top surface sits when the rail rests only on the table (no stand lifting it): RAIL_HEIGHT_m cos(theta) on its end corner, or the value set by the edge corner for an overhang, m. */
   tipRestHeight_m: number
   /** The two-leg stand holds the rail up so that its tip hangs above its resting height (by more than TIP_LIFT_TOL_m). */
   tipLifted: boolean
@@ -67,6 +70,10 @@ export interface RailGeometry {
   /** Roll of the rail about its axis, rad: hidden table tilt plus the screw foot of the two-leg stand. Drives the lateral drift. */
   roll_rad: number
   gap_m: number
+  /** The tip is beyond the table edge (gap_m < 0). */
+  overhang: boolean
+  /** The rail rests on the table EDGE corner (the end corner is past the edge) instead of its own end corner. */
+  edgeContact: boolean
   contacts: RailContacts
   /** Clearance between the two-leg support top and the rail underside at the stand, m: > 0 when it does not touch (a gap shows), 0 when it does. */
   twoLegClearance_m: number
@@ -82,43 +89,66 @@ const clampUnit = (v: number): number => Math.max(-1, Math.min(1, v))
 /**
  * Rail as a rigid straight beam of thickness t = RAIL_HEIGHT_m (rigid-body statics: a beam rests on its contacts and can never
  * penetrate the surface that supports it). Contacts: the rack clamp holds the top surface at height h at distance Dc from the
- * low tip (along the rail); the tabletop touches the underside corner of the low end; the two-leg stand's support (height b)
- * touches the underside at distance Ds. The top line has height tip + s sin(theta).
- *   Free line (rack + table): tip = t cos(theta) and Dc sin(theta) + t cos(theta) = h, so theta = asin(h / hypot(Dc, t)) - atan(t / Dc).
- *   The stand touches only if it is higher than the free line's underside at Ds: b > Ds sin(theta_free). A lower stand does
- *   not touch (a gap shows above it) and the rail rests on rack + table.
- *   Otherwise the rail rests on rack + stand: (Dc - Ds) sin(theta) + t cos(theta) = h - b (same closed form) and the tip hangs
- *   above the table at b + t cos(theta) - Ds sin(theta) >= t cos(theta).
+ * low tip (along the rail); the tabletop; and the two-leg stand's support (height b) touching the underside at distance Ds. The beam
+ * pivots about the clamp, so each support gives the largest angle it allows and the beam takes the SMALLEST (the first to touch).
+ *   Table, end corner on the tabletop (tip over the table, gap > 0): tip = t cos(theta) and Dc sin(theta) + t cos(theta) = h, so
+ *     theta = asin(h / hypot(Dc, t)) - atan(t / Dc).
+ *   Table, EDGE corner (the end corner is past the edge, x_tip > t sin(theta); an OVERHANG up to the tip hanging beyond the edge): the underside
+ *     line passes through the edge corner E = (0, 0). With n = (sin(theta), cos(theta)) the upward normal of the top surface and the tip at
+ *     (x_tip, h - Dc sin(theta)): n . tip = t, i.e. h cos(theta) - Dc sin(theta) cos(theta) + x_tip sin(theta) = t (no closed form, solved
+ *     with Brent from theta = 0, where the left side is h - t > 0, downward). The rail does not penetrate the table for any overhang: the
+ *     two regimes agree where the end corner reaches the edge (x_tip = t sin(theta)), so the geometry is continuous in the gap. The tip
+ *     may end up below the tabletop level (negative tipHeight_m).
+ *   Stand: (Dc - Ds) sin(theta) + t cos(theta) = h - b (same closed form). It touches only if its angle is smaller than the table's
+ *     (the stand is higher than the free line); then the tip hangs above the table at h - Dc sin(theta) >= its resting height.
  * The hidden table roll and the screw foot only roll the rail about its axis (tenths of a millimetre at the groove walls).
+ * Settable range: the apparatus refuses the band where the end cap sits on the corner (see GAP_MIN_m, GAP_OVERHANG_MIN_m); this function
+ * itself is valid for any gap, which the contact tests exploit.
  */
 export function railGeometry(inp: RailInput): RailGeometry {
   const t = RAIL_HEIGHT_m
   const hHigh = RACK_BASE_HEIGHT_m + inp.rack_mm / 1000
   const bLeg = LEG_BASE_HEIGHT_m + inp.leg_mm / 1000
+  const Dc = RACK_FROM_TIP_m
   /** theta of a beam with D sin(theta) + t cos(theta) = h (h above a support underside point D metres along the rail from the clamp). */
   const thetaFor = (h: number, D: number): number => Math.asin(clampUnit(h / Math.hypot(D, t))) - Math.atan2(t, D)
-  const thetaFree = thetaFor(hHigh, RACK_FROM_TIP_m)
-  let theta = thetaFree
+  const xTip = -inp.gap_m
+  let thetaTable = thetaFor(hHigh, Dc)
+  let edgeContact = false
+  if (xTip - t * Math.sin(thetaTable) > 0) {
+    // end corner past the edge: the underside rests on the edge corner
+    edgeContact = true
+    const fEdge = (th: number): number => hHigh * Math.cos(th) - Dc * Math.sin(th) * Math.cos(th) + xTip * Math.sin(th) - t
+    let hi = 0.005
+    while (fEdge(hi) > 0 && hi < 1.5) hi += 0.005
+    thetaTable = brent(fEdge, hi - 0.005, hi, 1e-14)
+  }
+  let theta = thetaTable
   let twoLeg = false
-  if (inp.twoLegAttached && bLeg > TWO_LEG_FROM_TIP_m * Math.sin(thetaFree)) {
-    twoLeg = true
-    theta = thetaFor(hHigh - bLeg, RACK_FROM_TIP_m - TWO_LEG_FROM_TIP_m)
+  if (inp.twoLegAttached) {
+    const thetaStand = thetaFor(hHigh - bLeg, Dc - TWO_LEG_FROM_TIP_m)
+    if (thetaStand < thetaTable) { twoLeg = true; theta = thetaStand }
   }
   const cos = Math.cos(theta)
   const sin = Math.sin(theta)
-  const tipRest = t * cos
-  const tip = twoLeg ? bLeg + t * cos - TWO_LEG_FROM_TIP_m * sin : tipRest
-  const rise = RACK_FROM_TIP_m * sin
-  const tipPt: Vec3 = { x_m: -inp.gap_m, y_m: tip, z_m: 0 }
+  const tipRest = hHigh - Dc * Math.sin(thetaTable)
+  const tip = hHigh - Dc * sin
+  const rise = Dc * sin
+  const tipPt: Vec3 = { x_m: xTip, y_m: tip, z_m: 0 }
   const d = dirOf(theta)
   const roll = inp.tableRoll_rad + (inp.twoLegAttached ? Math.asin(clampUnit(inp.foot_mm / 1000 / TWO_LEG_SPAN_m)) : 0)
-  const pose: RailPose = { tip: tipPt, highEnd: along(tipPt, d, RAIL_LENGTH_m), clamp: along(tipPt, d, RACK_FROM_TIP_m), twoLeg: along(tipPt, d, TWO_LEG_FROM_TIP_m), direction: d }
+  const pose: RailPose = { tip: tipPt, highEnd: along(tipPt, d, RAIL_LENGTH_m), clamp: along(tipPt, d, Dc), twoLeg: along(tipPt, d, TWO_LEG_FROM_TIP_m), direction: d }
   const lifted = tip - tipRest > TIP_LIFT_TOL_m
   const underAtStand = pose.twoLeg.y_m - t * cos
+  // lowest point of the underside over the TABLE (x <= 0): the end corner if it is over the table, else the underside where it crosses the edge
+  const xCorner = xTip - t * sin
+  const yCorner = tip - t * cos
+  const lowOverTable = xCorner <= 0 ? yCorner : yCorner + xCorner * Math.tan(theta)
   return {
     clampHeight_m: hHigh, legHeight_m: bLeg, tipHeight_m: tip, tipRestHeight_m: tipRest, tipLifted: lifted, stepDrop_m: tip, rise_m: rise, theta_rad: theta,
-    roll_rad: roll, gap_m: inp.gap_m, contacts: { rack: true, twoLeg, table: !lifted }, twoLegClearance_m: twoLeg ? 0 : Math.max(0, underAtStand - bLeg),
-    lowest_m: Math.min(tip - t * cos, pose.highEnd.y_m - t * cos), pose,
+    roll_rad: roll, gap_m: inp.gap_m, overhang: inp.gap_m < 0, edgeContact: edgeContact && !twoLeg, contacts: { rack: true, twoLeg, table: !lifted },
+    twoLegClearance_m: twoLeg ? 0 : Math.max(0, underAtStand - bLeg),
+    lowest_m: Math.min(lowOverTable, pose.highEnd.y_m - t * cos), pose,
   }
 }
 

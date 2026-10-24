@@ -3,13 +3,13 @@
 // change this file only.
 import {
   BALLS, DEFAULT_SETUP, firstBounce, carbonMark, effectiveRollingRadius_m, sampleRun, simulateLaunch, tableRollDecel_mps2,
-  ZERO_RUN, settlePath, type SettlePath, type BallSpec, type CarbonMark, type LaunchSetup, type PaperRect, type RunOffsets, type TrajectoryPoint,
+  ZERO_RUN, settlePath, type SettlePath, type BallSpec, type CarbonMark, type LaunchSetup, type PaperRect, type RunOffsets, type TrajectoryPoint, type PathPoint,
 } from '../physics/index.ts'
 import { TRAJECTORY_RATE_hz } from './constants.ts'
 
 export type BallId = BallSpec['id']
 export const BALL_IDS: readonly BallId[] = ['marble', 'pingpong']
-export type { PaperRect, RunOffsets, TrajectoryPoint, SettlePath }
+export type { PaperRect, RunOffsets, TrajectoryPoint, SettlePath, PathPoint }
 export { insidePaper } from '../physics/index.ts'
 
 export const ballSpec = (id: BallId): BallSpec => BALLS[id]
@@ -52,6 +52,10 @@ export interface LaunchSummary {
   /** Time on the table from the tip to the edge (or to the stop), s. */
   gapTime_s: number
   flight: FlightSummary | null
+  /** Bounces on the table between the rail tip and the edge (0 for an overhang). */
+  tableHops: number
+  /** Launch angle at the table edge, rad above the horizontal (negative = downward); null if it did not fly. */
+  launchAngle_rad: number | null
   /** First bounce after landing (animation / slow-mo only). */
   bounce: { vUp_mps: number; tNext_s: number } | null
 }
@@ -60,6 +64,8 @@ export interface LaunchRun {
   summary: LaunchSummary
   /** Flight samples from the edge (t = 0) to the landing instant; empty unless sampled. */
   trajectory: TrajectoryPoint[]
+  /** Whole path (tip departure -> table hops -> flight) at the sample rate; empty unless sampled. t from the tip departure. */
+  path: PathPoint[]
 }
 
 const toSetup = (b: BenchSetup): LaunchSetup => ({ ...DEFAULT_SETUP, rise_m: b.rise_m, gap_m: b.gap_m, H_m: b.H_m, stepDrop_m: b.stepDrop_m })
@@ -80,7 +86,7 @@ export function runLaunch(bench: BenchSetup, ball: BallId, releaseS_m: number, o
   const r = simulateLaunch(setup, spec, releaseS_m, offsets, { sampleRate_hz })
   const decel = tableRollDecel_mps2(spec.c_rr, spec.k_body, setup.g_mps2)
   const f = r.flight
-  const outcome: LaunchOutcome = r.stopped ? 'stopped' : r.leavesHorizontally && f ? 'landed' : 'rolledOver'
+  const outcome: LaunchOutcome = r.stopped ? 'stopped' : f ? 'landed' : 'rolledOver'
   const flight: FlightSummary | null = f && outcome === 'landed'
     ? { t_flight_s: f.t_flight_s, x_land_m: f.x_land_m, z_land_m: f.z_land_m, vx_impact_mps: f.vx_impact_mps, vy_impact_mps: f.vy_impact_mps, vz_impact_mps: f.vz_impact_mps }
     : null
@@ -90,9 +96,11 @@ export function runLaunch(bench: BenchSetup, ball: BallId, releaseS_m: number, o
       outcome, theta_rad: r.theta_rad, a_incline_mps2: r.a_incline_mps2, releaseS_m: r.releaseS_m,
       v_tip_mps: r.v_tip_mps, v_roll_mps: r.v_roll_mps, v_edge_mps: r.v_edge_mps, tableDecel_mps2: decel,
       tTip_s: Number.isFinite(r.rollDownTime_s) ? r.rollDownTime_s : null, gapTime_s: Number.isFinite(r.gapTime_s) ? r.gapTime_s : 0,
-      flight, bounce: bounce ? { vUp_mps: bounce.vUp_mps, tNext_s: bounce.tNext_s } : null,
+      flight, tableHops: r.table?.hops ?? 0, launchAngle_rad: flight && r.edgeLaunch ? r.edgeLaunch.angle_rad : null,
+      bounce: bounce ? { vUp_mps: bounce.vUp_mps, tNext_s: bounce.tNext_s } : null,
     },
     trajectory: f && outcome === 'landed' ? f.trajectory : [],
+    path: f ? r.path : [],
   }
 }
 
