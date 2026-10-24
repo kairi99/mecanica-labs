@@ -35,7 +35,7 @@
 <h3>Tiempo de vuelo y alcance</h3>
 <p>La bola toca el piso cuando <em>y</em> = 0. De la ecuación vertical sale el tiempo de vuelo, y de la horizontal el alcance:</p>
 <div class="eq">t = √(2·H / g)<br>x = v₀·t = v₀·√(2·H / g)</div>
-<p>Fíjate en qué falta en la primera fórmula: <em>v</em><sub>0</sub>. El tiempo de vuelo depende de la altura y de la gravedad, no de la rapidez de salida. Con <em>H</em> entre 0,74 y 0,78 m y <em>g</em> = 9,77 m/s² en Quito, <em>t</em> vale unos 0,39 a 0,40 s. En cambio, el alcance sí crece con <em>v</em><sub>0</sub>. Son las preguntas 3 y 5 del análisis.</p>
+<p>El tiempo de vuelo depende de la altura y de la gravedad, no de la rapidez de salida. Con <em>H</em> entre 0,74 y 0,78 m y <em>g</em> = 9,77 m/s² en Quito, <em>t</em> vale unos 0,39 a 0,40 s. En cambio, el alcance sí crece con <em>v</em><sub>0</sub>.</p>
 <h3>Rapidez justo antes del piso</h3>
 <p>La componente horizontal sigue siendo <em>v</em><sub>0</sub> y la vertical vale <em>g</em>·<em>t</em> = √(2·<em>g</em>·<em>H</em>). Por tanto:</p>
 <div class="eq">v = √(v₀² + 2·g·H)</div>
@@ -76,7 +76,7 @@
 
 <section id="cronometro"><h2>4. El cronómetro y por qué 0,4 s sale tan mal</h2>
 <h3>Qué cronometras</h3>
-<p>El tiempo de vuelo empieza cuando la bola pasa el borde y termina cuando toca el piso. Si arrancas el cronómetro al soltar la bola, también mides el rodar por la riel y por la mesa (más de un segundo): la lectura sale muy por encima de 0,4 s. El entrenador te avisa si pasa.</p>
+<p>El tiempo de vuelo empieza cuando la bola pasa el borde y termina cuando toca el piso. Si arrancas el cronómetro al soltar la bola, también mides el rodar por la riel y por la mesa (más de un segundo): la lectura sale muy por encima de 0,4 s. Una sugerencia te avisa si pasa.</p>
 <h3>Error aleatorio y sistemático</h3>
 <p>Al arrancar y al detener el cronómetro reaccionas con retraso. Si los dos retrasos fueran iguales se cancelarían; no lo son. Su diferencia tiene una parte que cambia en cada intento (error aleatorio, que se promedia) y una parte media que no cambia (sesgo sistemático, que no se promedia). Un sesgo de solo 0,1 s sobre un vuelo de 0,4 s es un error del 25 %. Con 25 repeticiones sigue ahí.</p>
 <h3>Por qué importa tanto aquí</h3>
@@ -100,11 +100,11 @@
 <h3>Cifras significativas y veredicto</h3>
 <p>La incertidumbre se da con 1 o 2 cifras y el valor se redondea a la misma posición decimal. El error porcentual de la tarea 6 se compara con la incertidumbre combinada del tiempo medido y del esperado: dentro de 1σ las dos cifras son compatibles; más allá de 2σ hay algo que explicar.</p>
 <h3>El sesgo de reacción es común</h3>
-<p>El mismo retraso afecta a las cinco marcas: los valores de <em>v</em><sub>0</sub> de filas distintas no son independientes. Por eso el panel lo dice y no trata las diferencias de las filas como independientes.</p>
+<p>El mismo retraso afecta a las cinco marcas y a las dos bolas: los valores de <em>v</em><sub>0</sub> de filas distintas no son independientes, y el panel lo dice. Al comparar una marca con otra (barras y dispersión de la tarea 3) o una bola con otra (tarea 8) el sesgo se cancela, porque es el mismo en las dos: esas comparaciones usan solo la dispersión de los datos y la resolución del cronómetro. La tarea 6, que compara con un tiempo esperado, conserva la incertidumbre completa, porque ahí el sesgo no se cancela.</p>
 </section>
 
 <section id="camara"><h2>6. La cámara lenta como referencia</h2>
-<p>El paso 4 reproduce un video a 240 cuadros por segundo de cualquier lanzamiento. Cuenta los cuadros desde el primero en que la bola ya pasó el borde hasta el primero en que ya tocó el piso. Cada cuadro dura 1/240 s = 4,2 ms, así que el tiempo contado tiene una incertidumbre de unos 2 ms: cien veces menor que la de tu cronómetro. El análisis (tarea 6) muestra ese tiempo por bola y su error porcentual frente al esperado, y compara tu cronómetro con él. La diferencia es, casi toda, tu retraso de reacción.</p>
+<p>El paso 4 reproduce un video a 240 cuadros por segundo de cualquier lanzamiento. Cuenta los cuadros desde el primero en que la bola ya pasó el borde hasta el primero en que ya tocó el piso. Cada cuadro dura 1/240 s = 4,2 ms, así que el tiempo contado tiene una incertidumbre de unos 2 ms: unas treinta veces menor que la de tu cronómetro. El análisis (tarea 6) muestra ese tiempo por bola y su error porcentual frente al esperado, y compara tu cronómetro con él. La diferencia es, casi toda, tu retraso de reacción.</p>
 </section>
 
 <section id="modelo"><h2>7. Un modelo honesto</h2>

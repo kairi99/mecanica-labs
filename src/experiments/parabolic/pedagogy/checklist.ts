@@ -28,7 +28,7 @@ export function buildChecklist(app: ParabolicApparatus): ChecklistStep[] {
   const perBall = Object.fromEntries(BALL_IDS.map((b) => [b, Math.min(TABLE_TRIALS * TABLE_REPS, app.tableData(b).cells.flat().filter((c) => c.t_s !== null && c.x_m !== null).length)])) as Record<(typeof BALL_IDS)[number], number>
   return [
     { id: 'assembly', status: st(p.setupComplete), detail: p.setupComplete ? null : { key: 'missing', params: { n: missing } }, focus: ['rail', 'rackStand', 'twoLeg'], panel: 'inventory' },
-    { id: 'rise', status: st(p.riseOk, geo !== null), detail: geo ? null : { key: 'needRail', params: {} }, focus: ['rackStand'], panel: 'adjust' },
+    { id: 'rise', status: st(p.riseOk, geo !== null), detail: !geo ? { key: 'needRail', params: {} } : !p.measured.rise ? { key: 'riseUnmeasured', params: {} } : null, focus: ['rackStand'], panel: 'adjust' },
     { id: 'gap', status: st(p.gapOk, geo !== null), detail: null, focus: ['rail'], panel: 'adjust' },
     {
       id: 'marks', status: st(p.marks.fiveMarks && p.marks.marksInUpperHalf),

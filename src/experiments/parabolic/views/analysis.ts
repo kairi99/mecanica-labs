@@ -248,7 +248,8 @@ export function mountAnalysis(opts: AnalysisOptions = { reference: true }): Moun
             box.append(el('p', 'muted', fmt(T.t6RefCompare, { diff: `${d >= 0 ? '+' : '−'}${numText(Math.abs(d), 2, lang)}`, pct: `${d >= 0 ? '+' : '−'}${numText(Math.abs((d / ref.t_s) * 100), 0, lang)}` })))
           }
         }
-        const ratios = BALL_IDS.map((b) => { const r = slowmoReference(app, b), pl = a.balls[b].pooled; return r && pl ? pl.u_s / Math.max(r.u_s, 0.0005) : null }).filter((v): v is number => v !== null)
+        // the note quotes ~2 ms per frame count, so the ratio is the stopwatch uncertainty over that figure
+        const ratios = BALL_IDS.map((b) => a.balls[b].pooled?.u_s ?? null).filter((v): v is number => v !== null).map((u) => u / 0.002)
         if (ratios.length) box.append(el('p', 'muted', fmt(T.t6RefNote, { ratio: String(Math.round(Math.min(...ratios) / 5) * 5) })))
         t6.push(box)
       }

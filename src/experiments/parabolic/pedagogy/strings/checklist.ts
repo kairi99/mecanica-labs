@@ -30,6 +30,7 @@ export const strings: Strings<ChecklistStrings> = {
     detail: {
       missing: 'Faltan {n} cosas (revisa el inventario).',
       needRail: 'Primero fija la riel a la pinza del soporte.',
+      riseUnmeasured: 'Aún no mediste con la cinta cuánto sube el extremo alto.',
       marks: '{n} marcas puestas, {upper} en la mitad superior',
       launches: '{runs} lanzamientos · {n} de {total} datos',
       timing: '{n} de {stops} lecturas empezaron en el borde',
@@ -62,6 +63,7 @@ export const strings: Strings<ChecklistStrings> = {
     detail: {
       missing: '{n} things are missing (check the inventory).',
       needRail: 'First fasten the rail to the stand clamp.',
+      riseUnmeasured: 'You have not measured with the tape how high the upper end is yet.',
       marks: '{n} marks placed, {upper} in the upper half',
       launches: '{runs} launches · {n} of {total} values',
       timing: '{n} of {stops} readings started at the edge',
