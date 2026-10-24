@@ -6,7 +6,7 @@ import { rad2deg } from '../../../core/physics/angles.ts'
 import { inTapeRange as coreInTapeRange } from '../../../core/physics/instruments.ts'
 import type { PaperRect } from './model.ts'
 import {
-  LEVEL_BUBBLE_MAX_mm, RACK_BASE_HEIGHT_m, RACK_FROM_TIP_m, RAIL_LENGTH_m, SHEET_LONG_m, SHEET_SHORT_m, TAPE_RANGE_m,
+  LEG_BASE_HEIGHT_m, LEVEL_BUBBLE_MAX_mm, RACK_BASE_HEIGHT_m, RAIL_HEIGHT_m, RACK_FROM_TIP_m, RAIL_LENGTH_m, SHEET_LONG_m, SHEET_SHORT_m, PAPER_THICKNESS_m, TAPE_RANGE_m,
   TIP_LIFT_TOL_m, TWO_LEG_FROM_TIP_m, TWO_LEG_SPAN_m, LEVEL_SENSITIVITY_mm_per_deg,
 } from './constants.ts'
 
@@ -34,53 +34,91 @@ export interface RailInput {
   twoLegAttached: boolean
 }
 
+/** Which supports the rail rests on. */
+export interface RailContacts {
+  /** Held by the rack-stand clamp (always: the geometry exists only then). */
+  rack: true
+  /** The two-leg stand's support touches the rail underside (it is attached and higher than the free line). */
+  twoLeg: boolean
+  /** The low end of the rail rests on the table (its underside corner at the tip touches the tabletop). */
+  table: boolean
+}
+
 export interface RailGeometry {
-  /** Rail top surface height above the table at the clamp / at the two-leg stand, m. */
+  /** Rail top surface height above the table at the clamp, m (what the tape reads). */
   clampHeight_m: number
+  /** Height of the two-leg stand's support above the table, m (the rail underside rests on it when it touches). */
   legHeight_m: number
-  /** Rail top surface height above the table at the low tip, m: 0 when the tip rests on the table. */
+  /**
+   * Rail top surface height above the table at the low tip, m. The rail is a beam RAIL_HEIGHT_m thick, so when it rests on the
+   * table at its tip this is RAIL_HEIGHT_m cos(theta) (about 2 cm), never 0.
+   */
   tipHeight_m: number
-  /** The two-leg stand holds the rail up so that its tip hangs in the air (tip height > tolerance). */
+  /** Where the tip top surface sits when the rail stands on the table at its tip: RAIL_HEIGHT_m cos(theta), m. */
+  tipRestHeight_m: number
+  /** The two-leg stand holds the rail up so that its tip hangs above its resting height (by more than TIP_LIFT_TOL_m). */
   tipLifted: boolean
-  /** Drop of the ball from the rail tip to the table, m (= tipHeight_m); fed to the physics as stepDrop_m. */
+  /** Drop of the ball from the rail tip (top surface) to the table, m (= tipHeight_m); fed to the physics as stepDrop_m. */
   stepDrop_m: number
-  /** Height of the high support above the tip, m. THE rise the ball feels (not necessarily what the tape reads at the clamp). */
+  /** Height of the high support above the tip, m (= distance tip-clamp x sin(theta)). THE rise the ball feels. */
   rise_m: number
   /** Incline angle of the rail, rad: asin(rise / distance tip-clamp). Negative when the two-leg stand holds the tip above the clamp. */
   theta_rad: number
   /** Roll of the rail about its axis, rad: hidden table tilt plus the screw foot of the two-leg stand. Drives the lateral drift. */
   roll_rad: number
   gap_m: number
+  contacts: RailContacts
+  /** Clearance between the two-leg support top and the rail underside at the stand, m: > 0 when it does not touch (a gap shows), 0 when it does. */
+  twoLegClearance_m: number
+  /** Lowest point of the rail body (the underside corners of both ends) above the table, m. Never below 0 up to rounding. */
+  lowest_m: number
   pose: RailPose
 }
 
 const dirOf = (theta_rad: number): Vec3 => ({ x_m: -Math.cos(theta_rad), y_m: Math.sin(theta_rad), z_m: 0 })
 const along = (tip: Vec3, d: Vec3, s: number): Vec3 => ({ x_m: tip.x_m + d.x_m * s, y_m: tip.y_m + d.y_m * s, z_m: tip.z_m + d.z_m * s })
+const clampUnit = (v: number): number => Math.max(-1, Math.min(1, v))
 
 /**
- * Rail resting on the rack-stand clamp (height set by the rack) and on the table at its low tip. If the two-leg stand is
- * attached and set higher than the straight line from the tip (on the table) to the clamp, it lifts the rail and the tip
- * hangs in the air: tip height = extrapolation of the line through the two supports to the tip. A lower two-leg stand
- * simply does not touch the rail. Heights are vertical and distances are along the rail (small-angle bookkeeping).
+ * Rail as a rigid straight beam of thickness t = RAIL_HEIGHT_m (rigid-body statics: a beam rests on its contacts and can never
+ * penetrate the surface that supports it). Contacts: the rack clamp holds the top surface at height h at distance Dc from the
+ * low tip (along the rail); the tabletop touches the underside corner of the low end; the two-leg stand's support (height b)
+ * touches the underside at distance Ds. The top line has height tip + s sin(theta).
+ *   Free line (rack + table): tip = t cos(theta) and Dc sin(theta) + t cos(theta) = h, so theta = asin(h / hypot(Dc, t)) - atan(t / Dc).
+ *   The stand touches only if it is higher than the free line's underside at Ds: b > Ds sin(theta_free). A lower stand does
+ *   not touch (a gap shows above it) and the rail rests on rack + table.
+ *   Otherwise the rail rests on rack + stand: (Dc - Ds) sin(theta) + t cos(theta) = h - b (same closed form) and the tip hangs
+ *   above the table at b + t cos(theta) - Ds sin(theta) >= t cos(theta).
+ * The hidden table roll and the screw foot only roll the rail about its axis (tenths of a millimetre at the groove walls).
  */
 export function railGeometry(inp: RailInput): RailGeometry {
+  const t = RAIL_HEIGHT_m
   const hHigh = RACK_BASE_HEIGHT_m + inp.rack_mm / 1000
-  const hLeg = inp.leg_mm / 1000
-  let tip = 0
-  if (inp.twoLegAttached) {
-    const slope = (hHigh - hLeg) / (RACK_FROM_TIP_m - TWO_LEG_FROM_TIP_m)
-    const raw = hLeg - slope * TWO_LEG_FROM_TIP_m
-    if (raw > TIP_LIFT_TOL_m) tip = raw
+  const bLeg = LEG_BASE_HEIGHT_m + inp.leg_mm / 1000
+  /** theta of a beam with D sin(theta) + t cos(theta) = h (h above a support underside point D metres along the rail from the clamp). */
+  const thetaFor = (h: number, D: number): number => Math.asin(clampUnit(h / Math.hypot(D, t))) - Math.atan2(t, D)
+  const thetaFree = thetaFor(hHigh, RACK_FROM_TIP_m)
+  let theta = thetaFree
+  let twoLeg = false
+  if (inp.twoLegAttached && bLeg > TWO_LEG_FROM_TIP_m * Math.sin(thetaFree)) {
+    twoLeg = true
+    theta = thetaFor(hHigh - bLeg, RACK_FROM_TIP_m - TWO_LEG_FROM_TIP_m)
   }
-  const rise = hHigh - tip
-  const theta = Math.asin(Math.max(-1, Math.min(1, rise / RACK_FROM_TIP_m)))
+  const cos = Math.cos(theta)
+  const sin = Math.sin(theta)
+  const tipRest = t * cos
+  const tip = twoLeg ? bLeg + t * cos - TWO_LEG_FROM_TIP_m * sin : tipRest
+  const rise = RACK_FROM_TIP_m * sin
   const tipPt: Vec3 = { x_m: -inp.gap_m, y_m: tip, z_m: 0 }
   const d = dirOf(theta)
-  const roll = inp.tableRoll_rad + (inp.twoLegAttached ? Math.asin(Math.max(-1, Math.min(1, inp.foot_mm / 1000 / TWO_LEG_SPAN_m))) : 0)
+  const roll = inp.tableRoll_rad + (inp.twoLegAttached ? Math.asin(clampUnit(inp.foot_mm / 1000 / TWO_LEG_SPAN_m)) : 0)
+  const pose: RailPose = { tip: tipPt, highEnd: along(tipPt, d, RAIL_LENGTH_m), clamp: along(tipPt, d, RACK_FROM_TIP_m), twoLeg: along(tipPt, d, TWO_LEG_FROM_TIP_m), direction: d }
+  const lifted = tip - tipRest > TIP_LIFT_TOL_m
+  const underAtStand = pose.twoLeg.y_m - t * cos
   return {
-    clampHeight_m: hHigh, legHeight_m: hLeg, tipHeight_m: tip, tipLifted: tip > 0, stepDrop_m: tip, rise_m: rise, theta_rad: theta,
-    roll_rad: roll, gap_m: inp.gap_m,
-    pose: { tip: tipPt, highEnd: along(tipPt, d, RAIL_LENGTH_m), clamp: along(tipPt, d, RACK_FROM_TIP_m), twoLeg: along(tipPt, d, TWO_LEG_FROM_TIP_m), direction: d },
+    clampHeight_m: hHigh, legHeight_m: bLeg, tipHeight_m: tip, tipRestHeight_m: tipRest, tipLifted: lifted, stepDrop_m: tip, rise_m: rise, theta_rad: theta,
+    roll_rad: roll, gap_m: inp.gap_m, contacts: { rack: true, twoLeg, table: !lifted }, twoLegClearance_m: twoLeg ? 0 : Math.max(0, underAtStand - bLeg),
+    lowest_m: Math.min(tip - t * cos, pose.highEnd.y_m - t * cos), pose,
   }
 }
 
@@ -126,6 +164,19 @@ export function floorToSheet(p: SheetPose, x_m: number, z_m: number): { a_m: num
   const dx = x_m - p.x_m
   const dz = z_m - p.z_m
   return p.orientation === 'alongX' ? { a_m: dx, b_m: dz } : { a_m: dz, b_m: -dx }
+}
+/** Heights above the floor at which the sheets lie: the carbon sheet lies on the bond paper where they overlap, else on the floor. */
+export interface PaperStack { bondBase_m: number; carbonBase_m: number }
+export function paperStack(bond: SheetPose | null, carbon: SheetPose | null): PaperStack {
+  return { bondBase_m: 0, carbonBase_m: bond && carbon && rectOverlap(sheetRect(bond), sheetRect(carbon)) ? PAPER_THICKNESS_m : 0 }
+}
+/** Height above the floor of the top surface under a floor point (0 on bare floor): a ball resting there has its centre R above it. */
+export function paperSurfaceAt_m(x_m: number, z_m: number, bond: SheetPose | null, carbon: SheetPose | null): number {
+  const inside = (r: PaperRect): boolean => x_m >= r.xMin_m && x_m <= r.xMax_m && z_m >= r.zMin_m && z_m <= r.zMax_m
+  const st = paperStack(bond, carbon)
+  const onBond = bond !== null && inside(sheetRect(bond))
+  const onCarbon = carbon !== null && inside(sheetRect(carbon))
+  return Math.max(onBond ? st.bondBase_m + PAPER_THICKNESS_m : 0, onCarbon ? st.carbonBase_m + PAPER_THICKNESS_m : 0)
 }
 export const floorDistance_m = (x1: number, z1: number, x2: number, z2: number): number => Math.hypot(x2 - x1, z2 - z1)
 

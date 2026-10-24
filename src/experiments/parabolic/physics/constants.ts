@@ -74,7 +74,7 @@ export interface LaunchSetup {
   /** Distance between the two contact lines of the ball on the rail, m (channel width). ASSUMED. 0 = single line. */
   channelWidth_m: number
   /**
-   * Drop from the rail top surface to the table at the tip, m. ASSUMED ~0 (rail thickness ignored). Geometry note: the ball's
+   * Drop from the rail top surface to the table at the tip, m. Default 0 (rail thickness ignored); the apparatus passes the real value (the rail is a 2 cm thick beam: apparatus/geometry.ts). Geometry note: the ball's
    * lowest point sits R - r_eff below the contact lines (1.75 mm for the marble in a 10 mm groove), so whether it touches the
    * table inside the groove, and how large the true drop is, depends on the rail profile.
    */

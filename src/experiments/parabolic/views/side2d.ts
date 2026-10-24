@@ -51,6 +51,7 @@ export const mountSide2d: MountView = (root, ctx): View => {
   let H_cm = 76
   let trailRun = -1
   let lastMarks = -1
+  let lastRestKey = ''
 
   function drawStatic(): void {
     const t = T()
@@ -102,7 +103,8 @@ export const mountSide2d: MountView = (root, ctx): View => {
     // extent: from a little behind the rail's high end to the landing zone
     const sheets = [st.paper.bond, st.paper.carbon].filter((p) => p !== null).map((p) => sheetRectCm(p!))
     const marks = st.paper.bond ? app.paperMarks(ctx.now()).map((m) => { const p = sheetToFloor(st.paper.bond!, m.a_m, m.b_m); return [p.x_m * CM, p.z_m * CM] as [number, number] }) : []
-    const xMax = landMaxFor(sheets, marks)
+    const rest = app.ballRest()
+    const xMax = landMaxFor(sheets, rest ? [...marks, [rest.x_m * CM, rest.z_m * CM] as [number, number]] : marks)
     const xMin = geo ? Math.min(-60, geo.pose.highEnd.x_m * CM - 14) : -150
     const topCm = Math.max(geo ? geo.clampHeight_m * CM + 14 : 0, 34)
     const floorPad = 26 * kPx // room under the floor line for its label
@@ -178,7 +180,7 @@ export const mountSide2d: MountView = (root, ctx): View => {
 
     // two-leg stand
     if (it.twoLeg && geo && st.joints.twoLegStand) {
-      const tx = X(geo.pose.twoLeg.x_m * CM), ty = Y(geo.legHeight_m * CM - RAIL.height)
+      const tx = X(geo.pose.twoLeg.x_m * CM), ty = Y(geo.legHeight_m * CM)
       add(svg('line', { x1: tx, y1: ty, x2: tx - 3 * S, y2: Y(0), class: 's2d-leg' }), svg('line', { x1: tx, y1: ty, x2: tx + 3 * S, y2: Y(0), class: 's2d-leg' }))
       occupy(tx - 3 * S - 2 * kPx, ty, tx + 3 * S + 2 * kPx, Y(0))
       label([t.twoLeg, t.short.twoLeg], [
@@ -270,12 +272,12 @@ export const mountSide2d: MountView = (root, ctx): View => {
     // the ball is drawn larger than life when small: a 16 mm marble would be a 1 px dot at this scale
     const r = Math.max(R * S, 3.4 * kPx)
     const pos = status.pos ? { x: status.pos.x_m * CM, y: (status.pos.y_m - st.world.H_m) * CM } : { x: STAGING.marble.x, y: R }
-    const key = `${id}|${status.settled === true}|${pos.x.toFixed(2)}|${pos.y.toFixed(2)}|${r.toFixed(2)}|${st.items.marble}|${st.items.pingPong}`
+    const key = `${id}|${pos.x.toFixed(2)}|${pos.y.toFixed(2)}|${r.toFixed(2)}|${st.items.marble}|${st.items.pingPong}`
     if (key !== ballKey) {
       ballKey = key
       ball.setAttribute('cx', String(X(pos.x))); ball.setAttribute('cy', String(Y(pos.y) - (r - R * S))); ball.setAttribute('r', String(r))
       ball.setAttribute('class', id === 'marble' ? 's2d-ball marble' : 's2d-ball pingpong')
-      ball.style.display = (status.ball === null && !st.items.marble && !st.items.pingPong) || status.settled === true ? 'none' : ''
+      ball.style.display = status.ball === null && !st.items.marble && !st.items.pingPong ? 'none' : ''
     }
     // dotted trail of the flight: the newest run that flew; hidden while the next ball is still rolling
     const runId = status.runId
@@ -298,6 +300,9 @@ export const mountSide2d: MountView = (root, ctx): View => {
       const now = ctx.now()
       app.tick(now)
       if (app.getState().paper.bond && app.paperMarks(now).length !== lastMarks) w.touch()
+      const rest = app.ballRest()
+      const restKey = rest ? `${rest.x_m.toFixed(3)},${rest.z_m.toFixed(3)}` : ''
+      if (restKey !== lastRestKey) { lastRestKey = restKey; w.touch() }
       if (w.dirty()) { w.clear(); drawStatic(); ballKey = '' }
       drawBall()
     },

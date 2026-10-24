@@ -56,10 +56,14 @@ describe('assembly rules', () => {
   it('rise follows the rack height: rail top at the clamp = 0.06 m + rack reading', () => {
     const a = mounted()
     a.setRackHeight_mm(140)
-    expect(a.geometry()!.rise_m).toBeCloseTo(0.2, 9)
-    expect(a.geometry()!.theta_rad).toBeCloseTo(Math.asin(0.2 / 1.1), 9)
+    const g = a.geometry()!
+    expect(g.clampHeight_m).toBeCloseTo(0.2, 12) // what the tape reads
+    // the rail is a 2 cm thick beam resting on its tip: the high end is 0.2 m up, the tip top is t cos(theta) up, the rise is the difference
+    expect(g.rise_m).toBeCloseTo(0.2 - g.tipHeight_m, 12)
+    expect(g.tipHeight_m).toBeCloseTo(0.02 * Math.cos(g.theta_rad), 12)
+    expect(g.theta_rad).toBeCloseTo(Math.asin(g.rise_m / 1.1), 12)
     a.setRackHeight_mm(100)
-    expect(a.geometry()!.rise_m).toBeCloseTo(0.16, 9) // wrong height: the procedure notices
+    expect(a.geometry()!.clampHeight_m).toBeCloseTo(0.16, 9) // wrong height: the procedure notices
     expect(a.procedure().riseOk).toBe(false)
     a.setRackHeight_mm(140)
     expect(a.procedure().riseOk).toBe(true)
@@ -68,15 +72,23 @@ describe('assembly rules', () => {
   it('a two-leg stand set too high lifts the tip off the table (step drop); too low does not touch', () => {
     const a = mounted()
     a.setRackHeight_mm(140)
-    a.setLegHeight_mm(10) // line tip->clamp at the leg: 0.2 x 0.1/1.1 = 18.2 mm, so 10 mm does not touch
-    expect(a.geometry()!.tipLifted).toBe(false)
-    expect(a.geometry()!.stepDrop_m).toBe(0)
-    a.setLegHeight_mm(40)
+    a.setLegHeight_mm(0) // support 13 mm; the free rail underside at the stand is about 16 mm: it does not touch
+    const free = a.geometry()!
+    expect(free.contacts).toEqual({ rack: true, twoLeg: false, table: true })
+    expect(free.twoLegClearance_m).toBeGreaterThan(0.002)
+    expect(free.tipLifted).toBe(false)
+    expect(free.stepDrop_m).toBeCloseTo(0.02 * Math.cos(free.theta_rad), 12) // the beam stands on its tip
+    a.setLegHeight_mm(40) // support 53 mm
     const g = a.geometry()!
+    expect(g.contacts).toEqual({ rack: true, twoLeg: true, table: false })
     expect(g.tipLifted).toBe(true)
-    // line through (1.1, 0.2) and (0.1, 0.04): slope 0.16 m/m, tip height 0.04 - 0.016 = 0.024
-    expect(g.stepDrop_m).toBeCloseTo(0.024, 9)
-    expect(g.rise_m).toBeCloseTo(0.2 - 0.024, 9)
+    expect(g.twoLegClearance_m).toBe(0)
+    // the beam rests on the rack clamp (top 0.2 m at 1.1 m) and on the stand (underside 0.053 m at 0.1 m): its top line there is 0.053 + t cos(theta)
+    const topAtStand = 0.053 + 0.02 * Math.cos(g.theta_rad)
+    expect(g.pose.twoLeg.y_m).toBeCloseTo(topAtStand, 12)
+    expect(g.pose.clamp.y_m).toBeCloseTo(0.2, 12)
+    expect(g.stepDrop_m).toBeGreaterThan(free.stepDrop_m)
+    expect(g.rise_m).toBeCloseTo(0.2 - g.tipHeight_m, 12)
     expect(a.procedure().tipLifted).toBe(true)
   })
   it('the step drop reaches the physics: a lifted tip changes the launch speed', () => {
@@ -108,6 +120,8 @@ describe('rail position and refusals', () => {
   it('a tip at or past the edge is refused; far gaps are allowed', () => {
     const a = mounted()
     expect(reasonOf(a.setGap_mm(0))).toBe('tipOverhangsEdge')
+    expect(reasonOf(a.setGap_mm(3))).toBe('tipOverhangsEdge') // the rail's end cap would reach the edge
+    expect(a.setGap_mm(4).ok).toBe(true)
     expect(reasonOf(a.setGap_mm(-20))).toBe('tipOverhangsEdge')
     expect(reasonOf(a.setGap_mm(5000))).toBe('outOfRange')
     expect(a.setGap_mm(50).ok).toBe(true)
@@ -118,7 +132,7 @@ describe('rail position and refusals', () => {
   it('a rail that is almost flat never starts the ball (rolling resistance wins): stopped, no flight, no mark', () => {
     const a = ready()
     a.setRackHeight_mm(0)
-    a.setLegHeight_mm(59) // two-leg stand lifts the tip: rise ~1 mm over 1.1 m, below the c_rr threshold
+    a.setLegHeight_mm(26) // two-leg stand (support 39 mm) lifts the tip: rise ~1 mm over 1.1 m, below the c_rr threshold
     expect(a.geometry()!.rise_m).toBeGreaterThan(0)
     a.release(0)
     const r = a.getRun(1)!

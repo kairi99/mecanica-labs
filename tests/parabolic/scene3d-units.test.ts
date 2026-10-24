@@ -86,10 +86,10 @@ describe('drag maths', () => {
   })
   it('dragging the rail toward the edge shrinks the gap and stays accepted by the apparatus', () => {
     expect(gapFromDrag_mm(50, 2)).toBe(30)
-    expect(gapFromDrag_mm(50, 100)).toBe(1)
+    expect(gapFromDrag_mm(50, 100)).toBe(4)
     expect(gapFromDrag_mm(50, -1000)).toBe(600)
     const a = createApparatus('assembled', { seed: 7 })
-    for (const g of [1, 30, 600]) expect(a.setGap_mm(g).ok).toBe(true)
+    for (const g of [4, 30, 600]) expect(a.setGap_mm(g).ok).toBe(true)
   })
 })
 

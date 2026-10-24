@@ -7,17 +7,17 @@ import { tapeMaxPermissibleError_m } from '../../../core/physics/instruments.ts'
 import { deg2rad } from '../../../core/physics/angles.ts'
 import { Stopwatch } from '../../../core/instruments/stopwatch.ts'
 import {
-  BALL_IDS, EXPECTED_OFFSETS, GRAVITY_mps2, ballSpec, drawRunOffsets, insidePaper, markOnPaper, runLaunch, runTrajectory, type BallId, type TrajectoryPoint,
+  BALL_IDS, EXPECTED_OFFSETS, GRAVITY_mps2, ballSpec, drawRunOffsets, insidePaper, markOnPaper, runLaunch, runTrajectory, settleAfterLanding, type BallId, type TrajectoryPoint,
 } from './model.ts'
 import {
-  BOND_SHEETS, EDGE_PROJECTION_SIGMA_m, FOOT_RANGE_mm, FOOT_STEP_mm, GAP_MAX_m, GAP_START_m, GAP_STEP_m, GAP_TARGET_m, GAP_TOLERANCE_m,
+  BOND_SHEETS, EDGE_PROJECTION_SIGMA_m, FOOT_RANGE_mm, FOOT_STEP_mm, GAP_MAX_m, GAP_MIN_m, GAP_START_m, GAP_STEP_m, GAP_TARGET_m, GAP_TOLERANCE_m,
   LATERAL_DRIFT_GAIN, LEG_MAX_mm, LEG_MIN_mm, LEG_STEP_mm, LEVEL_BUBBLE_MAX_mm, LEVEL_CENTERED_TOL_mm, MARK_COUNT_EXPECTED,
   MARK_MAX_COUNT, MARK_PLACEMENT_SIGMA_m, MARK_SNAP_m, MARK_UPPER_HALF_FROM_m, PAPER_POS_MAX_m, PAPER_SNAP_m, RACK_BASE_HEIGHT_m,
   RACK_MAX_mm, RACK_MIN_mm, RACK_STEP_mm, RAIL_LENGTH_m, RISE_TARGET_m, RISE_TOLERANCE_m, ROLL_OVER_TAIL_s, SCREWS_PER_JOINT, SCREWS_TOTAL,
   TABLE_REPS, TABLE_ROLL_MAX_deg, TABLE_TRIALS, TABLE_HEIGHT_MAX_m, TABLE_HEIGHT_MIN_m, TRAJECTORY_RATE_hz,
 } from './constants.ts'
 import {
-  bubbleOffset_mm, floorDistance_m, floorToSheet, inTapeRange, railGeometry, rectOverlap, sheetRect, sheetToFloor, tapeGeometry,
+  bubbleOffset_mm, floorDistance_m, floorToSheet, inTapeRange, paperSurfaceAt_m, railGeometry, rectOverlap, sheetRect, sheetToFloor, tapeGeometry,
   type SheetPose,
 } from './geometry.ts'
 import { eventRecords, slowmoClip, flightPointAt, type SlowmoClip } from './slowmo.ts'
@@ -270,14 +270,14 @@ export class ParabolicApparatus {
     return { ok: true, foot_mm: v }
   }
   /**
-   * Slide the rail along the table: distance from its low tip to the table edge, whole mm. A tip at or past the edge is
+   * Slide the rail along the table: distance from its low tip to the table edge, whole mm. A tip closer than the rail's end cap (4 mm) or past the edge is
    * refused (the ball would leave from the tilted rail tip, which the horizontal-launch model does not cover). A far-away
    * tip is allowed: the ball may stop on the table before the edge.
    */
   setGap_mm(value_mm: number): Result<{ gap_mm: number }> {
     const f = this.adjustCheck('setGap', 'rail', value_mm); if (f) return f
     const v = round6(snap(value_mm / 1000, GAP_STEP_m))
-    if (v <= 0) return this.refuse('setGap', 'tipOverhangsEdge')
+    if (v < GAP_MIN_m - 1e-9) return this.refuse('setGap', 'tipOverhangsEdge')
     if (v > GAP_MAX_m) return this.refuse('setGap', 'outOfRange')
     this.gap_m = v
     this.emit({ type: 'gapSet', gap_mm: Math.round(v * 1000) })
@@ -683,13 +683,17 @@ export class ParabolicApparatus {
       const s = Math.max(0, run.releaseS_m - (run.offsets.pushSpeed_mps * t + 0.5 * run.a_incline_mps2 * t * t))
       return { phase: 'rolling', ...base, pos: rail(s), onRail_s_m: s }
     }
+    // off the rail end the ball falls the step (free fall); a ball that stops on the table rests clear of the rail end face (centre R beyond it)
+    const drop = run.bench.stepDrop_m
+    const tDrop = Math.sqrt((2 * drop) / GRAVITY_mps2)
     const tableX = (tau: number): number => -run.bench.gap_m + run.v_roll_mps * tau - 0.5 * run.tableDecel_mps2 * tau * tau
+    const tableYat = (tau: number): number => run.bench.H_m + R + Math.max(0, drop - 0.5 * GRAVITY_mps2 * Math.max(0, tau) ** 2)
     const tableY = run.bench.H_m + R
     if (run.outcome === 'stopped') {
       const tau = Math.min(t - tip_s!, run.times.end_s - tip_s!)
-      return { phase: t >= run.times.end_s ? 'stopped' : 'rolling', ...base, pos: { x_m: tableX(tau), y_m: tableY, z_m: 0 }, onRail_s_m: null }
+      return { phase: t >= run.times.end_s ? 'stopped' : 'rolling', ...base, pos: { x_m: tableX(tau) + (tDrop > 0 ? R * Math.min(1, tau / tDrop) : R), y_m: tableYat(tau), z_m: 0 }, onRail_s_m: null }
     }
-    if (t < edge_s!) return { phase: 'rolling', ...base, pos: { x_m: tableX(t - tip_s!), y_m: tableY, z_m: 0 }, onRail_s_m: null }
+    if (t < edge_s!) return { phase: 'rolling', ...base, pos: { x_m: tableX(t - tip_s!), y_m: tableYat(t - tip_s!), z_m: 0 }, onRail_s_m: null }
     if (run.outcome === 'rolledOver') {
       const tau = Math.min(t - edge_s!, ROLL_OVER_TAIL_s)
       const y = Math.max(R, tableY - 0.5 * GRAVITY_mps2 * tau * tau)
@@ -700,10 +704,18 @@ export class ParabolicApparatus {
       const p = flightPointAt(traj, t - edge_s!)
       return { phase: 'flying', ...base, pos: { x_m: p.x_m, y_m: p.y_m, z_m: p.z_m }, onRail_s_m: null }
     }
-    const fl = run.flight!
-    const tau = Math.min(t - land_s!, run.bounce!.tNext_s)
-    const y = R + run.bounce!.vUp_mps * tau - 0.5 * GRAVITY_mps2 * tau * tau
-    return { phase: 'landed', ...base, pos: { x_m: fl.x_land_m + fl.vx_impact_mps * tau, y_m: Math.max(R, y), z_m: fl.z_land_m + fl.vz_impact_mps * tau }, onRail_s_m: null, settled: tau >= run.bounce!.tNext_s }
+    // landed: first contact, then the hops and the roll-out (physics/settle.ts); it stays on the floor, on the paper surface where it rests on a sheet
+    const path = settleAfterLanding(run.flight!, run.ball)
+    const tau = t - land_s!
+    const p = path.at(tau)
+    const surf = paperSurfaceAt_m(p.x_m, p.z_m, this.paper.bond, this.paper.carbon)
+    return { phase: 'landed', ...base, pos: { x_m: p.x_m, y_m: R + surf + p.lift_m, z_m: p.z_m }, onRail_s_m: null, atRest: tau >= path.duration_s }
+  }
+  /** Rest point on the floor of the ball of the current run (known from the release; null unless it lands). For framing the views. */
+  ballRest(): { x_m: number; z_m: number } | null {
+    if (!this.ball.released || this.ball.runId === null) return null
+    const run = this.runs.find((x) => x.id === this.ball.runId)
+    return run?.outcome === 'landed' && run.flight ? settleAfterLanding(run.flight, run.ball).rest : null
   }
   private ballRadius(b: BallId): number { return ballSpec(b).R_m }
   /** Ball centre on the rail at s_m from the tip (approximate: centre R above the top surface along the normal). For drawing. */
@@ -831,7 +843,8 @@ export class ParabolicApparatus {
       itemsComplete: miss.every((m) => m.kind !== 'item'),
       setupComplete: miss.length === 0,
       canRelease: this.canRelease().ok,
-      riseOk: geo !== null && Math.abs(geo.rise_m - RISE_TARGET_m) <= RISE_TOLERANCE_m,
+      // the guide's 20 cm is the rail top above the table at the high support (what the tape reads), not the rise the ball feels
+      riseOk: geo !== null && Math.abs(geo.clampHeight_m - RISE_TARGET_m) <= RISE_TOLERANCE_m,
       tipLifted: geo?.tipLifted ?? false,
       gapOk: this.items.has('rail') && Math.abs(this.gap_m - GAP_TARGET_m) <= GAP_TOLERANCE_m,
       levelUsed: this.levelUsed,
@@ -938,7 +951,7 @@ export class ParabolicApparatus {
     this.placeLevel('rail')
     this.setFoot_mm(-1000 * 0.2 * Math.sin(this.hidden.tableRoll_rad)) // roll = tableRoll + asin(foot / span) = 0
     this.setRackHeight_mm((RISE_TARGET_m - RACK_BASE_HEIGHT_m) * 1000)
-    this.setLegHeight_mm(10) // below the straight tip-to-clamp line (about 18 mm): the tip rests on the table
+    this.setLegHeight_mm(0) // lowest: the stand support (13 mm) is under the free rail line (about 16 mm at the stand): it does not touch and the tip rests on the table
     this.setGap_mm(GAP_TARGET_m * 1000)
     this.placeLevel('table')
     this.tapeMeasure({ kind: 'launchHeight' }); this.tapeMeasure({ kind: 'gap' }); this.tapeMeasure({ kind: 'rise' })

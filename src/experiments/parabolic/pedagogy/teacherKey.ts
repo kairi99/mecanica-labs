@@ -2,13 +2,16 @@
 // scripts/teacher-key.ts writes the result to docs/teacher-key-parabolic.md. Every number comes from the physics layer, the
 // apparatus (for the simulated careful student) and the analysis layer.
 import {
-  BALLS, DEFAULT_SETUP, G_QUITO_mps2, VACUUM_EFFECTS, effectiveInertiaFactor, mean, mulberry32, reactionBiasTypeB_s, sampleRun, sampleSd, simulateLaunch, ZERO_RUN, type BallSpec,
+  BALLS, DEFAULT_SETUP as PHYSICS_DEFAULT, G_QUITO_mps2, VACUUM_EFFECTS, effectiveInertiaFactor, mean, mulberry32, reactionBiasTypeB_s, sampleRun, sampleSd, simulateLaunch, ZERO_RUN, type BallSpec,
 } from '../physics/index.ts'
 import { SLOWMO_FPS_hz, TABLE_HEIGHT_MAX_m, TABLE_HEIGHT_MIN_m, createApparatus } from '../apparatus/index.ts'
 import { G_UNCERTAINTY_mps2, SIGMA_H_m, expectedFlightTime, fullAnalysis } from '../analysis/compute.ts'
 import { fillTableSimulated } from './simulatedReadings.ts'
 
 const f = (x: number, d: number): string => x.toFixed(d)
+/** The assembled preset's real contact geometry: 20 cm at the clamp, the 2 cm thick rail resting on the table at its tip (rise 18 cm, tip top 2 cm above the table). */
+const ASSEMBLED_GEO = createApparatus('assembled').geometry()!
+const DEFAULT_SETUP = { ...PHYSICS_DEFAULT, rise_m: ASSEMBLED_GEO.rise_m, stepDrop_m: ASSEMBLED_GEO.stepDrop_m }
 const MARKS_m = [0.6, 0.7, 0.8, 0.9, 1.0]
 const BALL_NAMES: Record<BallSpec['id'], string> = { marble: 'Marble', pingpong: 'Ping-pong ball' }
 const N_MC = 1000
@@ -44,7 +47,7 @@ export function teacherKey(): string {
     '',
     '## Setup the numbers refer to',
     '',
-    `- Rail 1.2 m, rack-stand end ${f(DEFAULT_SETUP.rise_m * 100, 0)} cm above the table, high support ${f(DEFAULT_SETUP.supportDist_m, 2)} m from the low tip, tip ${f(DEFAULT_SETUP.gap_m * 100, 0)} cm from the edge, marks at 60, 70, 80, 90 and 100 cm from the low tip (the \`assembled\` preset).`,
+    `- Rail 1.2 m and 2 cm thick, rack-stand clamp 20 cm above the table (the tape reading; the rail rests on the table at its tip, so the ball feels a rise of ${f(DEFAULT_SETUP.rise_m * 100, 1)} cm and leaves the tip ${f(DEFAULT_SETUP.stepDrop_m * 100, 1)} cm above the table), high support ${f(DEFAULT_SETUP.supportDist_m, 2)} m from the low tip, tip ${f(DEFAULT_SETUP.gap_m * 100, 0)} cm from the edge, marks at 60, 70, 80, 90 and 100 cm from the low tip (the \`assembled\` preset).`,
     `- Table height H is hidden and drawn per bench seed between ${f(TABLE_HEIGHT_MIN_m, 2)} and ${f(TABLE_HEIGHT_MAX_m, 2)} m; the tables below use H = ${f(DEFAULT_SETUP.H_m, 2)} m unless stated.`,
     `- Local g (Quito, 2800 m) = ${f(g, 4)} m/s^2.`,
     '',

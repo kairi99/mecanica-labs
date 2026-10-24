@@ -5,16 +5,20 @@ import { deg2rad } from '../../../core/physics/angles.ts'
 // ---- Rail and supports -------------------------------------------------------------------------------------------
 /** Length of the metal rail, m (guide: 1.2 m). */
 export const RAIL_LENGTH_m = 1.2
-/** Distance from the low tip to the rack-stand clamp (high support), m. Equals the physics DEFAULT_SETUP.supportDist_m. ASSUMED. */
+/** Distance from the low tip to the rack-stand clamp (high support), m, along the rail. Equals the physics DEFAULT_SETUP.supportDist_m. ASSUMED. */
 export const RACK_FROM_TIP_m = 1.1
 /** Distance from the low tip to the two-leg stand support, m. ASSUMED. */
 export const TWO_LEG_FROM_TIP_m = 0.1
+/** Height of the rail profile (top surface to underside), m: the rail is a rigid beam this thick, so it cannot rest lower than this at the tip. Equals the model's profile (2 cm). ASSUMED. */
+export const RAIL_HEIGHT_m = 0.02
 /** Height of the rail top surface at the clamp when the rack reads 0 mm, m. ASSUMED. */
 export const RACK_BASE_HEIGHT_m = 0.06
 export const RACK_MIN_mm = 0
 export const RACK_MAX_mm = 250
 export const RACK_STEP_mm = 1
-/** Two-leg stand height adjustment (rail top surface above the table at its support), mm. ASSUMED. */
+/** Height of the two-leg stand's support (the bridge the rail underside rests on) above the table when its scale reads 0 mm, m: pads plus bridge thickness. ASSUMED. */
+export const LEG_BASE_HEIGHT_m = 0.013
+/** Two-leg stand height adjustment: scale reading above the lowest position, mm (support height = LEG_BASE_HEIGHT_m + reading). ASSUMED. */
 export const LEG_MIN_mm = 0
 export const LEG_MAX_mm = 150
 export const LEG_STEP_mm = 1
@@ -51,6 +55,10 @@ export const GAP_START_m = 0.15
 /** Farthest the rail tip can be set from the edge, m (the table is finite). ASSUMED. */
 export const GAP_MAX_m = 0.6
 export const GAP_STEP_m = 0.001
+/** Black end cap of the rail, m: it sticks out beyond the tip toward the edge, so the tip must stay at least this far from the edge. */
+export const RAIL_END_CAP_m = 0.0035
+/** Nearest the rail tip can be set to the edge, m (whole mm above the end cap). */
+export const GAP_MIN_m = 0.004
 
 // ---- Marks on the rail -------------------------------------------------------------------------------------------
 export const MARK_SNAP_m = 0.0005
@@ -68,6 +76,8 @@ export const SHEET_SHORT_m = 0.21
 /** Bond-paper sheets in the inventory (guide: 2). */
 export const BOND_SHEETS = 2
 export const PAPER_SNAP_m = 0.001
+/** Thickness of one sheet as drawn and as the ball rests on it, m (a real sheet is ~0.1 mm; drawn larger so it reads). */
+export const PAPER_THICKNESS_m = 0.0004
 export const PAPER_POS_MAX_m = 3
 /** Placement error of the edge projection point on the floor (plumb line / set-square), 1-sigma per axis, m. ASSUMED. */
 export const EDGE_PROJECTION_SIGMA_m = 0.002

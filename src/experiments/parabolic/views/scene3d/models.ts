@@ -3,7 +3,7 @@
 // 1 unit = 1 cm, y up. The table top is y = 0.
 import * as THREE from 'three'
 import { box, canvasTexture, cyl, FONT, tag, type Kit } from '../../../../core/scene3d/models.ts'
-import type { BallId } from '../../apparatus/index.ts'
+import { PAPER_THICKNESS_m, type BallId } from '../../apparatus/index.ts'
 import type { Materials } from './materials.ts'
 import { CROSS_ARM_cm, FLOOR, MARK_HIT_cm, TABLE } from './units.ts'
 
@@ -62,7 +62,7 @@ export function buildBall(kit: PKit, id: BallId): BallModel {
 
 // ---- paper -------------------------------------------------------------------------------------------------------------
 export type SheetKind = 'bond' | 'carbon'
-export const SHEET_THICK_cm = 0.04
+export const SHEET_THICK_cm = PAPER_THICKNESS_m * 100
 /** A4 sheet lying flat: long side along x, centred on the origin, bottom face at y = 0. Rotate the group about y to turn it. */
 export function buildSheet(kit: PKit, kind: SheetKind): THREE.Group {
   const { M } = kit

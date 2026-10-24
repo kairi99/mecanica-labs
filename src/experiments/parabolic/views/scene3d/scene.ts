@@ -5,7 +5,7 @@
 import * as THREE from 'three'
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js'
 import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js'
-import { SCREWS_TOTAL, sheetToFloor, type BallId, type ParabolicApparatus, type TapeTarget } from '../../apparatus/index.ts'
+import { LEG_BASE_HEIGHT_m, SCREWS_TOTAL, paperStack, paperSurfaceAt_m, sheetToFloor, type BallId, type ParabolicApparatus, type TapeTarget } from '../../apparatus/index.ts'
 import type { CardInfo } from '../../../../core/scene3d/types.ts'
 import { boxCorners, fitView, type Vec } from '../../../../core/scene3d/framing.ts'
 import {
@@ -19,7 +19,7 @@ import { createMaterials, createOutlineMaterial } from './materials.ts'
 import { SHEET_THICK_cm, buildBall, buildMarkDot, buildPlumb, buildSheet, buildTable, railFlag, tag, type BallModel, type PKit, box } from './models.ts'
 import { PRESET_NAMES, type PresetName } from './presets.ts'
 import {
-  CM, FOV_DEFAULT_deg, RAIL, STAGING, TABLE, VIEW_ANGLES, fovFor, defaultFrameInput, edgePoints, floorPoints, landMaxFor, markDiameter_cm, markLabel, overviewPoints,
+  CM, FOV_DEFAULT_deg, RAIL, STAGED_BOXES, STAGING, levelRailRange_cm, levelTableSpot, mountedBoxes, TABLE, VIEW_ANGLES, fovFor, defaultFrameInput, edgePoints, floorPoints, landMaxFor, markDiameter_cm, markLabel, overviewPoints,
   planTape, railFrame, railLocalToWorld, railLocalX_cm, releasePoints, rollAngle_rad, sheetRectCm, tapeAngles, tapePoints, toScene, ballToScene,
   type FrameInput, type RailFrame, type TapePlan, type V3,
 } from './units.ts'
@@ -195,6 +195,7 @@ export function createScene(container: HTMLElement, ctx: ViewContext, opts: Scen
     if (st.paper.bond) f.sheets.push(sheetRectCm(st.paper.bond))
     if (st.paper.carbon) f.sheets.push(sheetRectCm(st.paper.carbon))
     if (st.paper.bond) for (const m of a.paperMarks(ctx.now())) { const p = sheetToFloor(st.paper.bond, m.a_m, m.b_m); f.floorPoints.push([p.x_m * CM, p.z_m * CM]) }
+    { const r = a.ballRest(); if (r) f.floorPoints.push([r.x_m * CM, r.z_m * CM]) }
     if (st.edgeProjection) { const e = a.hiddenTruth().edgeProjection; if (e) f.floorPoints.push([e.x_m * CM, e.z_m * CM]) }
     f.landMax_cm = landMaxFor(f.sheets, f.floorPoints)
     return f
@@ -298,7 +299,7 @@ export function createScene(container: HTMLElement, ctx: ViewContext, opts: Scen
     for (const m of marks) {
       const p = sheetToFloor(st.paper.bond, m.a_m, m.b_m)
       const dot = buildMarkDot(kit, markDiameter_cm(m.diameter_m), m.darkness, m.id)
-      dot.position.set(p.x_m * CM, -H_cm + SHEET_THICK_cm * 2 + 0.03, p.z_m * CM)
+      dot.position.set(p.x_m * CM, -H_cm + paperSurfaceAt_m(p.x_m, p.z_m, st.paper.bond, st.paper.carbon) * CM + 0.03, p.z_m * CM)
       marksGroup.add(dot)
     }
   }
@@ -342,13 +343,13 @@ export function createScene(container: HTMLElement, ctx: ViewContext, opts: Scen
     // two-leg stand
     twoLeg.root.visible = it.twoLeg
     if (geo && st.joints.twoLegStand) {
-      const h = Math.max(RAIL.height + 0.8, geo.legHeight_m * CM)
-      const touches = geo.legHeight_m >= geo.pose.twoLeg.y_m - 1e-4
+      // the stand model takes the rail top height at the stand: support height + the rail profile (the bridge top is the rail underside)
+      const h = geo.legHeight_m * CM + RAIL.height
       twoLeg.root.position.set(geo.pose.twoLeg.x_m * CM, 0, 0); twoLeg.root.rotation.set(0, 0, 0)
-      twoLeg.update(h, touches ? frame!.tilt_rad : 0)
+      twoLeg.update(h, geo.contacts.twoLeg ? frame!.tilt_rad : 0)
     } else {
       slot(twoLeg.root, STAGING.twoLeg)
-      twoLeg.update(Math.max(RAIL.height + 1.8, st.leg_mm / 10), 0)
+      twoLeg.update((LEG_BASE_HEIGHT_m * 1000 + st.leg_mm) / 10 + RAIL.height, 0)
     }
 
     // level: across the rail (to show its sideways roll) or on the table
@@ -357,10 +358,11 @@ export function createScene(container: HTMLElement, ctx: ViewContext, opts: Scen
     if (it.level) {
       if (st.level.placement === 'rail' && it.rail) {
         if (level.root.parent !== rail.root) { level.root.removeFromParent(); rail.root.add(level.root) }
+        const lr = levelRailRange_cm(st.joints.twoLegStand); levelX = Math.min(lr.max, Math.max(lr.min, levelX))
         level.root.position.set(levelX, 0, 0); level.root.rotation.set(0, Math.PI / 2, 0)
       } else {
         if (level.root.parent !== scene) { level.root.removeFromParent(); scene.add(level.root) }
-        if (st.level.placement === 'table') slot(level.root, levelTable, 0, 0)
+        if (st.level.placement === 'table') slot(level.root, levelTableSpot(levelTable.x, levelTable.z, [...STAGED_BOXES, ...(geo ? mountedBoxes(geo, st.joints.standBase, st.joints.twoLegStand) : [])]), 0, 0)
         else slot(level.root, STAGING.level, 0, STAGING.level.rotY)
       }
     }
@@ -387,12 +389,12 @@ export function createScene(container: HTMLElement, ctx: ViewContext, opts: Scen
     bond.visible = it.bondPaper && (pb !== null || st.paper.sheetsAvailable > 0)
     carbon.visible = it.carbonPaper
     if (pb) seat(bond, pb, -H_cm); else slot(bond, STAGING.bond, 0.02)
-    if (pc) seat(carbon, pc, -H_cm + SHEET_THICK_cm + 0.01); else slot(carbon, STAGING.carbon, 0.02 + SHEET_THICK_cm)
+    if (pc) seat(carbon, pc, -H_cm + paperStack(pb, pc).carbonBase_m * CM + 0.01); else slot(carbon, STAGING.carbon, 0.02 + SHEET_THICK_cm)
     syncPaperMarks()
     plumb.root.visible = st.edgeProjection
     if (st.edgeProjection) {
       const p = a.hiddenTruth().edgeProjection
-      if (p) { plumb.root.position.set(p.x_m * CM, -H_cm, p.z_m * CM); plumb.setHeight(H_cm) } else plumb.root.visible = false
+      if (p) { plumb.root.position.set(p.x_m * CM, -H_cm + paperSurfaceAt_m(p.x_m, p.z_m, st.paper.bond, st.paper.carbon) * CM, p.z_m * CM); plumb.setHeight(H_cm) } else plumb.root.visible = false
     }
 
     // tape measure: against the chosen target when it can be drawn, else resting on the table
@@ -464,7 +466,7 @@ export function createScene(container: HTMLElement, ctx: ViewContext, opts: Scen
     for (const id of ['marble', 'pingpong'] as const) {
       const ball = balls[id]
       const item = st.items[BALL_ITEM[id]]
-      ball.root.visible = item && !(status.ball === id && status.settled === true)
+      ball.root.visible = item
       if (!item) continue
       const R = ball.radius_cm
       const sp = spin[id]
@@ -615,8 +617,8 @@ export function createScene(container: HTMLElement, ctx: ViewContext, opts: Scen
     floorY: () => H_cm,
     ballRadius_cm: (id) => balls[id].radius_cm,
     preview,
-    setLevelX: (x) => { levelX = Math.min(RAIL.length - 12, Math.max(12, x)) },
-    setLevelTable: (x, z) => { levelTable = { x: Math.min(-8, Math.max(TABLE.x0 + 8, x)), z: Math.min(TABLE.halfD - 8, Math.max(-TABLE.halfD + 8, z)) } },
+    setLevelX: (x) => { const r = levelRailRange_cm(a.getState().joints.twoLegStand); levelX = Math.min(r.max, Math.max(r.min, x)) },
+    setLevelTable: (x, z) => { levelTable = { x, z } },
     getTool: () => tool,
     setTapeTarget: (t) => setTapeTarget(t, true),
     onCard: opts.onCard,

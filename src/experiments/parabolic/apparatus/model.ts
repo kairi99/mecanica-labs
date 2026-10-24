@@ -3,13 +3,13 @@
 // change this file only.
 import {
   BALLS, DEFAULT_SETUP, firstBounce, carbonMark, effectiveRollingRadius_m, sampleRun, simulateLaunch, tableRollDecel_mps2,
-  ZERO_RUN, type BallSpec, type CarbonMark, type LaunchSetup, type PaperRect, type RunOffsets, type TrajectoryPoint,
+  ZERO_RUN, settlePath, type SettlePath, type BallSpec, type CarbonMark, type LaunchSetup, type PaperRect, type RunOffsets, type TrajectoryPoint,
 } from '../physics/index.ts'
 import { TRAJECTORY_RATE_hz } from './constants.ts'
 
 export type BallId = BallSpec['id']
 export const BALL_IDS: readonly BallId[] = ['marble', 'pingpong']
-export type { PaperRect, RunOffsets, TrajectoryPoint }
+export type { PaperRect, RunOffsets, TrajectoryPoint, SettlePath }
 export { insidePaper } from '../physics/index.ts'
 
 export const ballSpec = (id: BallId): BallSpec => BALLS[id]
@@ -106,3 +106,7 @@ export const markOnPaper = (x_m: number, z_m: number, ball: BallId, vyImpact_mps
 
 /** Effective rolling radius in the channel, m (used by the view to draw the ball on the rail). */
 export const rollingRadius_m = (ball: BallId): number => effectiveRollingRadius_m(ballSpec(ball).R_m, DEFAULT_SETUP.channelWidth_m)
+
+/** Hops and roll-out of a landed ball (see physics/settle.ts); `at(tau)` is the centre displacement tau_s after the first contact. */
+export const settleAfterLanding = (flight: FlightSummary, ball: BallId): SettlePath =>
+  settlePath({ x_m: flight.x_land_m, z_m: flight.z_land_m, vx_mps: flight.vx_impact_mps, vy_mps: flight.vy_impact_mps, vz_mps: flight.vz_impact_mps }, ballSpec(ball), GRAVITY_mps2)

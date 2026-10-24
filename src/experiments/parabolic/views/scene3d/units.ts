@@ -4,7 +4,7 @@
 // The apparatus frames are the launch frame (x_m, y_m, z_m): rail poses use the table frame (y = 0 on the table top), ball poses
 // and floor items the floor frame (y = 0 on the floor).
 import {
-  GAP_MAX_m, RACK_BASE_HEIGHT_m, RACK_MAX_mm, RACK_MIN_mm, RAIL_LENGTH_m, SHEET_LONG_m, SHEET_SHORT_m,
+  GAP_MAX_m, GAP_MIN_m, RACK_BASE_HEIGHT_m, RACK_MAX_mm, RACK_MIN_mm, RACK_FROM_TIP_m, RAIL_HEIGHT_m, RAIL_LENGTH_m, TWO_LEG_FROM_TIP_m, SHEET_LONG_m, SHEET_SHORT_m,
   type RailGeometry, type SheetPose, type TapeTarget, type Vec3,
 } from '../../apparatus/index.ts'
 import { boxCorners, type Vec } from '../../../../core/scene3d/framing.ts'
@@ -19,17 +19,17 @@ export const TABLE = { x0: -205, x1: 0, halfD: 45, thickness: 3.5, legSize: 5, l
 /** Floor extent: big enough that its far edge is lost in the fog. */
 export const FLOOR = { x0: -1100, x1: 1100, halfZ: 900 } as const
 /** Rail profile of the shared model (half width, height), cm. */
-export const RAIL = { halfW: 1.25, height: 2.0, length: RAIL_LENGTH_m * CM } as const
+export const RAIL = { halfW: 1.25, height: RAIL_HEIGHT_m * CM, length: RAIL_LENGTH_m * CM } as const
 /** Rod of the rack stand behind the rail axis (core default), cm. */
 export const ROD_Z = -3.4
 /** Where the loose parts wait on the table (x, z in cm; rotY in rad). Front strip z > 12 is free of the rail and the stands. */
 export const STAGING = {
   rail: { x: -180, z: 8, rotY: 0 },
   base: { x: -120, z: -22, rotY: 0 },
-  rackStand: { x: -160, z: -22, rotY: 0 },
+  rackStand: { x: -168, z: -22, rotY: 0 },
   twoLeg: { x: -92, z: -22, rotY: 0 },
   stopwatch: { x: -16, z: 31, rotY: 0.1 },
-  bond: { x: -48, z: 27 },
+  bond: { x: -44, z: 27 },
   carbon: { x: -84, z: 27 },
   level: { x: -118, z: 29, rotY: 0 },
   tape: { x: -146, z: 30 },
@@ -49,6 +49,62 @@ export const MARK_MIN_DIAMETER_cm = 0.4
 export const CROSS_ARM_cm = 1.6
 /** Hit radius of a carbon mark for the tape tool, cm. */
 export const MARK_HIT_cm = 1.6
+
+// ---- Footprints on the table (cm) -------------------------------------------------------------------------------------
+/** Rectangle on the tabletop (x, z in cm). */
+export interface Box2 { x0: number; x1: number; z0: number; z1: number }
+/** The level lying on the table: half extents (12 x 2.2 cm body). */
+export const LEVEL_HALF = { x: 6, z: 1.1 } as const
+/** Where the loose parts wait (footprints of STAGING, with a little margin), cm. Used to keep the level from landing on them. */
+export const STAGED_BOXES: readonly Box2[] = [
+  { x0: -180, x1: -60, z0: 6.5, z1: 9.5 }, // rail
+  { x0: -128, x1: -110, z0: -29, z1: -17 }, // base plate
+  { x0: -170, x1: -129, z0: -24, z1: -20 }, // rack stand lying
+  { x0: -94, x1: -90, z0: -28, z1: -16 }, // two-leg stand
+  { x0: -22, x1: -10, z0: 24, z1: 38 }, // stopwatch
+  { x0: -60, x1: -28, z0: 16, z1: 38 }, // bond sheet
+  { x0: -100, x1: -68, z0: 16, z1: 38 }, // carbon sheet
+  { x0: -124, x1: -112, z0: 27, z1: 31 }, // level
+  { x0: -150, x1: -142, z0: 26, z1: 34 }, // tape measure
+  { x0: -176, x1: -167, z0: 26, z1: 32 }, // screws
+  { x0: -80, x1: -76, z0: 12, z1: 16 }, // marble
+  { x0: -67, x1: -61, z0: 11, z1: 17 }, // ping-pong ball
+]
+/** Footprints of what stands on the table around the mounted rail: the rail strip, the stand base and rod, the two-leg stand's legs. */
+export function mountedBoxes(geo: RailGeometry, standOn: boolean, twoLegOn: boolean): Box2[] {
+  const out: Box2[] = []
+  const hi = geo.pose.highEnd.x_m * CM, lo = geo.pose.tip.x_m * CM
+  out.push({ x0: hi - 1, x1: lo + 1, z0: -RAIL.halfW - 0.5, z1: RAIL.halfW + 0.5 })
+  const cx = geo.pose.clamp.x_m * CM
+  if (standOn) out.push({ x0: cx - 6.5, x1: cx + 9.5, z0: -6.5, z1: 4.5 })
+  if (twoLegOn) { const tx = geo.pose.twoLeg.x_m * CM; out.push({ x0: tx - 1.8, x1: tx + 1.8, z0: -5.2, z1: 5.2 }) }
+  return out
+}
+/**
+ * Nearest spot to (x, z) for the level on the table: inside the table and clear of every box (its own half extents added).
+ * The spot itself when it is free; otherwise the nearest free point of a 1 cm grid over the tabletop (null result impossible: the
+ * table is far larger than the boxes).
+ */
+export function levelTableSpot(x: number, z: number, boxes: readonly Box2[]): { x: number; z: number } {
+  const lim = (v: number, lo: number, hi: number): number => Math.min(hi, Math.max(lo, v))
+  const xLo = TABLE.x0 + LEVEL_HALF.x + 2, xHi = -LEVEL_HALF.x - 2, zLo = -TABLE.halfD + LEVEL_HALF.z + 2, zHi = TABLE.halfD - LEVEL_HALF.z - 2
+  const free = (px: number, pz: number): boolean => boxes.every((b) => !(px > b.x0 - LEVEL_HALF.x && px < b.x1 + LEVEL_HALF.x && pz > b.z0 - LEVEL_HALF.z && pz < b.z1 + LEVEL_HALF.z))
+  const p = { x: lim(x, xLo, xHi), z: lim(z, zLo, zHi) }
+  if (free(p.x, p.z)) return p
+  let best = p, bestD = Infinity
+  for (let px = Math.ceil(xLo); px <= xHi; px++) {
+    for (let pz = Math.ceil(zLo); pz <= zHi; pz++) {
+      const d = (px - p.x) ** 2 + (pz - p.z) ** 2
+      if (d < bestD && free(px, pz)) { bestD = d; best = { x: px, z: pz } }
+    }
+  }
+  return best
+}
+/** Allowed range of the level's centre on the rail, rail-frame x (cm from the high end): clear of the rack-stand collar and of the two-leg stand. */
+export function levelRailRange_cm(twoLegOn: boolean): { min: number; max: number } {
+  const clampX = RAIL.length - RACK_FROM_TIP_m * CM, legX = RAIL.length - TWO_LEG_FROM_TIP_m * CM
+  return { min: clampX + 2.4 + LEVEL_HALF.x + 0.3, max: twoLegOn ? legX - 1.2 - LEVEL_HALF.x - 0.3 : RAIL.length - LEVEL_HALF.x }
+}
 
 // ---- Conversions -----------------------------------------------------------------------------------------------------
 /** Launch-frame point to scene cm. `base_m` = 0 for table-frame points, H for floor-frame points (y above the floor). */
@@ -110,7 +166,7 @@ export function rackFromKnobY_mm(knobY_cm: number): number {
 }
 /** Gap (whole mm) after dragging the rail by dx_cm along +x (toward the edge shrinks the gap). Kept inside what the apparatus accepts. */
 export function gapFromDrag_mm(startGap_mm: number, dx_cm: number): number {
-  return Math.min(Math.round(GAP_MAX_m * 1000), Math.max(1, Math.round(startGap_mm - dx_cm * 10)))
+  return Math.min(Math.round(GAP_MAX_m * 1000), Math.max(Math.round(GAP_MIN_m * 1000), Math.round(startGap_mm - dx_cm * 10)))
 }
 /** Wheel step for fine adjustment: one unit per notch, sign opposite to the scroll direction (scroll up raises). */
 export const wheelStep = (deltaY: number): number => (deltaY < 0 ? 1 : -1)
@@ -234,6 +290,8 @@ export interface TapePlan {
   hook: V3
 }
 const TAPE_Z_BESIDE_RAIL = 3.4
+/** z of the vertical blade of the rise measurement: in front of the knob and of the base plate (plate edge at z = 4.5), cm. */
+const TAPE_Z_RISE = 5.2
 /**
  * Pose of the tape measure for a target, or null when the target cannot be drawn now. Conventions (core model): 'down' hangs from
  * the reading point at the origin to the hook at y = -L; 'right'/'left' run along +x/-x from the hook to the reading point.
@@ -259,8 +317,8 @@ export function planTape(t: TapeTarget, w: TapeWorld): TapePlan | null {
       if (!geo || !frame) return null
       // vertical blade just in front of the rack knob, from the table up to the rail top at the clamp
       const c = toScene(geo.pose.clamp)
-      const reading: V3 = [c[0], c[1], 4.4]
-      return { mode: 'down', length_cm: geo.clampHeight_m * CM, frame: 'scene', position: reading, yaw_rad: 0, flat: false, reading, hook: [c[0], c[1] - geo.clampHeight_m * CM, 4.4] }
+      const reading: V3 = [c[0], c[1], TAPE_Z_RISE]
+      return { mode: 'down', length_cm: geo.clampHeight_m * CM, frame: 'scene', position: reading, yaw_rad: 0, flat: false, reading, hook: [c[0], c[1] - geo.clampHeight_m * CM, TAPE_Z_RISE] }
     }
     case 'markPosition': {
       if (!geo || !frame) return null

@@ -58,7 +58,7 @@ Date of all rows in this section: 2026-10-24 (values unchanged since the model w
 | Gap rail tip to table edge `gap_m` | 0.05 | m | Guide (about 5 cm). |
 | Table height `H_m` | 0.76 | m | ASSUMED default (typical table 0.74-0.78 m); seeded per bench elsewhere. |
 | Channel width `channelWidth_m` (distance between the two contact lines) | 10 | mm | ASSUMED, top groove of the metal rail. r_eff = sqrt(R^2 - (w/2)^2): marble 6.2 mm, ping-pong 19.36 mm (= sqrt(20^2 - 5^2)). w >= 2R: the ball does not fit (error). w = 0 is a single line. |
-| Rail-top step to the table `stepDrop_m` | 0 | m | ASSUMED (rail thickness neglected); parameter kept. Geometry note: the ball's lowest point sits R - r_eff below the contact lines (1.75 mm for the marble, 0.64 mm for the ping-pong ball), so whether it touches the table inside the groove, and the true drop, depend on the rail profile, which we do not know. |
+| Rail-top step to the table `stepDrop_m` | 0 (physics default); the apparatus passes the real value, `RAIL_HEIGHT_m cos(theta)` = 19.7 mm in the assembled preset | m | Physics default ASSUMED 0 (rail thickness neglected); since 2026-10-24 the apparatus uses the contact geometry of the 2 cm thick rail resting on the table (the old thin-line model put the rail body through the tabletop). Effect on the assembled preset: rise felt 18.0 instead of 20.0 cm (the tape still reads 20 cm at the clamp), v0 about 5 % lower. Geometry note: the ball's lowest point sits R - r_eff below the contact lines (1.75 mm for the marble, 0.64 mm for the ping-pong ball), so whether it touches the table inside the groove, and the true drop, depend on the rail profile, which we do not know. |
 | Paper height `paperHeight_m` | 0 | m | Floor reference; the ball bottom lands at this height. |
 | g, air density | 9.7717, 0.869 | m/s^2, kg/m^3 | Site constants (see Site above). 0.869 kg/m^3 is for 15 °C; 20 °C gives 0.855 (-1.6 %), well inside the other uncertainties. |
 
@@ -106,7 +106,9 @@ Device and bench values of the Practica 2 apparatus layer. Date of all rows: 202
 | Rack clamp from the low tip `RACK_FROM_TIP_m` | 1.10 | m | ASSUMED (same as `supportDist_m` of the physics). |
 | Two-leg support from the low tip `TWO_LEG_FROM_TIP_m` | 0.10 | m | ASSUMED ("near the low end"). |
 | Rail top height at the clamp with the rack at 0 `RACK_BASE_HEIGHT_m` | 0.06 | m | ASSUMED. Rack reading 0 to 250 mm in 1 mm steps (ASSUMED). The 20 cm rise needs 140 mm. |
-| Two-leg stand height range | 0 to 150, 1 mm steps | mm | ASSUMED. |
+| Rail profile height `RAIL_HEIGHT_m` | 0.02 | m | ASSUMED (the drawn aluminium profile, 2 cm). The rail is a rigid beam this thick: resting on its low end, its top surface at the tip is `RAIL_HEIGHT_m cos(theta)` above the table (the rail can never go below the tabletop). Date 2026-10-24. |
+| Two-leg stand support at scale 0 `LEG_BASE_HEIGHT_m` | 0.013 | m | ASSUMED (pads 5 mm plus bridge 8 mm). The support (bridge top, where the rail underside rests) is at `LEG_BASE_HEIGHT_m` + scale reading. It touches the rail only if higher than the free rack-and-table line at its distance. Date 2026-10-24. |
+| Two-leg stand scale range | 0 to 150, 1 mm steps | mm | ASSUMED. |
 | Two-leg span `TWO_LEG_SPAN_m` (lever of the screw foot) | 0.20 | m | ASSUMED. |
 | Screw foot range / step | +-5 / 0.05 | mm | ASSUMED (same as Practica 1). |
 | Tip counted as lifted above `TIP_LIFT_TOL_m` | 0.5 | mm | ASSUMED. |
@@ -115,9 +117,11 @@ Device and bench values of the Practica 2 apparatus layer. Date of all rows: 202
 | Table lateral tilt (hidden, per bench) | uniform +-0.3 | deg | ASSUMED. |
 | Lateral launch angle per rad of rail roll `LATERAL_DRIFT_GAIN` | 4 | - | ASSUMED, stylised: the ball rides one wall of the groove. Not derived; it only makes the level matter (0.3 deg of roll adds 1.2 deg of launch angle, comparable to the 1 deg run scatter). |
 | Level sensitivity / bubble end / centred tolerance | 20 / 6 / 0.5 | mm/deg, mm, mm | ASSUMED (same vial as Practica 1). |
-| Rail tip to edge when first put down / maximum | 0.15 / 0.60 | m | ASSUMED. 1 mm slider steps. A tip at or past the edge is refused. |
+| Rail tip to edge when first put down / minimum / maximum | 0.15 / 0.004 / 0.60 | m | ASSUMED. 1 mm slider steps. The black end cap of the rail (`RAIL_END_CAP_m` 3.5 mm) sticks out beyond the tip, so a tip nearer than 4 mm to the edge, or past it, is refused. Date 2026-10-24. |
 | Rail mark: snap / student's placement error sigma / max count | 0.5 / 1 / 10 | mm, mm, - | ASSUMED. Guide: 5 marks in the upper half (s >= 0.60 m from the low tip). |
 | Paper and projection placement limit `PAPER_POS_MAX_m` | 3 | m | ASSUMED (the tape reaches 3 m; a sheet or the edge projection farther away is refused). Row added 2026-10-24. |
+| Sheet thickness `PAPER_THICKNESS_m` | 0.4 | mm | ASSUMED, drawn exaggerated (a real sheet is ~0.1 mm) so it reads. A ball resting on the paper has its centre R above the sheet top; the carbon sheet lies on the bond paper where they overlap, on the floor otherwise. Date 2026-10-24. |
+| Landed ball: hops and roll-out `FLOOR_TANGENT_KEEP`, `HOP_MIN_vUp_mps`, `FLOOR_ROLL_DECEL_mps2`, `MAX_HOPS` | 0.5, 0.3, 3, 6 | -, m/s, m/s^2, - | ASSUMED, animation of where the ball comes to rest only (the measured range is the first contact). Each impact multiplies the vertical speed by the restitution (0.5 marble, 0.8 ping-pong, ASSUMED) and the horizontal speed by 0.5; hopping ends below a take-off speed of 0.3 m/s; then a constant-deceleration roll-out. The ball stays on the floor (on the paper where it rests on a sheet) until the student returns it. Date 2026-10-24. |
 | A4 sheet | 0.297 x 0.210 | m | Standard A4. 2 bond sheets, 1 carbon sheet (guide). Position snap 1 mm. |
 | Edge projection placement error sigma | 2 (per axis) | mm | ASSUMED (plumb line or set-square on the floor). |
 | Tape measure reach / division / MPE | 3 / 1 / 0.3 + 0.2 L | m, mm, mm and mm/m | Reach ASSUMED (3 m pocket tape); division and class II MPE as in Instruments above. The range reading is the Euclidean floor distance (tape laid straight). |
@@ -135,4 +139,4 @@ Device and bench values of the Practica 2 apparatus layer. Date of all rows: 202
 | Coach: typed range counted "from the rail tip" `TIP_MATCH_m` | 0.02 | m | ASSUMED teaching tolerance (see the coach thresholds row). Not physics. Row added 2026-10-24. |
 | Coach thresholds (timing) | start press < 0.3 s before or > 0.45 s after the edge; reading > 0.3 s from 0.39 s | s | ASSUMED teaching thresholds, not physics. Typed range within 2 cm of (true range + gap) counts as measured from the rail tip. |
 
-Simplifications: no longitudinal table tilt; the table is long enough for any rail position; heights are vertical and distances along the rail (small-angle bookkeeping for the two-leg lift); after the first bounce the ball is not followed; marks are the first contact only. With the physics rolling resistance (`c_rr` 1.5e-3 and 5e-3) a ball does not stop on a 0.6 m gap: only a nearly flat rail stops it.
+Simplifications: no longitudinal table tilt; the table is long enough for any rail position; the rail is a rigid beam on its contacts (rack clamp, tabletop at the low end, two-leg stand when higher than the free line), exact in the angle; after the first bounce the ball follows the hop and roll-out model above; marks are the first contact only. With the physics rolling resistance (`c_rr` 1.5e-3 and 5e-3) a ball does not stop on a 0.6 m gap: only a nearly flat rail stops it.
