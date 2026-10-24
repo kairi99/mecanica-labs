@@ -1,6 +1,7 @@
-# DigiCart MRUV virtual lab (EPN, Práctica 1 · Movimiento Rectilíneo Uniformemente Variado)
+# Mecánica labs (EPN Newtonian-mechanics practices: Práctica 1 MRUV, Práctica 2 Movimiento parabólico)
 
-Browser-based, physics-driven, **educational** simulation of the Newtonian-mechanics lab "Práctica 1: MRUV" of the
+Repo `kairi99/mecanica-labs` (formerly `digicart-mruv-sim`), live at https://kairi99.github.io/mecanica-labs/.
+The first experiment, described here, is a browser-based, physics-driven, **educational** simulation of the Newtonian-mechanics lab "Práctica 1: MRUV" of the
 Escuela Politécnica Nacional (Quito): a PHYWE DigiCart rolling down an inclined metal rail at 1.30°. The student
 **assembles the setup from an inventory**, releases the cart, times it with a **virtual stopwatch driven by the
 student's own presses**, measures the stand heights and their separation with a **virtual tape measure** (flexómetro, analog), fills
