@@ -1,11 +1,12 @@
-# DigiCart MRUV virtual lab
+# Mecánica labs: Newtonian-mechanics virtual lab
 
-A browser-based, physics-driven, educational simulation of the Newtonian-mechanics lab **"Práctica 1: Movimiento
-Rectilíneo Uniformemente Variado (MRUV)"**: a PHYWE DigiCart rolling down a metal rail inclined at 1.30 degrees.
-Spanish first (English available), mobile first, light and dark themes, keyboard accessible. It now also hosts
-**Práctica 2, projectile motion** (see Experiments).
+Browser-based, physics-driven, educational simulations of Newtonian-mechanics lab practices: **Práctica 1, MRUV**
+(a PHYWE DigiCart rolling down a metal rail inclined at 1.30 degrees) and **Práctica 2, projectile motion** (a marble
+and a ping-pong ball launched horizontally from a table edge). Spanish first (English available), mobile first, light
+and dark themes, keyboard accessible.
 
-**Live:** https://kairi99.github.io/digicart-mruv-sim/
+**Live:** https://kairi99.github.io/mecanica-labs/ (the old address https://kairi99.github.io/digicart-mruv-sim/
+redirects to the MRUV practice here).
 
 ## Experiments
 

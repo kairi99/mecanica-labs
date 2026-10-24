@@ -1,5 +1,5 @@
 {
-  "name": "digicart-mruv-sim",
+  "name": "mecanica-labs",
   "private": true,
   "version": "0.0.0",
   "type": "module",
@@ -23,7 +23,7 @@
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/kairi99/digicart-mruv-sim.git"
+    "url": "git+https://github.com/kairi99/mecanica-labs.git"
   },
-  "homepage": "https://kairi99.github.io/digicart-mruv-sim/"
+  "homepage": "https://kairi99.github.io/mecanica-labs/"
 }
