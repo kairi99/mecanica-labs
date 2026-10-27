@@ -114,6 +114,6 @@ Licences: code MIT ([LICENSE](LICENSE)); educational content CC BY 4.0 ([LICENSE
 three.js (MIT), uPlot (MIT), Vite, Vitest, TypeScript. The notices of the shipped libraries are in
 [public/THIRD-PARTY-NOTICES.txt](public/THIRD-PARTY-NOTICES.txt) (served with the site).
 
-Parts of the code and documentation were written with the help of AI tools (Claude) and reviewed by the author.
+Parts of the code and documentation were written with the help of AI tools (Claude) and reviewed by the authors.
 
 Privacy: the app stores progress only in the browser (`localStorage`); it sends nothing to any server and has no analytics.
