@@ -200,7 +200,7 @@ Date of every row: 2026-10-27. **ASSUMED** = chosen by us from typical values an
 | 1 N scale: range / smallest division / printed length / `k_Npm` | 1 / 0.02 / 0.10 / 10 | N, N, m, N/m | ASSUMED (a plausible 10 cm barrel, 50 divisions 2 mm apart; k = range / length by Hooke). |
 | 2 N scale: range / smallest division / printed length / `k_Npm` | 2 / 0.05 / 0.10 / 20 | N, N, m, N/m | ASSUMED (40 divisions 2.5 mm apart). |
 | Reading convention | nearest division by eye; Type B u = d / sqrt(12) | - | `statistics.ts` `typeBAnalog` (GUM 4.3.7), same as the tape measure. |
-| Internal damping `damping_Nspm` (dashpot in parallel with the spring) | 1.0 | N s/m | ASSUMED. Chosen so that the needle settles in a few tenths of a second (damping ratio 0.4 to 0.8 with the block alone, 0.3 to 0.5 with all masses); a pull at v adds c v to the force on the block at breakaway (0.01 to 0.1 N at 1 to 10 cm/s: a slight speed dependence of the peak). The needle shows the spring force k e only. |
+| Barrel damping `damping_Nspm` (dashpot in parallel with the spring) | 0.15 | N s/m | ASSUMED. A real tube dynamometer rings (damping ratio of order 0.02 to 0.05); this gives 0.05 to 0.1 with the block alone. ANY barrel damping makes the needle read c v low during the build-up (0.0015 N at 1 cm/s, 0.015 N at 10 cm/s): the static peak is mu_s N - c v. It does NOT make the plateau possible; see `CONTACT_BETA_spm`. The needle shows the spring force k e only. |
 | Moving mass (rod, hook, needle) `movingMass_kg` | 2 (1 N), 3 (2 N) | g | ASSUMED. A scale zeroed hanging and used horizontally reads low by m g (0.020 N and 0.029 N). The zero screw, turned horizontally, removes it. |
 | Over-range | needle held at the full-scale stop, flagged | - | The model keeps the spring linear past the stop (the real scale becomes rigid); only the displayed value is clamped. |
 
@@ -234,6 +234,7 @@ In every pair mu_s > mu_k. The coefficients do not depend on weight or contact a
 | Parameter | Value | Unit | Source |
 |---|---|---|---|
 | Face on paper: relative sigma of mu_s / mu_k per trial | 5 / 3 | % | ASSUMED (patch of surface under the block, dust, fibres). |
+| Correlation of the mu_s and mu_k deviations of a trial `MU_CORRELATION` | 0.7 | - | ASSUMED: one shared surface-patch factor plus independent parts (the same dust or oxide acts on both). Keeps a = g (sin theta - mu_k cos theta) from scattering as if mu_s - mu_k were independent: slide-time scatter is about 10 % (it was 18 to 27 % with independent draws). |
 | Bar on rail: relative sigma of mu_s / mu_k per trial | 6 / 4 | % | ASSUMED (oxide film, handling). With a ratio mu_s / mu_k of only 1.25 the acceleration (proportional to mu_s - mu_k) scatters by about 20 to 30 %: slide times at the onset scatter that much (teacher key). |
 | Loose paper | 15 / 10 | % | ASSUMED (erratic, three times the face scatter). |
 | Guard `MIN_MU_RATIO` | 1.02 | - | Numerical: a draw cannot make mu_s smaller than 1.02 mu_k (static friction is the larger one). One-sided; it acts in under 1 % of draws. |
@@ -243,10 +244,11 @@ In every pair mu_s > mu_k. The coefficients do not depend on weight or contact a
 
 | Parameter | Value | Unit | Source |
 |---|---|---|---|
-| Equations | stuck: breaks away when abs(k e + c v) >= mu_s N; sliding: M u' = k e + c e' - mu_k N, e' = v_pull - u, N = M g | - | Coulomb friction with a dashpot-in-parallel spring. Exact damped-oscillator update per step, events (breakaway, arrest, re-stick or reverse slip) found by bisection. |
+| `CONTACT_BETA_spm` (THE parameter that makes a steady plateau possible) | 1.5 | s/m | ASSUMED. Velocity strengthening of the kinetic friction at the block-paper contact, mu_k(u) = mu_k (1 + beta u): zero force while stuck (the static peak stays at mu_s N), it damps the stick-slip ring. Consequence: the steady needle reading is mu_k N (1 + beta v), +6 % at the advised 4 cm/s, so the fitted slope of F against W is mu_k (1 + beta v), not mu_k. Without it (beta = 0) the sliding block oscillates forever around mu_k N with amplitude (mu_s - mu_k) N. |
+| Equations | stuck: breaks away when abs(k e + c_b v) >= mu_s N; sliding: M u' = k e + c_b e' - mu_k N (1 + beta u), e' = v_pull - u, N = M g | - | Coulomb friction with a dashpot-in-parallel spring. Exact damped-oscillator update per step, events (breakaway, arrest, re-stick or reverse slip) found by bisection. |
 | Step `PULL_DT_s`, stored sample `PULL_SAMPLE_s` | 1, 5 | ms | Numerical. The result does not depend on the step (test: split vs single advance). |
 | Pull speeds offered | 2 to 200 | mm/s | ASSUMED (hand pulling). |
-| Paper travel `PAPER_TRAVEL_m` | 0.20 | m | ASSUMED (A4 sheet 297 mm along the pull minus the block length and margins). Past it the block is on the bare table (above). |
+| Paper travel `PAPER_TRAVEL_m` | 0.20 | m | ASSUMED: A4 sheet 297 mm along the pull, minus a block about 60 mm long (ASSUMED), minus about 20 mm of margin at each end for the tape that fixes it; conservative (0.237 m would fit). The spring stretches before the block moves, so the travel is used only after the breakaway; at the advised 4 cm/s it gives about 4 s of readable plateau for every load (teacher key). Past it the block is on the bare table (above). |
 | Pull angle | 0 (horizontal) | - | Simplification: no cosine factor. |
 
 ### Exp. 3: rail geometry (`RAIL_SUPPORT_DIST_m` etc.)
@@ -259,9 +261,10 @@ In every pair mu_s > mu_k. The coefficients do not depend on weight or contact a
 | Course `COURSE_m` | 1.00 | m | Guide (100 cm). Start mark: bar front edge 1.10 m from the low end; longest course allowed `COURSE_MAX_m` = 1.08 m. |
 | Mark placement | snap 1 mm, sigma 1 mm | mm | ASSUMED. |
 | Rack stand reach `RACK_H_MAX_m` | 0.70 | m | ASSUMED (a taller rod than Practica 1 and 2, so that tan(theta) up to 0.82 is reachable; the iron bar needs h = 0.55 m). |
-| Crank rate offered | 0.5 to 20 | mm/s | ASSUMED. |
+| Crank rate offered / default | 0.5 to 60 / 20 | mm/s | ASSUMED (a fast crank reaches the onset of the iron bar, h = 0.55 m, in 28 s; slowing down near the onset reduces the overshoot of h when the crank is stopped about 0.3 to 0.5 s after the slip). |
 | theta(t) during the slide | follows h(t): if the student keeps cranking the angle keeps increasing; if the crank stops, theta is frozen | - | Choice, documented. RK4 step 1 ms; closed form a t^2 / 2 at constant angle (tested). |
 | Tape reading of h | 1 mm division, placement sigma 0.5 mm | mm | ASSUMED (tape model of core; MPE reported not applied). Refused while the crank is turning. |
+| u(h) as recorded, u(L), u(d) of the analysis | tape 1 mm and onset judgment 3 mm in quadrature; 2 mm; 1 mm mark placement and 1 mm tape | mm | ASSUMED (the onset judgment is a few mm of crank at 5 mm/s). Enter delta mu with the time term. |
 | Slide uncertainty of t | display 0.01 s and reaction-bias half-width 0.1 s in quadrature (0.058 s) | s | As Practica 1 and 2 (`reactionBiasTypeB_s`). |
 
 ### Simplifications

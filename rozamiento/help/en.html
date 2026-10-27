@@ -1,0 +1,134 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<title>Help guide: friction force</title>
+<link rel="stylesheet" href="./help.css">
+<script type="module" src="./help.ts"></script>
+</head>
+<body>
+<a class="skip-link" href="#main">Skip to main content</a>
+<header class="bar"><a class="pill accent" href="../index.html">Back to the lab</a><nav class="pills" aria-label="Language"><a class="pill" href="index.html" hreflang="es" lang="es">Español</a></nav></header>
+<main id="main" tabindex="-1">
+<h1>Help guide: friction force</h1>
+<p class="lede">A companion to the virtual lab of Practice 4: what static and kinetic friction are, how they are measured with a spring scale, why the needle sometimes jumps, how μ is obtained with a raised rail, and what makes your data drift. It gives no coefficient values: looking them up and citing them is task 7 of the guide and it is yours.</p>
+<nav class="toc" aria-label="Contents">
+<a href="#teoria">Theory</a><a href="#uso">Using the lab</a><a href="#dinamometro">Spring scale</a><a href="#riel">Raised rail</a><a href="#incertidumbre">Uncertainty</a><a href="#errores">Error sources</a><a href="#modelo">Honest model</a><a href="#teclas">Keys</a><a href="#accesibilidad">Accessibility</a><a href="#creditos">Credits</a>
+</nav>
+
+<section id="teoria"><h2>1. Theory of friction</h2>
+<p>When two surfaces in contact slide, or are about to, a force appears parallel to the surface that opposes the relative motion. While the body is at rest this <b>static</b> force adjusts to whatever is needed, up to a maximum. Once the body slides, the <b>kinetic</b> force has an almost fixed value. In the Amontons-Coulomb model both are proportional to the normal force <em>N</em> and do not depend on the contact area:</p>
+<div class="eq">f<sub>s</sub> ≤ μ<sub>s</sub>·N<br>f<sub>k</sub> = μ<sub>k</sub>·N</div>
+<p>The coefficients μ<sub>s</sub> and μ<sub>k</sub> are dimensionless numbers that depend on <b>both</b> surfaces in contact, not on one. It is common for μ<sub>s</sub> to be larger than μ<sub>k</sub>, and that is one of the questions your data have to answer.</p>
+<h3>Block on a horizontal table (experiments 1 and 2)</h3>
+<p>Draw the free-body diagram of the block: the weight <em>W</em> = (<em>M</em> + <em>m</em>)·<em>g</em> down, the normal <em>N</em> up, the spring-scale force <em>F</em> horizontal and friction opposing it. Horizontally there is no acceleration when the block is about to move or moves at constant speed, and vertically <em>N</em> = <em>W</em>. So:</p>
+<div class="eq">F<sub>max</sub> = μ<sub>s</sub>·M·g &nbsp; (about to move, no added masses)<br>F = μ<sub>k</sub>·(M + m)·g &nbsp; (constant speed)</div>
+<p>The second equation is a straight line: if you plot <em>F</em> against the weight <em>W</em>, the slope is the kinetic coefficient. What exactly the slope represents, and what the intercept says, you answer with your diagram.</p>
+<h3>Bar on a raised rail (experiment 3)</h3>
+<p>On a plane inclined by an angle θ the weight has a component <em>mg</em>·sin θ along the plane and <em>mg</em>·cos θ perpendicular to it, which is the normal. The bar stays at rest while <em>mg</em>·sin θ ≤ μ<sub>s</sub>·<em>mg</em>·cos θ, that is, while tan θ ≤ μ<sub>s</sub>. Once it slides:</p>
+<div class="eq">m·a = m·g·sin θ − μ·m·g·cos θ<br>μ = tan θ − a / (g·cos θ)</div>
+<p>The mass cancels, so the bar's mass does not enter the result. If the bar starts from rest and the acceleration is constant, <em>a</em> = 2·<em>d</em>/<em>t</em>².</p>
+</section>
+
+<section id="uso"><h2>2. Using the lab</h2>
+<p>The lab goes in steps, which you see in the bar above: 1 Assembly, 2 Experiment 1, 3 Experiment 2, 4 Experiment 3, 5 Reference record, 6 Analysis. With <code>?reference=0</code> or <code>?analysis=0</code> in the address, steps 5 and 6 are hidden. The "Procedure" follows the guide and, with "Show me", takes you to the panel you need.</p>
+<div class="note"><b>Materials the guide does not list.</b> The guide's materials list does not mention the rack-and-pinion stand and its base, the stopwatch or the balance. But the procedure needs them: the stand to raise the rail and the stopwatch to time the travel (experiment 3), and the balance to measure the block's mass <em>M</em>. In the simulator you find them in the inventory box, along with a few items that are of no use in this practice.</div>
+<ol>
+<li><b>Assembly.</b> Put what you need on the table. Weigh the block: you get <em>M</em> with the balance's resolution.</li>
+<li><b>Experiment 1 (force at constant speed).</b> Fix the paper to the table, rest one face of the block, choose the spring scale and <b>zero it lying flat</b>. Pull at constant speed and press "Read" when the needle holds steady. Five readings per face and per added mass (0, 50, 100 and 150 g).</li>
+<li><b>Experiment 2 (largest force).</b> With no masses, pull <em>slowly</em> and press "Read" at the instant of the largest force, just before the block starts. Afterwards the needle drops.</li>
+<li><b>Experiment 3 (rail).</b> Measure and mark 100 cm on the rail (with the bar on the start mark it fits on the 1.2 m rail), put a bar, turn the stand's crank until it slides without stopping and <b>stop it at once</b>. Measure <em>h</em> with the tape and time the travel. Five tries per bar.</li>
+<li><b>Analysis.</b> It computes from your tables and updates by itself. The answers in words are yours; the comparison with the literature uses the value and source you type.</li>
+</ol>
+<h3>Which pull speed to use</h3>
+<p>With a soft spring and static friction larger than kinetic, the block can advance in jumps (<em>stick-slip</em>): it sticks, the spring stretches to the maximum, it lets go, relaxes and sticks again. With slow pulls the needle goes up and down with no steady reading. In this simulator, with a steady hand, the motion becomes continuous from about 1 to 3 cm/s depending on the load (minimum: 1.0 cm/s with sandpaper and 150 g on the 1 N scale; 3.0 cm/s with cloth and masses on the 2 N one). <b>Pull at 4 cm/s or more in experiment 1</b>: the needle settles and about 4 s of steady reading remain on the sheet, for any load. In experiment 2, on the other hand, pull slowly (below 1 cm/s) to have time to react. A higher speed raises the kinetic force a little (friction increases slightly with speed in this model) and lowers the maximum force the needle shows, because of the spring scale's own damping.</p>
+<p>The A4 sheet is about 30 cm long; the block takes part of it and leaves a useful travel of about 20 cm. If it leaves the sheet, friction changes (it rubs on the table).</p>
+</section>
+
+<section id="dinamometro"><h2>3. The spring scale</h2>
+<p>It is a spring with a needle over a printed scale. By Hooke's law the needle moves in proportion to the force: <em>F</em> = <em>k</em>·<em>x</em>. There are two, 1 N (0.02 N marks) and 2 N (0.05 N marks); the 2 N one is stiffer and has coarser marks.</p>
+<ul>
+<li><b>Full scale.</b> If the real force exceeds the maximum, the needle sits on the stop and the reading is not valid. With sandpaper and the heaviest masses the 1 N one falls short: use the 2 N. With cloth the 1 N is enough.</li>
+<li><b>Zero.</b> It comes set with the scale hanging. Lying flat, the spring no longer supports the weight of the moving parts and the needle reads low by a small, fixed amount (a few hundredths of a newton). Turn the zero screw with the scale lying flat. If you do not, the error shows up as a non-zero intercept in your line.</li>
+<li><b>Your press.</b> "Read" notes the needle at the exact instant you press, not at the best instant. The largest force is a short peak: if you are late, you read a smaller force.</li>
+<li><b>Reading.</b> You read the nearest mark. The Type B uncertainty of each reading is the division divided by √12.</li>
+</ul>
+</section>
+
+<section id="riel"><h2>4. The raised rail and its geometry</h2>
+<p>The 1.2 m rail rests on the table on the lower edge of its low end, and the rack-and-pinion stand holds it <b>1.10 m</b> from that point, measured along the rail. The height <em>h</em> is that of the rail's lower edge at the clamp above the table. With that definition the sine of the angle is exact:</p>
+<div class="eq">sin θ = h / L, &nbsp; L = 1.10 m</div>
+<p>The bar leaves the start mark (its front edge on the mark) and covers the distance you marked, 100 cm in the guide. If you keep turning the crank while the bar slides, the angle keeps growing and the acceleration is not constant; the simulator represents it as it is. If you stop it, the angle stays fixed.</p>
+<h3>What you actually measure</h3>
+<p>The height <em>h</em> at the start of sliding is information about <em>static</em> friction (tan θ = μ<sub>s</sub>), but the travel time gives the acceleration, which depends on the <em>kinetic</em> coefficient (μ = tan θ − <em>a</em>/(<em>g</em> cos θ)). The guide mixes both in one coefficient per bar, and deciding whether that value is static or kinetic is a real question of task 6. The closer μ<sub>s</sub> and μ<sub>k</sub> are, the slower and more scattered the fall right after it starts.</p>
+</section>
+
+<section id="incertidumbre"><h2>5. Uncertainty</h2>
+<ul>
+<li><b>Mean forces.</b> Type A: <em>s</em>/√<em>n</em> of the five readings. Type B: the spring scale's division divided by √12 (combined in quadrature; Type B does not shrink with repetition). The result is F̄ ± ΔF.</li>
+<li><b>F against W line.</b> Weighted fit with weights 1/(ΔF)². If the fit is poor, the slope's uncertainty is widened by √(reduced χ²). The uncertainties of W, a few hundredths of a newton, are negligible next to ΔF.</li>
+<li><b>μ<sub>s</sub> = F̄<sub>max</sub>/(M·g).</b> The uncertainties of F̄<sub>max</sub>, of the mass (balance) and of <em>g</em> are propagated.</li>
+<li><b>Experiment 3.</b> Each try propagates the time uncertainty (0.01 s display and a reaction bias of ±0.1 s) and that of <em>h</em> (1 mm tape and your judgment of the instant sliding starts), and <em>L</em> and <em>d</em> are added. The result is μ̄ ± δμ per material.</li>
+<li><b>Comparison.</b> Type the literature value and the source. The app computes the relative error and compares it with your uncertainty; it does not give you the value.</li>
+</ul>
+</section>
+
+<section id="errores"><h2>6. Error sources you will see in your data</h2>
+<ul>
+<li>Loose paper: the spring scale measures the friction of the paper on the table. Low, erratic readings.</li>
+<li>Spring scale not zeroed horizontally: all forces shifted by the same amount.</li>
+<li>Slow pull and soft spring: the needle jumps (<em>stick-slip</em>).</li>
+<li>Reading after the start of motion: the largest force comes out low and μ<sub>s</sub> may look smaller than μ<sub>k</sub>.</li>
+<li>1 N spring scale at its stop: the reading is not the force.</li>
+<li>Nominal 50 g masses: each differs a little from its label; if you weigh them on the balance you will notice.</li>
+<li>Crank stopped late: the height you read is above that at the start of sliding.</li>
+<li>Hand timing of a 1.5 s travel: a 0.1 s delay is 7 % of the time and 13 % of the acceleration.</li>
+<li>Reading <em>h</em> with the tape while the crank turns: not possible; stop, then measure.</li>
+</ul>
+</section>
+
+<section id="modelo"><h2>7. An honest model</h2>
+<p>The simulator does not reproduce the coefficients of the real material: they are assumptions, documented in <code>PARAMETERS.md</code> with their plausibility range. For the block, the spring scale and the paper, the equation of the spring with static friction up to the start and kinetic afterwards is solved, with a small speed dependence and the spring scale's damping; that is why you see the peak, the drop and, at low speed, <em>stick-slip</em>. For the bar the condition tan θ ≥ μ<sub>s</sub> is applied with different values in each try (the surface is never the same). The "Reference record" shows you the true force against time and the true height and time, so you can compare with what you read.</p>
+<p>What the model lacks: table tilt, pull angle (always horizontal), tipping of the block or the bars, and friction varying with area.</p>
+</section>
+
+<section id="teclas"><h2>8. Keyboard shortcuts</h2>
+<table>
+<thead><tr><th scope="col">Action</th><th scope="col">Key</th></tr></thead>
+<tbody>
+<tr><td>Note the needle ("Read"), stop the crank, start or stop the stopwatch when the button has focus</td><td><kbd>Enter</kbd> or <kbd>Space</kbd></td></tr>
+<tr><td>Change the hand or crank speed</td><td>Slider arrows</td></tr>
+<tr><td>Close menus, dialogs and the tour</td><td><kbd>Esc</kbd></td></tr>
+</tbody>
+</table>
+</section>
+
+<section id="accesibilidad"><h2>9. Accessibility</h2>
+<p>This lab was reviewed against the Web Content Accessibility Guidelines (WCAG) 2.0 level AA, the basis of the NTE INEN-ISO/IEC 40500 standard. The review combined an automatic tool (axe-core) on all pages, in Spanish and English, in light and dark theme, with manual tests: keyboard-only use, colour contrast and respect for "reduce motion".</p>
+<ul>
+<li>Everything can be done with the keyboard. The first link of each page skips to the main content. <kbd>Esc</kbd> closes menus, dialogs and the tour and returns focus to where it was.</li>
+<li>The assistant's hints and the refusals are announced in a status region and do not disappear by themselves; they are closed with their button.</li>
+<li>Colours are never the only means: every state also has text or a mark.</li>
+</ul>
+<h3>Known limits</h3>
+<ul>
+<li>The 3D view is visual. Every action has an equivalent control in the panels (buttons and sliders), and the 2D view and the panels show the same information in text.</li>
+<li>The spring scale's needle is a drawing; its value is noted with "Read", which also announces it in text.</li>
+<li>Timing and reading the needle are timed tasks by design: measuring with your own press is the experiment. No other part has a time limit.</li>
+</ul>
+<h3>How to report a problem</h3>
+<p>If you find an accessibility barrier, open an issue on <a href="https://github.com/kairi99/mecanica-labs/issues" hreflang="en">the project's issues page</a> and say the page, the device and the assistive technology you use.</p>
+</section>
+
+<section id="creditos"><h2>10. Credits</h2>
+<p>This virtual lab is based on the guide "Práctica 4: Fuerza de rozamiento" of the Physics Laboratory of the Escuela Politécnica Nacional (Quito). It is a free, open-source educational project. PHYWE is a trademark of its owner and is mentioned only to identify the real lab equipment; <b>this project is not affiliated with, sponsored or endorsed by PHYWE</b>. The friction coefficients, masses and spring-scale constants are assumptions documented in <code>PARAMETERS.md</code>.</p>
+<p>Methods: GUM (JCGM 100) and J. R. Taylor, <em>An Introduction to Error Analysis</em>. Code under the MIT licence and educational content under CC BY 4.0.</p>
+<p>Privacy: your progress is saved only in your browser (<code>localStorage</code>); it is not sent to any server. "Start over" deletes it.</p>
+<p>Part of the code was written with the help of AI tools and reviewed by the authors. Licences of the libraries used (three.js, uPlot, MIT): <a href="../../THIRD-PARTY-NOTICES.txt">third-party notices</a>.</p>
+</section>
+<p class="credits"><a href="../index.html">Back to the lab</a></p>
+</main>
+</body>
+</html>

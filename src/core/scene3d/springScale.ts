@@ -62,36 +62,48 @@ export function buildSpringScale(kit: Kit, spec: SpringScaleSpec): SpringScaleMo
   // printed plate with divisions and numerals
   const plateW = len_cm + 1.6, plateH = 1.7
   const px = Math.round(plateW * PX_PER_CM), py = Math.round(plateH * PX_PER_CM)
-  const tex = canvasTexture(kit, px, py, (c) => {
-    c.fillStyle = '#f6f7f4'; c.fillRect(0, 0, px, py)
-    c.strokeStyle = '#16181c'; c.fillStyle = '#16181c'; c.textAlign = 'center'; c.textBaseline = 'middle'
-    const nDiv = Math.round(spec.range_N / spec.division_N)
-    const x0 = 0.8 * PX_PER_CM
-    for (let i = 0; i <= nDiv; i++) {
-      const F = i * spec.division_N
-      const x = x0 + F * cmPerN * PX_PER_CM
-      const isLabel = Math.abs(F / spec.labelStep_N - Math.round(F / spec.labelStep_N)) < 1e-6
-      const isFifth = i % 5 === 0
-      c.lineWidth = isLabel ? 4 : isFifth ? 3 : 2
-      c.beginPath()
-      c.moveTo(x, 0)
-      c.lineTo(x, (isLabel ? 0.6 : isFifth ? 0.42 : 0.28) * PX_PER_CM)
-      c.stroke()
-      if (isLabel) {
-        c.font = `800 ${0.5 * PX_PER_CM}px ${FONT}`
-        c.fillText(F === 0 ? '0' : Number.isInteger(F) ? String(F) : F.toFixed(1), x, 0.98 * PX_PER_CM)
+  // mirror = true draws the back plate: the plate is turned half a turn about y, so its u axis runs toward -x and the marks are drawn at
+  // the mirrored positions (numerals stay upright) to keep every numeral under the needle that belongs to it.
+  const makeTex = (mirror: boolean): THREE.CanvasTexture => {
+    const t = canvasTexture(kit, px, py, (c) => {
+      c.fillStyle = '#f6f7f4'; c.fillRect(0, 0, px, py)
+      c.strokeStyle = '#16181c'; c.fillStyle = '#16181c'; c.textAlign = 'center'; c.textBaseline = 'middle'
+      const nDiv = Math.round(spec.range_N / spec.division_N)
+      const x0 = 0.8 * PX_PER_CM
+      for (let i = 0; i <= nDiv; i++) {
+        const F = i * spec.division_N
+        const xf = x0 + F * cmPerN * PX_PER_CM
+        const x = mirror ? px - xf : xf
+        const isLabel = Math.abs(F / spec.labelStep_N - Math.round(F / spec.labelStep_N)) < 1e-6
+        const isFifth = i % 5 === 0
+        c.lineWidth = isLabel ? 4 : isFifth ? 3 : 2
+        c.beginPath()
+        c.moveTo(x, 0)
+        c.lineTo(x, (isLabel ? 0.6 : isFifth ? 0.42 : 0.28) * PX_PER_CM)
+        c.stroke()
+        if (isLabel) {
+          c.font = `800 ${0.66 * PX_PER_CM}px ${FONT}`
+          c.fillText(F === 0 ? '0' : Number.isInteger(F) ? String(F) : F.toFixed(1), x, 1.2 * PX_PER_CM)
+        }
       }
-    }
-    c.font = `700 ${0.34 * PX_PER_CM}px ${FONT}`
-    c.fillText('N', px - 0.45 * PX_PER_CM, 1.42 * PX_PER_CM)
-  })
-  tex.generateMipmaps = true
-  tex.minFilter = THREE.LinearMipmapLinearFilter
-  const plate = new THREE.Mesh(new THREE.PlaneGeometry(plateW, plateH), new THREE.MeshStandardMaterial({ map: tex, roughness: 0.6, metalness: 0 }))
+      c.font = `700 ${0.4 * PX_PER_CM}px ${FONT}`
+      c.fillText('N', mirror ? 0.45 * PX_PER_CM : px - 0.45 * PX_PER_CM, 1.5 * PX_PER_CM)
+    })
+    t.generateMipmaps = true
+    t.minFilter = THREE.LinearMipmapLinearFilter
+    return t
+  }
+  const plate = new THREE.Mesh(new THREE.PlaneGeometry(plateW, plateH), new THREE.MeshStandardMaterial({ map: makeTex(false), roughness: 0.6, metalness: 0 }))
   // flat plate on the front of the barrel; its left edge is 0.8 cm before the zero mark
   plate.position.set(ZERO_X - 0.8 + plateW / 2, 0, BARREL_R + 0.02)
   plate.receiveShadow = true
   root.add(plate)
+  // the same plate on the back (-z), readable from behind: a scale hooked to something on its -x side is seen from the other side
+  const plateBack = new THREE.Mesh(new THREE.PlaneGeometry(plateW, plateH), new THREE.MeshStandardMaterial({ map: makeTex(true), roughness: 0.6, metalness: 0 }))
+  plateBack.rotation.y = Math.PI
+  plateBack.position.x = plate.position.x
+  plateBack.position.z = -(BARREL_R + 0.02)
+  root.add(plateBack)
   // slot guides above and below the numerals
   box(plateW, 0.12, 0.05, M.aluDark, ZERO_X - 0.8 + plateW / 2, plateH / 2, BARREL_R + 0.03, root)
   box(plateW, 0.12, 0.05, M.aluDark, ZERO_X - 0.8 + plateW / 2, -plateH / 2, BARREL_R + 0.03, root)
@@ -100,7 +112,8 @@ export function buildSpringScale(kit: Kit, spec: SpringScaleSpec): SpringScaleMo
   const moving = new THREE.Group()
   root.add(moving)
   xcyl(0.22, 12, M.steel, moving, ZERO_X + 6)
-  box(0.18, plateH, 0.14, M.red, ZERO_X, 0, BARREL_R + 0.1, moving) // needle (red bar across the plate height)
+  box(0.22, plateH, 0.14, M.red, ZERO_X, 0, BARREL_R + 0.1, moving) // needle (red bar across the plate height)
+  box(0.22, plateH, 0.14, M.red, ZERO_X, 0, -(BARREL_R + 0.1), moving)
   const hookStart = BARREL_L + 1.2
   box(1.0, 0.5, 0.5, M.steel, BARREL_L + 0.5, 0, 0, moving)
   const hook = new THREE.Mesh(new THREE.TorusGeometry(0.85, 0.2, 12, 28, Math.PI * 1.45), M.steel)

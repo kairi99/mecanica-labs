@@ -2,11 +2,11 @@ import { describe, expect, it } from 'vitest'
 import {
   BAR_PAIRS, FACE_PAIRS, G_QUITO_mps2 as g, PullSimulator, STEADY_HAND, simulateIncline, simulatePull, meanForce_N, mulberry32,
   inclineAngle_rad, inclineHeight_m, onsetHeight_m, slideAcceleration_mps2, slideTime_s, muFromSlide, sampleTrialCoefficients, sampleHand,
-  sampleBenchMasses, FACE_SCATTER, BAR_SCATTER, NO_SCATTER, RAIL_SUPPORT_DIST_m, COURSE_m, type PullParams, type RaiseProfile,
+  sampleBenchMasses, CONTACT_BETA_spm, MU_CORRELATION, FACE_SCATTER, BAR_SCATTER, NO_SCATTER, RAIL_SUPPORT_DIST_m, COURSE_m, type PullParams, type RaiseProfile,
 } from '../../src/experiments/friction/physics/index.ts'
 
 const params = (over: Partial<PullParams> = {}): PullParams => ({
-  k_Npm: 10, c_Nspm: 1.0, mass_kg: 0.1, mu_s: 0.72, mu_k: 0.55, g_mps2: g, paperTravel_m: Infinity, hand: STEADY_HAND, ...over,
+  k_Npm: 10, c_Nspm: 0.15, beta_spm: CONTACT_BETA_spm, mass_kg: 0.1, mu_s: 0.72, mu_k: 0.55, g_mps2: g, paperTravel_m: Infinity, hand: STEADY_HAND, ...over,
 })
 
 describe('spring-block: static peak and kinetic plateau', () => {
@@ -22,13 +22,30 @@ describe('spring-block: static peak and kinetic plateau', () => {
     const p = params()
     const N = p.mass_kg * g
     const r = simulatePull(p, [{ t_s: 0, speed_mps: 0.05 }], 6)
-    expect(meanForce_N(r.samples, 4, 6)).toBeCloseTo(p.mu_k * N, 2)
+    // steady needle = mu_k N (1 + beta v): the velocity-strengthening term is the ONLY departure from mu_k N
+    expect(meanForce_N(r.samples, 4, 6)).toBeCloseTo(p.mu_k * N * (1 + CONTACT_BETA_spm * 0.05), 3)
     expect(r.summary.F_max_N).toBeGreaterThan(meanForce_N(r.samples, 4, 6))
+  })
+  it('the static peak stays at mu_s N at all pull speeds up to 10 cm/s within the barrel damping c v (cloth, 100 g)', () => {
+    const p = params({ mass_kg: 0.2, mu_s: 0.4, mu_k: 0.3 })
+    for (const v of [0.01, 0.05, 0.1]) {
+      const r = simulatePull(p, [{ t_s: 0, speed_mps: v }], 12)
+      expect(r.summary.F_breakaway_N!).toBeCloseTo(p.mu_s * p.mass_kg * g - p.c_Nspm * v, 3)
+      expect(r.summary.F_breakaway_N!).toBeGreaterThan(p.mu_k * p.mass_kg * g * (1 + CONTACT_BETA_spm * v) + 0.02) // the peak is visible above the plateau
+    }
+  })
+  it('heavy sandpaper (+150 g) on the 2 N scale pulled at the advised 4 cm/s: no stick-slip and a plateau within the 0.20 m of paper', () => {
+    const p = params({ mass_kg: 0.25, mu_s: 0.72, mu_k: 0.55, k_Npm: 20, paperTravel_m: 0.2 })
+    const r = simulatePull(p, [{ t_s: 0, speed_mps: 0.04 }], 12)
+    expect(r.summary.restickCount).toBe(0)
+    const Fss = p.mu_k * p.mass_kg * g * (1 + CONTACT_BETA_spm * 0.04)
+    const settled = r.samples.filter((s) => s.t_s < r.summary.leftPaper_t_s!).filter((s) => Math.abs(s.F_N - Fss) > 0.03 * Fss).pop()!.t_s
+    expect(r.summary.leftPaper_t_s! - settled).toBeGreaterThan(1.5)
   })
   it('stick-slip appears for a very slow pull with a soft spring and not for a fast one with a stiff one', () => {
     const slow = simulatePull(params(), [{ t_s: 0, speed_mps: 0.01 }], 40)
     expect(slow.summary.restickCount).toBeGreaterThanOrEqual(2)
-    const fast = simulatePull(params({ k_Npm: 20 }), [{ t_s: 0, speed_mps: 0.1 }], 4)
+    const fast = simulatePull(params({ k_Npm: 20 }), [{ t_s: 0, speed_mps: 0.06 }], 4)
     expect(fast.summary.restickCount).toBe(0)
     const last = fast.samples.filter((s) => s.t_s > 3)
     expect(last.every((s) => s.sliding)).toBe(true)
@@ -71,7 +88,8 @@ describe('spring-block: static peak and kinetic plateau', () => {
     expect(idle.summary.breakaway_t_s).toBeNull()
     const off = simulatePull(params({ paperTravel_m: 0.1, off: { mu_s: 0.3, mu_k: 0.2, muSRange: [0.2, 0.4] } }), [{ t_s: 0, speed_mps: 0.08 }], 8)
     expect(off.summary.leftPaper_t_s).not.toBeNull()
-    expect(meanForce_N(off.samples, 7, 8)).toBeCloseTo(0.2 * 0.1 * g, 1)
+    // bare table: mu_k = 0.2, steady at 0.08 m/s: mu_k N (1 + beta v); tolerance 0.003 N covers the residual of the settling ripple
+    expect(meanForce_N(off.samples, 7, 8)).toBeCloseTo(0.2 * 0.1 * g * (1 + CONTACT_BETA_spm * 0.08), 2)
   })
 })
 
@@ -139,8 +157,19 @@ describe('variability', () => {
     const m = xs.reduce((a, x) => a + x.mu_s, 0) / xs.length
     const sd = Math.sqrt(xs.reduce((a, x) => a + (x.mu_s - m) ** 2, 0) / (xs.length - 1))
     expect(m).toBeCloseTo(FACE_PAIRS.sandpaper.mu_s, 1)
-    expect(sd / m).toBeGreaterThan(0.035)
-    expect(sd / m).toBeLessThan(0.065)
+    // sampling error of an sd from 2000 draws is ~1.6 % of itself (0.0008 of 0.05): +-0.005 is a 6 sigma window
+    expect(sd / m).toBeGreaterThan(0.045)
+    expect(sd / m).toBeLessThan(0.055)
+  })
+  it('the per-trial deviations of mu_s and mu_k are correlated (shared patch factor), about MU_CORRELATION', () => {
+    const rng = mulberry32(8)
+    const xs = Array.from({ length: 4000 }, () => sampleTrialCoefficients(rng, FACE_PAIRS.cloth, FACE_SCATTER))
+    const a = xs.map((x) => x.mu_s), b = xs.map((x) => x.mu_k)
+    const ma = a.reduce((x, y) => x + y, 0) / a.length, mb = b.reduce((x, y) => x + y, 0) / b.length
+    let sab = 0, saa = 0, sbb = 0
+    for (let i = 0; i < a.length; i++) { sab += (a[i]! - ma) * (b[i]! - mb); saa += (a[i]! - ma) ** 2; sbb += (b[i]! - mb) ** 2 }
+    // standard error of a correlation from 4000 draws is < 0.01
+    expect(sab / Math.sqrt(saa * sbb)).toBeCloseTo(MU_CORRELATION, 1)
   })
   it('no scatter returns the expectation; pairs obey mu_s > mu_k', () => {
     expect(sampleTrialCoefficients(mulberry32(1), BAR_PAIRS.wood, NO_SCATTER)).toEqual({ mu_s: 0.4, mu_k: 0.3 })

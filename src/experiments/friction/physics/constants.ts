@@ -82,8 +82,15 @@ export const COURSE_m = 1.0
 export const RACK_H_MAX_m = 0.7
 /** Rack-and-pinion crank speeds the control offers (rate of change of h), m/s. */
 export const RAISE_RATE_MIN_mps = 0.0005
-export const RAISE_RATE_MAX_mps = 0.02
+export const RAISE_RATE_MAX_mps = 0.06
 /** Integration step of the slide, s (RK4). */
 export const SLIDE_DT_s = 0.001
 /** Distance the bar is followed beyond the course before the simulation stops, m. */
 export const SLIDE_TAIL_m = 0.05
+
+/**
+ * Velocity strengthening of the kinetic friction at the block-paper contact, s/m: mu_k(u) = mu_k (1 + CONTACT_BETA_spm |u|). ASSUMED.
+ * THIS is the parameter that lets stick-slip settle into a steady plateau (the scale barrel alone is lightly damped and rings). It gives zero
+ * force while stuck, so the static peak stays at mu_s N. The steady needle reading is mu_k N (1 + beta v).
+ */
+export const CONTACT_BETA_spm = 1.5

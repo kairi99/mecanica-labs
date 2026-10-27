@@ -7,6 +7,7 @@ import {
   weightedLinearFit, STOPWATCH_RESOLUTION_s, TAPE_DIVISION_m, type Comparison, type RepeatedStats, type WeightedFit,
 } from '../../../core/physics/index.ts'
 import { SPRING_SCALES } from '../../../core/instruments/springScale.ts'
+import { COURSE_SIGMA_m } from '../apparatus/constants.ts'
 import { COURSE_m, MASS_NOMINAL_kg, RAIL_SUPPORT_DIST_m } from '../physics/constants.ts'
 import { inclineAngle_rad, muFromSlide } from '../physics/incline.ts'
 import { BALANCE_RESOLUTION_kg } from '../apparatus/constants.ts'
@@ -69,8 +70,8 @@ const FACES = ['cloth', 'sandpaper'] as const
 export function weight_N(M_kg: number, n_added: number, mEach_kg: number = MASS_NOMINAL_kg, g_mps2: number = G_QUITO_mps2): { W_N: number; sigma_W_N: number } {
   const m = M_kg + n_added * mEach_kg
   const sM = typeBDigital(BALANCE_RESOLUTION_kg)
-  // masses taken at their nominal value; the 0.5 % scatter of each (PARAMETERS.md) is not known to the student
-  const sigma_m = combinedUncertainty(sM, n_added * 0.005 * mEach_kg)
+  // the student knows only what the balance shows: one digit-uncertainty for M and one for each added mass (n of them, independent)
+  const sigma_m = sM * Math.sqrt(1 + n_added)
   return { W_N: m * g_mps2, sigma_W_N: Math.sqrt((g_mps2 * sigma_m) ** 2 + (m * G_UNCERTAINTY_mps2) ** 2) }
 }
 
@@ -136,12 +137,15 @@ export interface InclineTrialResult {
   /** Standard uncertainty of this trial's mu from the time (reaction bias + display) and the tape reading of h. */
   sigma_mu_t: number
   sigma_mu_h: number
+  /** Terms from the rail geometry L and the course length d (common to all trials). */
+  sigma_mu_L: number
+  sigma_mu_d: number
 }
 export interface InclineMaterialResult {
   trials: (InclineTrialResult | null)[]
   n: number
   mu: number | null
-  /** delta mu = combined(s/sqrt(n), mean time term, mean height term). */
+  /** delta mu = combined(s/sqrt(n), mean time, height, L and d terms). */
   delta_mu: number | null
   sd: number | null
   uA: number | null
@@ -155,8 +159,14 @@ export interface InclineOptions {
 }
 /** Time uncertainty of one hand timing, s: display (0.01 s digital) with the reaction bias (ASSUMED half-width 0.1 s), in quadrature. */
 export const slideTimeUncertainty_s = (): number => combinedUncertainty(typeBDigital(STOPWATCH_RESOLUTION_s), reactionBiasTypeB_s())
-/** Tape reading uncertainty of h, m (analog tape, 1 mm). */
-export const heightUncertainty_m = (): number => typeBAnalog(TAPE_DIVISION_m)
+/** Judgment of the instant the bar starts to slide, expressed as an uncertainty of the h that is read, m. ASSUMED (a few mm of crank at 5 mm/s: ~0.5 s). */
+export const ONSET_JUDGMENT_m = 0.003
+/** Uncertainty of h as the student records it: tape reading (analog, 1 mm) and the onset judgment, in quadrature, m. */
+export const heightUncertainty_m = (): number => combinedUncertainty(typeBAnalog(TAPE_DIVISION_m), ONSET_JUDGMENT_m)
+/** Uncertainty of L (contact point and clamp judged by eye), m. ASSUMED. */
+export const RAIL_L_UNCERTAINTY_m = 0.002
+/** Uncertainty of the course d: mark placement (1 mm) and the tape reading, in quadrature, m. */
+export const courseUncertainty_m = (): number => combinedUncertainty(COURSE_SIGMA_m, typeBAnalog(TAPE_DIVISION_m))
 
 /**
  * Tasks 1 to 5 of exp. 3: theta = asin(h / L); a = 2 d / t^2 (MRUV from rest, constant angle); free-body diagram along the rail
@@ -173,7 +183,9 @@ export function inclineTrial(h_m: number, t_s: number, o: InclineOptions = {}): 
   const sigma_mu_t = ((2 * a_mps2) / t_s / (g * c)) * slideTimeUncertainty_s()
   const dMuDTheta = 1 / (c * c) - (a_mps2 * s) / (g * c * c)
   const sigma_mu_h = Math.abs(dMuDTheta / (L * c)) * heightUncertainty_m()
-  return { h_m, t_s, theta_rad, a_mps2, mu, sigma_mu_t, sigma_mu_h }
+  const sigma_mu_L = Math.abs(dMuDTheta * (Math.tan(theta_rad) / L)) * RAIL_L_UNCERTAINTY_m
+  const sigma_mu_d = (a_mps2 / d / (g * c)) * courseUncertainty_m()
+  return { h_m, t_s, theta_rad, a_mps2, mu, sigma_mu_t, sigma_mu_h, sigma_mu_L, sigma_mu_d }
 }
 export function table43Material(trials: readonly InclineTrialInput[], o: InclineOptions = {}): InclineMaterialResult {
   const res = trials.map((t) => (t.h_m !== null && t.t_s !== null ? inclineTrial(t.h_m, t.t_s, o) : null))
@@ -181,7 +193,7 @@ export function table43Material(trials: readonly InclineTrialInput[], o: Incline
   if (ok.length === 0) return { trials: res, n: 0, mu: null, delta_mu: null, sd: null, uA: null }
   const mus = ok.map((r) => r.mu)
   const uA = sem(mus)
-  const delta_mu = combinedUncertainty(uA, mean(ok.map((r) => r.sigma_mu_t)), mean(ok.map((r) => r.sigma_mu_h)))
+  const delta_mu = combinedUncertainty(uA, mean(ok.map((r) => r.sigma_mu_t)), mean(ok.map((r) => r.sigma_mu_h)), mean(ok.map((r) => r.sigma_mu_L)), mean(ok.map((r) => r.sigma_mu_d)))
   return { trials: res, n: ok.length, mu: mean(mus), delta_mu, sd: sampleSd(mus), uA }
 }
 

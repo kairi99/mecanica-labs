@@ -1,0 +1,49 @@
+@import '../../src/core/styles/tokens.css';
+
+* { box-sizing: border-box; }
+[hidden] { display: none !important; }
+body { margin: 0; background: var(--bg); color: var(--label); font: var(--text-body); -webkit-font-smoothing: antialiased; }
+a { color: var(--accent); }
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.bar { display: flex; align-items: center; justify-content: space-between; gap: var(--space-2); padding: var(--space-2) var(--space-4); max-width: 46rem; margin-inline: auto; }
+.pill { display: inline-grid; place-items: center; min-height: var(--touch); padding: 0 var(--space-4); border-radius: var(--radius-full); background: var(--fill); color: var(--label); text-decoration: none; font: var(--text-callout); }
+.pill.accent { background: var(--accent-fill); color: var(--on-accent); font-weight: 600; }
+.pills { display: flex; gap: var(--space-1); }
+main { max-width: 46rem; margin-inline: auto; padding: var(--space-2) var(--space-4) var(--space-7); }
+h1 { font: var(--text-title); margin: var(--space-4) 0 var(--space-2); }
+h2 { font: var(--text-headline); margin: var(--space-6) 0 var(--space-2); }
+h3 { font: var(--text-callout); font-weight: 600; margin: var(--space-4) 0 var(--space-1); }
+p { margin: 0 0 var(--space-3); }
+.lede { color: var(--label-2); }
+nav.toc { display: flex; flex-wrap: wrap; gap: var(--space-2); margin: var(--space-3) 0; }
+nav.toc a { display: inline-grid; place-items: center; min-height: var(--touch); padding: 0 var(--space-3); border-radius: var(--radius-full); background: var(--fill); color: var(--label); text-decoration: none; font: var(--text-footnote); }
+.eq { margin: var(--space-3) 0; padding: var(--space-3) var(--space-4); background: var(--surface); border-radius: var(--radius-m); box-shadow: var(--shadow-1); font-family: var(--font-mono); font-variant-numeric: tabular-nums; overflow-x: auto; white-space: nowrap; }
+.note { padding: var(--space-3) var(--space-4); background: var(--surface); border-left: 3px solid var(--accent); border-radius: var(--radius-s); margin: 0 0 var(--space-3); }
+ol, ul { padding-left: var(--space-5); margin: 0 0 var(--space-3); }
+li { margin-bottom: var(--space-1); }
+li::marker { color: var(--label-2); }
+table { border-collapse: collapse; margin: 0 0 var(--space-3); width: 100%; font: var(--text-callout); font-variant-numeric: tabular-nums; }
+th, td { text-align: left; padding: var(--space-2) var(--space-3); border-bottom: var(--stroke-hair) solid var(--separator); }
+th { font: var(--text-caption); color: var(--label-2); }
+kbd { font-family: var(--font-mono); font-size: 0.9em; padding: 1px var(--space-2); border-radius: var(--radius-s); background: var(--fill); }
+figure { margin: var(--space-4) 0; background: var(--surface); border-radius: var(--radius-l); box-shadow: var(--shadow-1); padding: var(--space-3); }
+figure svg { display: block; width: 100%; height: auto; max-width: 40rem; margin-inline: auto; color: var(--label); }
+figcaption { font: var(--text-footnote); color: var(--label-2); margin-top: var(--space-2); }
+.f-body { fill: var(--metal); stroke: var(--metal-ink); stroke-width: 1; }
+.f-body2 { fill: var(--metal-2); stroke: var(--metal-ink); stroke-width: 1; }
+.f-tick { stroke: var(--metal-ink); stroke-width: 1.2; }
+.f-hit { stroke: var(--danger); stroke-width: 2.4; }
+.f-guide { stroke: var(--danger); stroke-width: 1; stroke-dasharray: 4 3; }
+.f-zero { stroke: var(--accent); stroke-width: 1.6; }
+.f-num { fill: var(--metal-ink); font: 600 13px var(--font); }
+.f-note { fill: var(--label); font: 500 13px var(--font); }
+.g-ax { stroke: var(--label-2); stroke-width: 1.5; fill: none; }
+.g-curve { fill: none; stroke-width: 2.5; stroke-linecap: round; }
+.g-x { stroke: var(--phys-a); }
+.g-v { stroke: var(--phys-b); }
+.g-a { stroke: var(--phys-c); }
+.g-lab { fill: var(--label-2); font: 600 14px var(--font); }
+.credits { color: var(--label-2); font: var(--text-footnote); margin-top: var(--space-6); }
+.skip-link { position: absolute; left: var(--space-2); top: -4rem; z-index: 2; min-height: var(--touch); display: inline-flex; align-items: center; padding: 0 var(--space-4); border-radius: var(--radius-s); background: var(--accent-fill); color: var(--on-accent); font: var(--text-callout); font-weight: 600; text-decoration: none; }
+.skip-link:focus { top: var(--space-2); }
+main:focus { outline: none; }
