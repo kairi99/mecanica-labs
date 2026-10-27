@@ -36,7 +36,7 @@ export const strings: Strings<LandingStrings> = {
     langSwitch: 'Cambiar a inglés',
     theme: 'Tema',
     themes: { auto: 'Automático', light: 'Claro', dark: 'Oscuro' },
-    credits: 'Basado en la guía de laboratorio de la EPN. Proyecto de código abierto, sin afiliación con PHYWE.',
+    credits: 'Basado en la guía de laboratorio de la EPN. Proyecto educativo gratuito y de código abierto. PHYWE y DigiCart son marcas de sus titulares, mencionadas solo para identificar el equipo real; este proyecto no está afiliado, patrocinado ni respaldado por PHYWE.',
   },
   en: {
     title: 'Mechanics · Virtual lab',
@@ -52,6 +52,6 @@ export const strings: Strings<LandingStrings> = {
     langSwitch: 'Switch to Spanish',
     theme: 'Theme',
     themes: { auto: 'Automatic', light: 'Light', dark: 'Dark' },
-    credits: 'Based on the EPN lab guide. Open-source project, not affiliated with PHYWE.',
+    credits: 'Based on the EPN lab guide. Free, open-source educational project. PHYWE and DigiCart are trademarks of their owners, mentioned only to identify the real lab equipment; this project is not affiliated with, sponsored or endorsed by PHYWE.',
   },
 }

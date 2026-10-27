@@ -101,8 +101,9 @@ npm run teacher-key   # regenerate docs/teacher-key.md from the model
 Both experiments are based on lab guides of the Laboratorio de Física, Escuela Politécnica Nacional (EPN), Quito:
 "Práctica 1: MRUV" and "Práctica 2: Movimiento parabólico". The guides are **paraphrased** (objectives, assembly,
 procedure, table layouts, analysis tasks); their text, figures and the equipment photos are copyrighted and are not included.
-This project is **not affiliated with PHYWE**; DigiCart and PHYWE are trademarks of their
-owners and are used descriptively.
+This free educational project is **not affiliated with, sponsored or endorsed by PHYWE**. PHYWE and DigiCart are trademarks of
+their respective owners, mentioned only to identify the real lab equipment. The 3D and 2D models are our own drawings (no
+logos, product photos or manual text), and the cart parameters are model assumptions, not manufacturer data.
 
 Literature values behind the model (each cited in [PARAMETERS.md](PARAMETERS.md) next to its number, otherwise marked
 ASSUMED): ITTF Handbook (ping-pong ball size and mass), White, *Fluid Mechanics* (smooth-sphere drag curve), Tanaka et al.
@@ -110,4 +111,9 @@ ASSUMED): ITTF Handbook (ping-pong ball size and mass), White, *Fluid Mechanics*
 (JCGM 100), J. R. Taylor, *An Introduction to Error Analysis*, Orear (1982) effective variance.
 
 Licences: code MIT ([LICENSE](LICENSE)); educational content CC BY 4.0 ([LICENSE-CONTENT](LICENSE-CONTENT)). Dependencies:
-three.js (MIT), uPlot (MIT), Vite, Vitest, TypeScript.
+three.js (MIT), uPlot (MIT), Vite, Vitest, TypeScript. The notices of the shipped libraries are in
+[public/THIRD-PARTY-NOTICES.txt](public/THIRD-PARTY-NOTICES.txt) (served with the site).
+
+Parts of the code and documentation were written with the help of AI tools (Claude) and reviewed by the author.
+
+Privacy: the app stores progress only in the browser (`localStorage`); it sends nothing to any server and has no analytics.
