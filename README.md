@@ -1,8 +1,10 @@
 # Mecánica labs: Newtonian-mechanics virtual lab
 
 Browser-based, physics-driven, educational simulations of Newtonian-mechanics lab practices: **Práctica 1, MRUV**
-(a PHYWE DigiCart rolling down a metal rail inclined at 1.30 degrees) and **Práctica 2, projectile motion** (a marble
-and a ping-pong ball launched horizontally from a table edge). Spanish first (English available), mobile first, light
+(a PHYWE DigiCart rolling down a metal rail inclined at 1.30 degrees) **Práctica 2, projectile motion** (a marble
+and a ping-pong ball launched horizontally from a table edge), **Práctica 3, force and acceleration** (a DigiCart on a level
+rail pulled by a hanging mass over a pulley) and **Práctica 4, friction** (a friction block pulled with a spring scale, and
+bars sliding down a raised rail). Spanish first (English available), mobile first, light
 and dark themes, keyboard accessible.
 
 **Live:** https://kairi99.github.io/mecanica-labs/ (the old address https://kairi99.github.io/digicart-mruv-sim/
@@ -18,12 +20,15 @@ JavaScript chunk; three.js is loaded lazily by the 3D stage, so a page only down
 | --- | --- | --- | --- | --- |
 | Práctica 1 | MRUV: a DigiCart rolls down an inclined rail | `/mruv/` | `src/experiments/mruv` | ready |
 | Práctica 2 | Projectile motion: a marble and a ping-pong ball leave the table edge after rolling down an inclined rail | `/parabolico/` | `src/experiments/parabolic` | ready |
+| Práctica 3 | Force and acceleration: a DigiCart on a level rail pulled by a hanging canister; total mass kept constant | `/segunda-ley/` | `src/experiments/newton2` | ready |
+| Práctica 4 | Friction: static and kinetic friction of a block pulled with a spring scale, and bars on a raised rail | `/rozamiento/` | `src/experiments/friction` | ready |
 
 Both follow the same flow: assemble the setup from an inventory, set it up (heights, level, marks), take your own
 measurements with virtual instruments (stopwatch driven by your own presses, tape measure), fill the guide's table and do its
-analysis tasks. Help pages: `/mruv/help/` and `/parabolico/help/` (Spanish, with `en.html` in English). The teacher keys
+analysis tasks. Help pages: `/mruv/help/`, `/parabolico/help/`, `/segunda-ley/help/` and `/rozamiento/help/` (Spanish, with `en.html` in English). The teacher keys
 are generated: [docs/teacher-key.md](docs/teacher-key.md) (MRUV) and [docs/teacher-key-parabolic.md](docs/teacher-key-parabolic.md)
-(projectile), both by `npm run teacher-key`.
+(projectile), [docs/teacher-key-newton2.md](docs/teacher-key-newton2.md) (force and acceleration) and
+[docs/teacher-key-friction.md](docs/teacher-key-friction.md) (friction), all by `npm run teacher-key`.
 
 ### Add an experiment
 
@@ -99,7 +104,8 @@ npm run teacher-key   # regenerate docs/teacher-key.md from the model
 ## Credits and licence
 
 Both experiments are based on lab guides of the Laboratorio de Física, Escuela Politécnica Nacional (EPN), Quito:
-"Práctica 1: MRUV" and "Práctica 2: Movimiento parabólico". The guides are **paraphrased** (objectives, assembly,
+"Práctica 1: MRUV", "Práctica 2: Movimiento parabólico", "Práctica 3: Relación Fuerza - Aceleración" and "Práctica 4:
+Fuerza de rozamiento". The guides are **paraphrased** (objectives, assembly,
 procedure, table layouts, analysis tasks); their text, figures and the equipment photos are copyrighted and are not included.
 This free educational project is **not affiliated with, sponsored or endorsed by PHYWE**. PHYWE and DigiCart are trademarks of
 their respective owners, mentioned only to identify the real lab equipment. The 3D and 2D models are our own drawings (no

@@ -1,4 +1,4 @@
-# Mecánica labs (EPN Newtonian-mechanics practices: Práctica 1 MRUV, Práctica 2 Movimiento parabólico)
+# Mecánica labs (EPN Newtonian-mechanics practices: Práctica 1 MRUV, Práctica 2 Movimiento parabólico, Práctica 3 Fuerza–aceleración, Práctica 4 Rozamiento)
 
 Repo `kairi99/mecanica-labs` (formerly `digicart-mruv-sim`), live at https://kairi99.github.io/mecanica-labs/.
 The first experiment, described here, is a browser-based, physics-driven, **educational** simulation of the Newtonian-mechanics lab "Práctica 1: MRUV" of the
@@ -8,11 +8,12 @@ student's own presses**, measures the stand heights and their separation with a 
 Table 1.1 and does the guide's analysis tasks. Public and **open source** (MIT code, CC BY 4.0 content). Spanish first.
 Not affiliated with PHYWE. Make no statement about EPN affiliation either way (no "affiliated", no "not affiliated").
 
-Source documents live in `refs/` (gitignored, copyrighted). Use the `mruv-reference` and `parabolic-reference` skills instead of the PDFs/photos.
+Source documents live in `refs/` (gitignored, copyrighted). Use the `mruv-reference`, `parabolic-reference`, `newton2-reference` and `friction-reference` skills instead of the PDFs/photos.
 
 The repo is a **multi-experiment app**: a landing page (`index.html`, `src/landing`) lists the experiments; each one is its
 own page and chunk (`mruv/index.html` and `src/experiments/mruv`; `parabolico/index.html` and `src/experiments/parabolic`,
-Práctica 2, status `ready`). Shared code is in `src/core` (no imports from `src/experiments`; a test enforces it). The second
+Práctica 2; `segunda-ley/index.html` and `src/experiments/newton2`, Práctica 3; `rozamiento/index.html` and
+`src/experiments/friction`, Práctica 4; all status `ready`). Shared code is in `src/core` (no imports from `src/experiments`; a test enforces it). The second
 guide has its own skill, `parabolic-reference` (paraphrased facts from "Práctica 2: Movimiento parabólico"); use it instead of the PDF.
 A new experiment is a folder, a manifest, a registry entry and an html entry (README, "Add an experiment").
 
@@ -21,9 +22,9 @@ A new experiment is a folder, a manifest, a registry entry and an html entry (RE
 ```bash
 npm install
 npm run dev      # Vite dev server
-npm test         # Vitest (tests/**/*.test.ts: tests/core, tests/mruv, tests/parabolic)
+npm test         # Vitest (tests/**/*.test.ts: tests/core and one folder per experiment)
 npm run build    # tsc && vite build -> dist/
-npm run teacher-key  # regenerates docs/teacher-key.md (MRUV) and docs/teacher-key-parabolic.md from the models
+npm run teacher-key  # regenerates docs/teacher-key*.md (one per experiment) from the models
 ```
 
 ## Non-negotiable invariants
@@ -66,6 +67,8 @@ Rules (`.claude/rules/`): `design-system`, `physics-model`, `open-source`.
 Skills (`.claude/skills/`):
 - `mruv-reference`: paraphrased facts from the Práctica 1 guide (objectives, materials, assembly, procedure, tasks, equipment look).
 - `parabolic-reference`: paraphrased facts from the Práctica 2 guide (marble and ping-pong ball launched horizontally from a table edge, Tabla 2.1, tasks).
+- `newton2-reference`: paraphrased facts from the Práctica 3 guide (DigiCart pulled by a hanging canister over a pulley, Tabla 3.1, F(a) fit, tasks).
+- `friction-reference`: paraphrased facts from the Práctica 4 guide (friction block and spring scales, bars on a raised rail, Tablas 4.1–4.3, tasks).
 
 Agents (`.claude/agents/`, read-only reviewers; call them after meaningful changes in their area):
 `physics-reviewer`, `pedagogy-reviewer`, `design-reviewer`.
