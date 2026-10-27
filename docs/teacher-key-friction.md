@@ -13,27 +13,36 @@ Every friction coefficient, mass and scale constant is **ASSUMED** (see PARAMETE
 
 ## Experiment 1: force at constant speed (Tabla 4.1)
 
-F_k = mu_k (M + m) g. The "steady" column is the mean needle reading 4 to 6 s into a pull at 0.10 m/s with a steady hand on a paper long enough to hold the plateau (the real A4 sheet allows less travel: see the note).
+F_k = mu_k (M + m) g (1 + beta v), with the ASSUMED velocity strengthening beta = 1.5 s/m (the parameter that lets the stick-slip settle into a plateau): at the advised pull speed 4 cm/s the plateau is 6.0 % above mu_k W. "Min. steady speed" is the lowest pull speed on a 0.005 m/s grid above which no run shows a re-stick (stick-slip) with a steady hand and no travel limit; below it the needle oscillates between about mu_k N and mu_s N. "Readable" is how long the needle stays within 3 % of its final value while the block is still on the 0.20 m of paper, at 4 cm/s.
 
-| Face | Added mass (g) | W = (M+m) g (N) | Expected F_k (N) | Steady plateau, sim (N) | 1 N scale |
-|---|---|---|---|---|---|
-| Cloth (tela) | 0 | 0.977 | 0.293 | 0.293 | fits |
-| Cloth (tela) | 50 | 1.466 | 0.440 | 0.440 | fits |
-| Cloth (tela) | 100 | 1.954 | 0.586 | 0.586 | fits |
-| Cloth (tela) | 150 | 2.443 | 0.733 | 0.733 | fits |
-| Sandpaper (lija) | 0 | 0.977 | 0.537 | 0.537 | fits |
-| Sandpaper (lija) | 50 | 1.466 | 0.806 | 0.806 | fits |
-| Sandpaper (lija) | 100 | 1.954 | 1.075 | 1.075 | overranges or nearly (use 2 N) |
-| Sandpaper (lija) | 150 | 2.443 | 1.344 | 1.344 | overranges or nearly (use 2 N) |
+| Face | Added mass (g) | W = (M+m) g (N) | Expected F_k at 4 cm/s (N) | Plateau, sim (N) | Min. steady speed, 1 N (cm/s) | Min. steady speed, 2 N (cm/s) | Readable at 4 cm/s, 2 N (s) | 1 N scale |
+|---|---|---|---|---|---|---|---|---|
+| Cloth (tela) | 0 | 0.977 | 0.311 | 0.311 | 2.5 | 2.5 | 4.1 | fits |
+| Cloth (tela) | 50 | 1.466 | 0.466 | 0.466 | 2.5 | 3.0 | 4.2 | fits |
+| Cloth (tela) | 100 | 1.954 | 0.621 | 0.621 | 2.5 | 3.0 | 4.0 | fits |
+| Cloth (tela) | 150 | 2.443 | 0.777 | 0.776 | 2.5 | 3.0 | 3.9 | fits |
+| Sandpaper (lija) | 0 | 0.977 | 0.570 | 0.570 | 2.0 | 2.5 | 4.5 | fits |
+| Sandpaper (lija) | 50 | 1.466 | 0.855 | 0.855 | 1.5 | 2.5 | 4.3 | fits |
+| Sandpaper (lija) | 100 | 1.954 | 1.139 | 1.140 | 1.0 | 2.0 | 4.2 | overranges or nearly (use 2 N) |
+| Sandpaper (lija) | 150 | 2.443 | 1.424 | 1.425 | 1.0 | 2.0 | 4.1 | overranges or nearly (use 2 N) |
 
-Note: a real pull that stays on the A4 sheet (0.20 m of travel) at 0.10 m/s lasts only 2 s; at 0.03 to 0.05 m/s it lasts 4 to 7 s and the plateau is shorter but readable. Slower pulls with the soft 1 N spring show stick-slip (needle oscillating between roughly mu_k N and mu_s N).
+Advice for the help page: pull at 4 to 5 cm/s or faster for every load (all the minimum steady speeds above are below 4 cm/s); the first part of the pull is spent stretching the spring (the block does not move), so the 0.20 m of paper is used only after the breakaway. Pulls below the minimum steady speed show stick-slip with the soft 1 N spring.
 
 ### Expected fits (weighted straight line of mean force against weight)
 
-| Face | Expected slope = mu_k | Expected intercept (N) |
+| Face | Expected slope mu_k (1 + beta v), v = 4 cm/s | Expected intercept (N) |
 |---|---|---|
-| Cloth (tela) | 0.300 | 0 (a non-zero intercept means a zero error: scale not zeroed horizontally gives about -0.020 N on the 1 N scale) |
-| Sandpaper (lija) | 0.550 | 0 (a non-zero intercept means a zero error: scale not zeroed horizontally gives about -0.020 N on the 1 N scale) |
+| Cloth (tela) | 0.318 (assumed mu_k 0.30) | 0 (a non-zero intercept means a zero error: a scale not zeroed horizontally gives about -0.020 N on the 1 N scale) |
+| Sandpaper (lija) | 0.583 (assumed mu_k 0.55) | 0 (a non-zero intercept means a zero error: a scale not zeroed horizontally gives about -0.020 N on the 1 N scale) |
+
+### Static peak against pull speed
+
+The needle shows the spring force k e; the barrel damping (c = 0.15 N s/m) makes it read c v below mu_s N during the build-up. Cloth and sandpaper, no added mass, 2 N scale.
+
+| Face | mu_s M g (N) | Peak at 1 cm/s (N) | at 5 cm/s (N) | at 10 cm/s (N) |
+|---|---|---|---|---|
+| Cloth (tela) | 0.391 | 0.389 | 0.383 | 0.376 |
+| Sandpaper (lija) | 0.704 | 0.702 | 0.696 | 0.689 |
 
 ## Experiment 2: peak force before breakaway (Tabla 4.2)
 
@@ -41,8 +50,8 @@ F_max = mu_s M g (no added mass). The "reading" columns are the needle at the pe
 
 | Face | Expected peak mu_s M g (N) | Peak, sim (N) | Press +0.2 s (N) | Press +0.5 s (N) | mu_s from a +0.2 s press |
 |---|---|---|---|---|---|
-| Cloth (tela) | 0.391 | 0.386 | 0.309 | 0.284 | 0.316 (true 0.400) |
-| Sandpaper (lija) | 0.704 | 0.699 | 0.497 | 0.514 | 0.509 (true 0.720) |
+| Cloth (tela) | 0.391 | 0.390 | 0.296 | 0.267 | 0.303 (true 0.400) |
+| Sandpaper (lija) | 0.704 | 0.703 | 0.498 | 0.515 | 0.510 (true 0.720) |
 
 A late press catches the dropped (kinetic-like) force, so the static coefficient comes out too low and may even fall below mu_k: the human-reaction point of the lab.
 
@@ -50,8 +59,8 @@ A late press catches the dropped (kinetic-like) force, so the static coefficient
 
 | Face | mean mu_s | sd mu_s | mean mu_k | sd mu_k | sd of a single peak reading (N, M g = 0.977 N) |
 |---|---|---|---|---|---|
-| Cloth (tela) | 0.401 | 0.019 | 0.300 | 0.009 | 0.019 |
-| Sandpaper (lija) | 0.721 | 0.035 | 0.550 | 0.017 | 0.034 |
+| Cloth (tela) | 0.399 | 0.020 | 0.300 | 0.009 | 0.019 |
+| Sandpaper (lija) | 0.718 | 0.036 | 0.549 | 0.017 | 0.035 |
 
 ## Experiment 3: bars on the raised rail (Tabla 4.3)
 
@@ -77,9 +86,9 @@ Hand timing uncertainty used by the analysis: 0.058 s (display 0.01 s and reacti
 
 | Bar | mean t (s) | sd t (s) | mean mu from (h, t) | sd mu |
 |---|---|---|---|---|
-| Wood (madera) | 1.526 | 0.262 | 0.300 | 0.012 |
-| Aluminium (aluminio) | 1.598 | 0.434 | 0.400 | 0.017 |
-| Iron (hierro) | 1.475 | 0.373 | 0.460 | 0.019 |
+| Wood (madera) | 1.490 | 0.134 | 0.301 | 0.013 |
+| Aluminium (aluminio) | 1.526 | 0.177 | 0.401 | 0.017 |
+| Iron (hierro) | 1.415 | 0.155 | 0.461 | 0.019 |
 
 ## Notes for the discussion (not shown to the student)
 

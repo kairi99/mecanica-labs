@@ -113,6 +113,8 @@ export interface InclineStatus {
   s_m: number
   v_mps: number
   slipped: boolean
+  /** The crank is turning now (a non-zero rate that is not stopped by the rack limit). */
+  cranking: boolean
 }
 
 export interface InclineReference {

@@ -39,13 +39,13 @@ export function analysisCSV(a: FrictionAnalysis, lang: Lang): string {
     const [v, u] = r ? pair(r.mean, r.dF_N, lang) : ['', '']
     rows.push([L.face[FACE_ORDER[Math.floor(i / MASS_STEPS)]!], String((i % MASS_STEPS) * 50), v, u])
   })
-  rows.push([], ['fit', 'mu_k', 'dmu_k', 'F0 (N)', 'dF0 (N)'])
+  rows.push([], ['fit', 'mu', 'dmu', 'F0 (N)', 'dF0 (N)'])
   a.t41?.fits.forEach((f) => {
     const [m, dm] = pair(f.mu_k, f.sigma_mu_k, lang)
     const [b, db] = pair(f.intercept_N, f.sigma_intercept_N, lang)
     rows.push([L.face[f.face], m, dm, b, db])
   })
-  rows.push([], ['Tabla 4.2', 'Fmax (N)', 'dF (N)', 'mu_s', 'dmu_s'])
+  rows.push([], ['Tabla 4.2', 'Fmax (N)', 'dF (N)', 'mu', 'dmu'])
   a.t42.forEach((c, i) => {
     const [f, df] = c ? pair(c.Fmax.mean, c.Fmax.dF_N, lang) : ['', '']
     const [m, dm] = c ? pair(c.mu_s, c.sigma_mu_s, lang) : ['', '']

@@ -18,7 +18,7 @@ export interface SpringScaleSpec {
   k_Npm: number
   /** Extension of the spring at full scale, m (length of the printed scale). */
   fullExtension_m: number
-  /** Internal damping of the needle and spring (dashpot in parallel with the spring), N s/m. ASSUMED. */
+  /** Damping of the barrel (dashpot in parallel with the spring), N s/m. ASSUMED small: a real tube dynamometer rings (damping ratio ~0.02-0.05). */
   damping_Nspm: number
   /** Mass of the moving parts (rod, hook, needle) whose weight sets the zero when the scale is used in another orientation, kg. ASSUMED. */
   movingMass_kg: number
@@ -28,8 +28,8 @@ export interface SpringScaleSpec {
 
 /** ASSUMED: scale length 10 cm for both (1 N: 50 divisions of 0.02 N, 2 mm apart; 2 N: 40 divisions of 0.05 N, 2.5 mm apart). */
 export const SPRING_SCALES: Readonly<Record<SpringScaleId, SpringScaleSpec>> = {
-  '1N': { id: '1N', range_N: 1, division_N: 0.02, k_Npm: 10, fullExtension_m: 0.1, damping_Nspm: 1.0, movingMass_kg: 0.002, labelStep_N: 0.1 },
-  '2N': { id: '2N', range_N: 2, division_N: 0.05, k_Npm: 20, fullExtension_m: 0.1, damping_Nspm: 1.0, movingMass_kg: 0.003, labelStep_N: 0.5 },
+  '1N': { id: '1N', range_N: 1, division_N: 0.02, k_Npm: 10, fullExtension_m: 0.1, damping_Nspm: 0.15, movingMass_kg: 0.002, labelStep_N: 0.2 },
+  '2N': { id: '2N', range_N: 2, division_N: 0.05, k_Npm: 20, fullExtension_m: 0.1, damping_Nspm: 0.15, movingMass_kg: 0.003, labelStep_N: 0.5 },
 }
 export const SPRING_SCALE_IDS: readonly SpringScaleId[] = ['1N', '2N']
 

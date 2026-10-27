@@ -82,7 +82,7 @@
 /* Instruments (fixed in both themes, like real devices): LCD, device bodies, tape blade and metal, level vial. */
 :root {
   --lcd-bg: #b9c4aa; --lcd-ink: #1a2016; --lcd-ghost: rgba(26, 32, 22, 0.1);
-  --device: #2a2a2d; --device-hi: #4a4a4f; --device-ink: #f5f5f7;
+  --device: #2a2a2d; --device-hi: #4a4a4f; --device-ink: #f5f5f7; --needle-red: #ff453a;
   --metal: #d9dbe0; --metal-2: #b8bbc2; --metal-ink: #1d1d1f;
   --tape-blade: #f2c230; --tape-ink: #1d1d1f;
   --vial-fluid: #d3e6ad; --vial-bubble: #fbfdf2;

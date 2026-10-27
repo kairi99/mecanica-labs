@@ -10,7 +10,7 @@ import {
   SPRING_SCALES, createSpringScale, rezeroSpringScale, springScaleReading, type SpringScale, type SpringScaleId,
 } from '../../../core/instruments/springScale.ts'
 import {
-  BAR_MASS_kg, BAR_PAIRS, BAR_SCATTER, BLOCK_ON_TABLE, COURSE_m, FACE_IDS, FACE_PAIRS, FACE_SCATTER, G_QUITO_mps2, LOOSE_PAPER_SCATTER, PAPER_ON_TABLE, PAPER_TRAVEL_m,
+  BAR_MASS_kg, BAR_PAIRS, CONTACT_BETA_spm, BAR_SCATTER, BLOCK_ON_TABLE, COURSE_m, FACE_IDS, FACE_PAIRS, FACE_SCATTER, G_QUITO_mps2, LOOSE_PAPER_SCATTER, PAPER_ON_TABLE, PAPER_TRAVEL_m,
   PULL_SPEED_MAX_mps, PULL_SPEED_MIN_mps, PullSimulator, RACK_H_MAX_m, RAISE_RATE_MAX_mps, RAISE_RATE_MIN_mps, heightAt_m, inclineAngle_rad,
   sampleBenchMasses, sampleHand, sampleTrialCoefficients, simulateIncline, MASS_COUNT,
   type BarId, type FaceId, type InclineRun, type PullParams, type RaiseProfile,
@@ -223,7 +223,7 @@ export class FrictionApparatus {
     const spec = SPRING_SCALES[rec.setup.scale]
     const fixed = rec.setup.paper === 'fixed'
     return {
-      k_Npm: spec.k_Npm, c_Nspm: spec.damping_Nspm, mass_kg: rec.mass_kg, mu_s: rec.mu_s, mu_k: rec.mu_k, g_mps2: G_QUITO_mps2,
+      k_Npm: spec.k_Npm, c_Nspm: spec.damping_Nspm, beta_spm: CONTACT_BETA_spm, mass_kg: rec.mass_kg, mu_s: rec.mu_s, mu_k: rec.mu_k, g_mps2: G_QUITO_mps2,
       paperTravel_m: fixed ? PAPER_TRAVEL_m : Infinity, ...(fixed ? { off: BLOCK_ON_TABLE } : {}), hand: rec.hand,
     }
   }
@@ -384,7 +384,7 @@ export class FrictionApparatus {
     return r
   }
 
-  /** Turn the rack crank at rate_mps (m/s of h, 0.5 to 20 mm/s; negative lowers). The first call starts the trial. */
+  /** Turn the rack crank at rate_mps (m/s of h, 0.5 to 60 mm/s; negative lowers). The first call starts the trial. */
   raiseStart(t_ms: number, rate_mps: number): Result<{ trialId: number }> {
     this.touch(t_ms)
     const rateOk = Math.abs(rate_mps) >= RAISE_RATE_MIN_mps && Math.abs(rate_mps) <= RAISE_RATE_MAX_mps
@@ -439,7 +439,7 @@ export class FrictionApparatus {
     const tr = this.trialRec(this.activeTrial)
     if (!tr) {
       const h = this.rackH_m
-      return { phase: 'idle', trialId: null, h_m: h, theta_rad: inclineAngle_rad(h), s_m: 0, v_mps: 0, slipped: false }
+      return { phase: 'idle', trialId: null, h_m: h, theta_rad: inclineAngle_rad(h), s_m: 0, v_mps: 0, slipped: false, cranking: false }
     }
     const t_s = Math.max(0, (t_ms - tr.start_ms) / 1000)
     const h = heightAt_m(this.profileOf(tr), t_s)
@@ -457,7 +457,7 @@ export class FrictionApparatus {
       if (!this.announced.has(`s${tr.id}`)) { this.announced.add(`s${tr.id}`); this.emit({ type: 'barSlips', trialId: tr.id, h_m: run.onset_h_m! }, tr.start_ms + run.onset_t_s * 1000) }
       if (phase === 'finished' && !this.announced.has(`f${tr.id}`)) { this.announced.add(`f${tr.id}`); this.emit({ type: 'barFinished', trialId: tr.id }, t_ms) }
     }
-    return { phase, trialId: tr.id, h_m: h, theta_rad: theta, s_m: Math.min(s, tr.course_m + 0.05), v_mps: v, slipped }
+    return { phase, trialId: tr.id, h_m: h, theta_rad: theta, s_m: Math.min(s, tr.course_m + 0.05), v_mps: v, slipped, cranking: lastRate !== 0 && h < RACK_H_MAX_m }
   }
   /** Reference record of a trial (true onset and slide time; mu_s and mu_k of the trial). */
   referenceTrial(trialId: number): InclineReference | null {
@@ -470,6 +470,11 @@ export class FrictionApparatus {
     }
   }
   getTrials(): readonly InclineTrialRecord[] { return this.trials }
+  /** Time after the first crank turn at which the bar of a trial starts to slide (null: it never does). */
+  inclineOnset_s(trialId: number): number | null {
+    const tr = this.trials.find((t) => t.id === trialId)
+    return tr ? this.runOf(tr).onset_t_s : null
+  }
 
   /** Tape reading of h (rail underside at the clamp above the table), to the mm. Refused while the crank is turning. */
   measureHeight(t_ms: number): Result<{ h_m: number }> {

@@ -20,13 +20,19 @@ export const BAR_SCATTER: FrictionScatter = { sigma_mu_s_rel: 0.06, sigma_mu_k_r
 export const LOOSE_PAPER_SCATTER: FrictionScatter = { sigma_mu_s_rel: 0.15, sigma_mu_k_rel: 0.1 }
 export const NO_SCATTER: FrictionScatter = { sigma_mu_s_rel: 0, sigma_mu_k_rel: 0 }
 
+/** Correlation between the per-trial deviations of mu_s and mu_k (shared patch factor). ASSUMED 0.7. */
+export const MU_CORRELATION = 0.7
+
 /** Smallest ratio mu_s / mu_k a trial may have (the draw cannot make kinetic friction exceed static: physical, one-sided guard). */
 export const MIN_MU_RATIO = 1.02
 
-/** Coefficients of ONE trial: fixed draw order (mu_s, mu_k). The static one is kept at least MIN_MU_RATIO times the kinetic one. */
+/** Coefficients of ONE trial: fixed draw order (shared, static, kinetic), correlation MU_CORRELATION. The static one is kept at least MIN_MU_RATIO times the kinetic one. */
 export function sampleTrialCoefficients(rng: () => number, pair: SurfacePair, cfg: FrictionScatter): { mu_s: number; mu_k: number } {
-  const mu_s = pair.mu_s * (1 + cfg.sigma_mu_s_rel * gaussian(rng))
-  const mu_k = pair.mu_k * (1 + cfg.sigma_mu_k_rel * gaussian(rng))
+  // a shared surface-patch factor (the same dust, fibres or oxide acts on both coefficients) plus independent parts; fixed draw order
+  const zc = gaussian(rng), zs = gaussian(rng), zk = gaussian(rng)
+  const a = Math.sqrt(MU_CORRELATION), b = Math.sqrt(1 - MU_CORRELATION)
+  const mu_s = pair.mu_s * (1 + cfg.sigma_mu_s_rel * (a * zc + b * zs))
+  const mu_k = pair.mu_k * (1 + cfg.sigma_mu_k_rel * (a * zc + b * zk))
   return { mu_s: Math.max(mu_s, mu_k * MIN_MU_RATIO), mu_k }
 }
 

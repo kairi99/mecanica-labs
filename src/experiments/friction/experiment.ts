@@ -1,4 +1,4 @@
-// Manifest of the friction experiment (data only: see ../manifest.ts). Status 'soon' until the views exist (not in the registry yet).
+// Manifest of the friction experiment (data only: see ../manifest.ts). Status 'ready': page rozamiento/index.html.
 import type { ExperimentManifest } from '../manifest.ts'
 
 export const manifest: ExperimentManifest = {
@@ -13,5 +13,5 @@ export const manifest: ExperimentManifest = {
   page: 'rozamiento/index.html',
   help: { es: 'rozamiento/help/index.html', en: 'rozamiento/help/en.html' },
   thumb: 'block',
-  status: 'soon',
+  status: 'ready',
 }

@@ -65,8 +65,26 @@ function pulleyDrawing(): SVGElement[] {
   ]
 }
 
+function blockDrawing(): SVGElement[] {
+  // a block on a surface pulled to the right by a spring scale (barrel, needle, hook) held by a hand ring
+  const gy = 84
+  return [
+    svg('line', { x1: 0, y1: gy, x2: W, y2: gy, class: 'th-ground' }),
+    svg('rect', { x: 44, y: gy - 30, width: 62, height: 30, rx: 4, class: 'th-body' }),
+    svg('rect', { x: 44, y: gy - 6, width: 62, height: 6, rx: 2, class: 'th-paper' }),
+    svg('line', { x1: 106, y1: gy - 15, x2: 150, y2: gy - 15, class: 'th-line' }),
+    svg('rect', { x: 150, y: gy - 24, width: 92, height: 18, rx: 9, class: 'th-body' }),
+    svg('line', { x1: 168, y1: gy - 24, x2: 168, y2: gy - 6, class: 'th-line' }),
+    svg('line', { x1: 188, y1: gy - 24, x2: 188, y2: gy - 6, class: 'th-line' }),
+    svg('line', { x1: 208, y1: gy - 24, x2: 208, y2: gy - 6, class: 'th-line' }),
+    svg('line', { x1: 196, y1: gy - 28, x2: 196, y2: gy - 2, class: 'th-needle' }),
+    svg('circle', { cx: 256, cy: gy - 15, r: 8, class: 'th-ring' }),
+    svg('line', { x1: 244, y1: gy - 15, x2: 248, y2: gy - 15, class: 'th-line' }),
+  ]
+}
+
 export function thumb(kind: ExperimentManifest['thumb']): SVGElement {
   const s = svg('svg', { viewBox: `0 0 ${W} ${H}`, class: 'lp-thumb', 'aria-hidden': 'true', focusable: 'false' })
-  s.append(svg('rect', { width: W, height: H, class: 'th-bg' }), ...(kind === 'incline' ? inclineDrawing() : kind === 'pulley' ? pulleyDrawing() : arcDrawing()))
+  s.append(svg('rect', { width: W, height: H, class: 'th-bg' }), ...(kind === 'incline' ? inclineDrawing() : kind === 'pulley' ? pulleyDrawing() : kind === 'block' ? blockDrawing() : arcDrawing()))
   return s
 }

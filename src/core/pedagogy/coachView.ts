@@ -24,7 +24,7 @@ export interface CoachDef<A extends EventSource<E>, E, K extends string> {
   localise?(params: Record<string, string | number>, lang: Lang): Record<string, string | number>
 }
 
-export function mountCoach<A extends EventSource<E>, E, K extends string>(ctx: ViewContext<A>, def: CoachDef<A, E, K>): { relabel(): void; destroy(): void } {
+export function mountCoach<A extends EventSource<E>, E, K extends string>(ctx: ViewContext<A>, def: CoachDef<A, E, K>): { relabel(): void; clear(): void; destroy(): void } {
   const strings = def.strings
   const gate = new CoachGate<K>()
   const box = el('div', 'coach', undefined, { role: 'status', 'aria-live': 'polite' })
@@ -55,5 +55,6 @@ export function mountCoach<A extends EventSource<E>, E, K extends string>(ctx: V
     window.clearTimeout(timer)
   })
   label()
-  return { relabel: label, destroy() { off(); hide(false); box.remove() } }
+  /** Hide the current hint without muting it (for example when the student changes lab step: a hint about another step is stale). */
+  return { relabel: label, clear() { hide(false) }, destroy() { off(); hide(false); box.remove() } }
 }

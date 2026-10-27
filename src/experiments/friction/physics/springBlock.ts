@@ -5,9 +5,15 @@
 //   e = x_pull - x_block      extension of the spring (natural length absorbed in x_block), m
 //   F_spring = k e            what the needle shows, N
 //   stuck (u = 0):  e' = v_pull; the block stays at rest while |k e + c v_pull| <= mu_s N
-//   sliding (sign s): M u' = k e + c e' - s mu_k N,  e' = v_pull - u,   N = M g (horizontal pull on a level table)
-// With y = e - s mu_k N / k the sliding equation is a damped oscillator, y'' + 2a y' + w0^2 y = 0 (a = c / 2M, w0^2 = k / M), solved EXACTLY
-// over each step while v_pull is held constant inside it. The fixed step is PULL_DT_s; events (breakaway: stick to slip, arrest: u crosses
+//   sliding (sign s): M u' = k e + c_b e' - s mu_k N (1 + beta |u|),  e' = v_pull - u,   N = M g (horizontal pull on a level table)
+// c_b is the (small) damping of the scale barrel, acting only while the spring changes length; beta is a mild velocity strengthening of
+// the kinetic friction at the block-paper contact (mu_k(u) = mu_k (1 + beta |u|), ASSUMED): it is zero force while stuck, so it does not
+// touch the static peak, and it is what lets the stick-slip ring die out into a steady plateau (the parameter that makes the plateau possible).
+// Substituting e' = v_pull - u gives M e'' + (c_b + c_i) e' + k e = s mu_k N + c_i v_pull with c_i = beta mu_k N. With y = e - e_eq,
+// e_eq = (s mu_k N + c_i v_pull) / k, this is a damped oscillator, y'' + 2a y' + w0^2 y = 0 (a = (c_b + c_i) / 2M, w0^2 = k / M), solved EXACTLY
+// over each step while v_pull is held constant inside it. At steady speed the needle reads mu_k N (1 + beta v): a few percent above mu_k N.
+// The pull speed is never negative (the hand pulls forward), so breakaway and sliding are always in the +x direction unless the block
+// overshoots and the spring pushes it back (reverse slip, handled). The fixed step is PULL_DT_s; events (breakaway: stick to slip, arrest: u crosses
 // zero, then stick or reverse slip) are located inside a step by bisection on the exact solution, so the result does not depend on the step.
 // This reproduces the static peak mu_s N, the drop after breakaway, the plateau mu_k N at steady speed and stick-slip for slow pulls with
 // a soft spring. The scale's needle is the spring extension only (the dashpot force acts on the block, it is not displayed).
@@ -25,7 +31,10 @@ export const STEADY_HAND: HandParams = { tau_s: 0, wobbleRel: 0, wobbleFreq_hz: 
 
 export interface PullParams {
   k_Npm: number
+  /** Damping of the scale barrel (dashpot in parallel with the spring), N s/m. The needle reads c_b v low during the build-up. */
   c_Nspm: number
+  /** Velocity strengthening of the kinetic friction, s/m: mu_k(u) = mu_k (1 + beta |u|). 0: pure Coulomb (never settles). */
+  beta_spm?: number
   /** Total sliding mass (block + masses on it), kg. */
   mass_kg: number
   mu_s: number
@@ -64,7 +73,8 @@ export interface PullSummary {
 }
 
 /** Exact damped-oscillator update y'' + 2a y' + w0^2 y = 0 over h (underdamped). */
-function dampedStep(y0: number, yp0: number, w0sq: number, a: number, h: number): [number, number] {
+function dampedStep(y0: number, yp0: number, w0sq: number, aIn: number, h: number): [number, number] {
+  const a = Math.min(aIn, 0.98 * Math.sqrt(w0sq)) // underdamped by construction (a heavily damped contact is clamped, documented)
   const wd2 = w0sq - a * a
   if (!(wd2 > 0)) throw new Error('spring-block model needs an underdamped scale (c < 2 sqrt(k M))')
   const wd = Math.sqrt(wd2)
@@ -86,7 +96,6 @@ export class PullSimulator {
   private mode: 'stick' | 'slip' = 'stick'
   private dir = 1
   private w0sq: number
-  private a: number
   private out: PullSample[] = []
   private nextSample = 0
   private breakaway_t: number | null = null
@@ -98,7 +107,6 @@ export class PullSimulator {
   constructor(p: PullParams) {
     this.p = p
     this.w0sq = p.k_Npm / p.mass_kg
-    this.a = p.c_Nspm / (2 * p.mass_kg)
     this.record()
   }
 
@@ -171,15 +179,16 @@ export class PullSimulator {
       if (this.mode === 'stick') {
         const Ftot = k * this.e + c * vp
         if (Math.abs(Ftot) >= muS) { this.startSlip(Math.sign(Ftot) || 1, t0 + (h - rem), k * this.e); continue }
-        let tt = Infinity
-        if (vp > 0) tt = ((muS - c * vp) / k - this.e) / vp
-        else if (vp < 0) tt = ((-muS - c * vp) / k - this.e) / vp
-        if (tt <= rem) { this.e += vp * tt; this.xp += vp * tt; rem -= tt; this.startSlip(vp > 0 ? 1 : -1, t0 + (h - rem), k * this.e) } else { this.e += vp * rem; this.xp += vp * rem; rem = 0 }
+        // v_pull >= 0: only the +x threshold can be reached from a stuck state (the -x one is caught by the check above)
+        const tt = vp > 0 ? ((muS - c * vp) / k - this.e) / vp : Infinity
+        if (tt <= rem) { this.e += vp * tt; this.xp += vp * tt; rem -= tt; this.startSlip(1, t0 + (h - rem), k * this.e) } else { this.e += vp * rem; this.xp += vp * rem; rem = 0 }
       } else {
         const s = this.dir
-        const ek = (s * muK) / k
+        const cI = (this.p.beta_spm ?? 0) * muK
+        const a = (c + cI) / (2 * M)
+        const ek = (s * muK + cI * vp) / k
         const y0 = this.e - ek, yp0 = vp - this.u
-        const [y1, yp1] = dampedStep(y0, yp0, this.w0sq, this.a, rem)
+        const [y1, yp1] = dampedStep(y0, yp0, this.w0sq, a, rem)
         const u1 = vp - yp1
         if (s * u1 >= 0) {
           this.xp += vp * rem; this.e = y1 + ek; this.u = u1; rem = 0
@@ -188,16 +197,18 @@ export class PullSimulator {
           let lo = 0, hi = rem
           for (let i = 0; i < 60; i++) {
             const mid = (lo + hi) / 2
-            const [, ypm] = dampedStep(y0, yp0, this.w0sq, this.a, mid)
+            const [, ypm] = dampedStep(y0, yp0, this.w0sq, a, mid)
             if (s * (vp - ypm) > 0) lo = mid
             else hi = mid
           }
           const tau = hi
-          const [yt] = dampedStep(y0, yp0, this.w0sq, this.a, tau)
+          const [yt] = dampedStep(y0, yp0, this.w0sq, a, tau)
           this.xp += vp * tau; this.e = yt + ek; this.u = 0; rem -= tau
           const Ftot = k * this.e + c * vp
-          if (Math.abs(Ftot) <= muS) { this.mode = 'stick'; this.resticks++ } else this.dir = Math.sign(Ftot) || 1
-          if (tau <= 1e-15 && rem > 0) { this.mode = 'stick'; this.resticks++ } // numerical grazing: treat as arrested
+          const newDir = Math.sign(Ftot) || 1
+          if (Math.abs(Ftot) <= muS) { this.mode = 'stick'; this.resticks++ }
+          else if (newDir !== this.dir) this.dir = newDir // reverse slip chosen: never overridden below
+          else if (tau <= 1e-15 && rem > 0) { this.mode = 'stick'; this.resticks++ } // numerical grazing in the same direction: treat as arrested
         }
       }
     }

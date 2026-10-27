@@ -2,7 +2,7 @@
 // scripts/teacher-key.ts writes the result to docs/teacher-key-friction.md. Every number comes from the physics layer and the analysis layer.
 // It states what this virtual lab produces; it never answers the guide's qualitative questions for the student's report in the app.
 import {
-  BAR_IDS, BAR_PAIRS, BAR_SCATTER, BLOCK_MASS_NOMINAL_kg, COURSE_m, FACE_IDS, FACE_PAIRS, FACE_SCATTER, G_QUITO_mps2, MASS_NOMINAL_kg, PAPER_TRAVEL_m,
+  BAR_IDS, BAR_PAIRS, BAR_SCATTER, BLOCK_MASS_NOMINAL_kg, CONTACT_BETA_spm, COURSE_m, FACE_IDS, FACE_PAIRS, FACE_SCATTER, G_QUITO_mps2, MASS_NOMINAL_kg, PAPER_TRAVEL_m,
   PullSimulator, RAIL_SUPPORT_DIST_m, STEADY_HAND, inclineAngle_rad, mean, mulberry32, muFromSlide, onsetHeight_m, sampleSd, sampleTrialCoefficients,
   simulateIncline, slideAcceleration_mps2, slideTime_s, type BarId, type FaceId, type PullParams,
 } from '../physics/index.ts'
@@ -20,8 +20,21 @@ function pullParams(face: FaceId, masses: number, scale: SpringScaleId): PullPar
   const spec = SPRING_SCALES[scale]
   return {
     k_Npm: spec.k_Npm, c_Nspm: spec.damping_Nspm, mass_kg: BLOCK_MASS_NOMINAL_kg + masses * MASS_NOMINAL_kg, mu_s: FACE_PAIRS[face].mu_s, mu_k: FACE_PAIRS[face].mu_k,
-    g_mps2: g, paperTravel_m: PAPER_TRAVEL_m, hand: STEADY_HAND,
+    beta_spm: CONTACT_BETA_spm, g_mps2: g, paperTravel_m: PAPER_TRAVEL_m, hand: STEADY_HAND,
   }
+}
+const ADVISED_mps = 0.04
+/** Lowest speed on a 0.005 m/s grid (up to 0.1 m/s) above which a steady-hand pull never re-sticks after the breakaway. */
+function minSteadySpeed(face: FaceId, masses: number, scale: SpringScaleId): number {
+  let vmin = 0.1
+  for (let v = 0.1; v >= 0.005 - 1e-9; v -= 0.005) {
+    const p = { ...pullParams(face, masses, scale), paperTravel_m: Infinity }
+    const peak = (p.mu_s * p.mass_kg * g) / p.k_Npm
+    const sim = pullTrace(p, v, peak / v + 0.4 / v + 3)
+    if (sim.summary().restickCount > 0) break
+    vmin = v
+  }
+  return vmin
 }
 function pullTrace(p: PullParams, v_mps: number, T_s: number): PullSimulator {
   const sim = new PullSimulator(p)
@@ -49,32 +62,38 @@ export function teacherKey(): string {
     '',
     '## Experiment 1: force at constant speed (Tabla 4.1)',
     '',
-    'F_k = mu_k (M + m) g. The "steady" column is the mean needle reading 4 to 6 s into a pull at 0.10 m/s with a steady hand on a paper long enough to hold the plateau (the real A4 sheet allows less travel: see the note).',
+    `F_k = mu_k (M + m) g (1 + beta v), with the ASSUMED velocity strengthening beta = ${CONTACT_BETA_spm} s/m (the parameter that lets the stick-slip settle into a plateau): at the advised pull speed ${ADVISED_mps * 100} cm/s the plateau is ${f(CONTACT_BETA_spm * ADVISED_mps * 100, 1)} % above mu_k W. "Min. steady speed" is the lowest pull speed on a 0.005 m/s grid above which no run shows a re-stick (stick-slip) with a steady hand and no travel limit; below it the needle oscillates between about mu_k N and mu_s N. "Readable" is how long the needle stays within 3 % of its final value while the block is still on the ${f(PAPER_TRAVEL_m, 2)} m of paper, at ${ADVISED_mps * 100} cm/s.`,
     '',
   )
-  // steady plateau: use a long paper so the plateau can be read (the model switches to the bare table past PAPER_TRAVEL_m)
-  push('| Face | Added mass (g) | W = (M+m) g (N) | Expected F_k (N) | Steady plateau, sim (N) | 1 N scale |', '|---|---|---|---|---|---|')
+  push('| Face | Added mass (g) | W = (M+m) g (N) | Expected F_k at 4 cm/s (N) | Plateau, sim (N) | Min. steady speed, 1 N (cm/s) | Min. steady speed, 2 N (cm/s) | Readable at 4 cm/s, 2 N (s) | 1 N scale |', '|---|---|---|---|---|---|---|---|---|')
   for (const face of FACE_IDS) {
     for (let k = 0; k < 4; k++) {
       const W = (BLOCK_MASS_NOMINAL_kg + k * MASS_NOMINAL_kg) * g
-      const Fk = FACE_PAIRS[face].mu_k * W
-      const scale: SpringScaleId = Fk > SPRING_SCALES['1N'].range_N ? '2N' : '1N'
-      const p = { ...pullParams(face, k, scale), paperTravel_m: Infinity }
-      const sim = pullTrace(p, 0.1, 6)
-      const tail = sim.samples().filter((s) => s.t_s >= 4)
-      const plateau = mean(tail.map((s) => s.F_N))
-      push(`| ${FACE_NAME[face]} | ${k * 50} | ${f(W, 3)} | ${f(Fk, 3)} | ${f(plateau, 3)} | ${Fk > 0.9 ? 'overranges or nearly (use 2 N)' : 'fits'} |`)
+      const Fk = FACE_PAIRS[face].mu_k * W * (1 + CONTACT_BETA_spm * ADVISED_mps)
+      const sim = pullTrace(pullParams(face, k, '2N'), ADVISED_mps, 3 + 0.3 / ADVISED_mps)
+      const left = sim.summary().leftPaper_t_s ?? sim.time_s
+      const on = sim.samples().filter((s) => s.t_s <= left)
+      let settled = 0
+      for (const sm of on) if (Math.abs(sm.F_N - Fk) > 0.03 * Fk) settled = sm.t_s
+      const plateau = mean(on.filter((s) => s.t_s >= settled + 0.2 && s.t_s <= left).map((s) => s.F_N))
+      const v1 = minSteadySpeed(face, k, '1N'), v2 = minSteadySpeed(face, k, '2N')
+      push(`| ${FACE_NAME[face]} | ${k * 50} | ${f(W, 3)} | ${f(Fk, 3)} | ${f(plateau, 3)} | ${f(v1 * 100, 1)} | ${f(v2 * 100, 1)} | ${f(Math.max(0, left - settled), 1)} | ${Fk > 0.9 ? 'overranges or nearly (use 2 N)' : 'fits'} |`)
     }
   }
   push(
     '',
-    'Note: a real pull that stays on the A4 sheet (0.20 m of travel) at 0.10 m/s lasts only 2 s; at 0.03 to 0.05 m/s it lasts 4 to 7 s and the plateau is shorter but readable. Slower pulls with the soft 1 N spring show stick-slip (needle oscillating between roughly mu_k N and mu_s N).',
+    `Advice for the help page: pull at 4 to 5 cm/s or faster for every load (all the minimum steady speeds above are below 4 cm/s); the first part of the pull is spent stretching the spring (the block does not move), so the ${f(PAPER_TRAVEL_m, 2)} m of paper is used only after the breakaway. Pulls below the minimum steady speed show stick-slip with the soft 1 N spring.`,
     '',
     '### Expected fits (weighted straight line of mean force against weight)',
     '',
-    '| Face | Expected slope = mu_k | Expected intercept (N) |', '|---|---|---|',
+    '| Face | Expected slope mu_k (1 + beta v), v = 4 cm/s | Expected intercept (N) |', '|---|---|---|',
   )
-  for (const face of FACE_IDS) push(`| ${FACE_NAME[face]} | ${f(FACE_PAIRS[face].mu_k, 3)} | 0 (a non-zero intercept means a zero error: scale not zeroed horizontally gives about ${f(-SPRING_SCALES['1N'].movingMass_kg * g, 3)} N on the 1 N scale) |`)
+  for (const face of FACE_IDS) push(`| ${FACE_NAME[face]} | ${f(FACE_PAIRS[face].mu_k * (1 + CONTACT_BETA_spm * ADVISED_mps), 3)} (assumed mu_k ${f(FACE_PAIRS[face].mu_k, 2)}) | 0 (a non-zero intercept means a zero error: a scale not zeroed horizontally gives about ${f(-SPRING_SCALES['1N'].movingMass_kg * g, 3)} N on the 1 N scale) |`)
+  push('', '### Static peak against pull speed', '', 'The needle shows the spring force k e; the barrel damping (c = ' + SPRING_SCALES['1N'].damping_Nspm + ' N s/m) makes it read c v below mu_s N during the build-up. Cloth and sandpaper, no added mass, 2 N scale.', '', '| Face | mu_s M g (N) | Peak at 1 cm/s (N) | at 5 cm/s (N) | at 10 cm/s (N) |', '|---|---|---|---|---|')
+  for (const face of FACE_IDS) {
+    const pk = (v: number): number => { const sim = pullTrace(pullParams(face, 0, '2N'), v, 5 + 3 / v); return sim.summary().F_breakaway_N! }
+    push(`| ${FACE_NAME[face]} | ${f(FACE_PAIRS[face].mu_s * BLOCK_MASS_NOMINAL_kg * g, 3)} | ${f(pk(0.01), 3)} | ${f(pk(0.05), 3)} | ${f(pk(0.1), 3)} |`)
+  }
   push('', '## Experiment 2: peak force before breakaway (Tabla 4.2)', '', 'F_max = mu_s M g (no added mass). The "reading" columns are the needle at the peak and when the student presses 0.2 s and 0.5 s after it (pull at 5 mm/s, nominal bench, 1 N scale for the cloth face, 2 N for the sandpaper face).', '')
   push('| Face | Expected peak mu_s M g (N) | Peak, sim (N) | Press +0.2 s (N) | Press +0.5 s (N) | mu_s from a +0.2 s press |', '|---|---|---|---|---|---|')
   for (const face of FACE_IDS) {
