@@ -5,6 +5,8 @@
 // pure model (core/instruments/springScale.ts) and never computes physics.
 import * as THREE from 'three'
 import type { SpringScaleSpec } from '../instruments/springScale.ts'
+import type { Lang } from '../i18n.ts'
+import { formatNum } from '../views/numfmt.ts'
 import { FONT, box, canvasTexture, cyl, tag, type Kit } from './models.ts'
 
 /** Barrel length, cm. */
@@ -24,6 +26,8 @@ export interface SpringScaleModel {
    */
   set(extension_m: number): void
   /** Where the hook eye sits in the local frame now, cm (to attach a string or the block's hook in the scene). */
+  /** Redraw the printed numerals with the language's decimal mark (comma in Spanish). */
+  setLang(lang: Lang): void
   hookPosition(): THREE.Vector3
   /** Where the pull ring centre sits, cm. */
   ringPosition(): THREE.Vector3
@@ -40,7 +44,8 @@ function xcyl(r: number, len: number, mat: THREE.Material, parent: THREE.Object3
  * Build a scale for a spec (range, division, printed length). Ticks every division (long every fifth, numerals every `labelStep_N`).
  * The plate is drawn in cm of the real printed length: spec.fullExtension_m * 100 cm for the full range.
  */
-export function buildSpringScale(kit: Kit, spec: SpringScaleSpec): SpringScaleModel {
+export function buildSpringScale(kit: Kit, spec: SpringScaleSpec, opts: { lang?: Lang } = {}): SpringScaleModel {
+  let lang: Lang = opts.lang ?? 'es'
   const { M } = kit
   const root = new THREE.Group()
   tag(root, 'springScale')
@@ -83,7 +88,7 @@ export function buildSpringScale(kit: Kit, spec: SpringScaleSpec): SpringScaleMo
         c.stroke()
         if (isLabel) {
           c.font = `800 ${0.66 * PX_PER_CM}px ${FONT}`
-          c.fillText(F === 0 ? '0' : Number.isInteger(F) ? String(F) : F.toFixed(1), x, 1.2 * PX_PER_CM)
+          c.fillText(formatNum(F, Number.isInteger(F) ? 0 : 1, lang), x, 1.2 * PX_PER_CM)
         }
       }
       c.font = `700 ${0.4 * PX_PER_CM}px ${FONT}`
@@ -93,13 +98,15 @@ export function buildSpringScale(kit: Kit, spec: SpringScaleSpec): SpringScaleMo
     t.minFilter = THREE.LinearMipmapLinearFilter
     return t
   }
-  const plate = new THREE.Mesh(new THREE.PlaneGeometry(plateW, plateH), new THREE.MeshStandardMaterial({ map: makeTex(false), roughness: 0.6, metalness: 0 }))
+  const matFront = new THREE.MeshStandardMaterial({ map: makeTex(false), roughness: 0.6, metalness: 0 })
+  const matBack = new THREE.MeshStandardMaterial({ map: makeTex(true), roughness: 0.6, metalness: 0 })
+  const plate = new THREE.Mesh(new THREE.PlaneGeometry(plateW, plateH), matFront)
   // flat plate on the front of the barrel; its left edge is 0.8 cm before the zero mark
   plate.position.set(ZERO_X - 0.8 + plateW / 2, 0, BARREL_R + 0.02)
   plate.receiveShadow = true
   root.add(plate)
   // the same plate on the back (-z), readable from behind: a scale hooked to something on its -x side is seen from the other side
-  const plateBack = new THREE.Mesh(new THREE.PlaneGeometry(plateW, plateH), new THREE.MeshStandardMaterial({ map: makeTex(true), roughness: 0.6, metalness: 0 }))
+  const plateBack = new THREE.Mesh(new THREE.PlaneGeometry(plateW, plateH), matBack)
   plateBack.rotation.y = Math.PI
   plateBack.position.x = plate.position.x
   plateBack.position.z = -(BARREL_R + 0.02)
@@ -127,6 +134,13 @@ export function buildSpringScale(kit: Kit, spec: SpringScaleSpec): SpringScaleMo
     set(extension_m: number): void {
       const e = Math.min(spec.fullExtension_m, Math.max(0, extension_m)) * 100
       moving.position.x = e
+    },
+    setLang(l: Lang): void {
+      if (l === lang) return
+      lang = l
+      matFront.map?.dispose(); matBack.map?.dispose()
+      matFront.map = makeTex(false); matBack.map = makeTex(true)
+      matFront.needsUpdate = true; matBack.needsUpdate = true
     },
     hookPosition: () => new THREE.Vector3(hookStart + 0.4 + moving.position.x, 0, 0),
     ringPosition: () => new THREE.Vector3(-2.2, 0, 0),

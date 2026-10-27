@@ -6,13 +6,13 @@ import { createMenu } from '../../../../core/scene3d/menu.ts'
 import type { Stage3DView } from '../../../../core/shell/types.ts'
 import { PRESETS, strings, type PresetName } from '../strings/scene3d.ts'
 import type { ViewContext } from '../view.ts'
-import type { Scene3D } from './scene.ts'
+import type { Area, Scene3D } from './scene.ts'
 
 export { webgl2Available, PRESETS }
 export type { PresetName }
 
-export interface Scene3DOptions { preset?: PresetName; openPanel?: (panel: string) => void; onFail?: (reason: string) => void }
-export interface Scene3DView extends Stage3DView { setPreset(name: PresetName): void }
+export interface Scene3DOptions { preset?: PresetName; area?: Area; openPanel?: (panel: string) => void; onFail?: (reason: string) => void }
+export interface Scene3DView extends Stage3DView { setPreset(name: PresetName): void; setArea(area: Area): void }
 
 export const parsePreset = (s: string | null | undefined): PresetName | null => (s && (PRESETS as readonly string[]).includes(s) ? (s as PresetName) : null)
 
@@ -42,6 +42,7 @@ export function mountScene3D(root: HTMLElement, ctx: ViewContext, opts: Scene3DO
   let destroyed = false
   let current: PresetName = initial
   let pendingFocus: string[] | null = null
+  let area: Area = opts.area ?? 'all'
 
   const sync = (): void => {
     viewMenu.setValue(current)
@@ -69,10 +70,11 @@ export function mountScene3D(root: HTMLElement, ctx: ViewContext, opts: Scene3DO
     await new Promise<void>((r) => setTimeout(r, 0))
     if (destroyed) return
     try {
-      scene = createScene(stage, ctx, { initialPreset: initial, onFail: (r) => opts.onFail?.(r) })
+      scene = createScene(stage, ctx, { initialPreset: initial, initialArea: area, onFail: (r) => opts.onFail?.(r) })
       status.textContent = ''
       if (pendingFocus) scene.focus(pendingFocus)
       if (current !== initial) scene.setPreset(current)
+      scene.setArea(area)
     } catch (err) {
       opts.onFail?.(String(err))
     }
@@ -84,6 +86,7 @@ export function mountScene3D(root: HTMLElement, ctx: ViewContext, opts: Scene3DO
     focus(list) { pendingFocus = list; scene?.focus(list) },
     setVisible(v) { wrap.hidden = !v; scene?.setVisible(v) },
     setPreset: choose,
+    setArea(a) { area = a; scene?.setArea(a) },
     destroy() {
       destroyed = true
       viewMenu.destroy()

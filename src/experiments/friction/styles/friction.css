@@ -2,7 +2,7 @@
 .seg-groups { display: flex; flex-direction: column; gap: var(--space-3); }
 .seg-group { display: flex; flex-direction: column; gap: var(--space-1); }
 .seg-label { font: var(--text-footnote); color: var(--label-2); }
-.seg-row { display: flex; flex-wrap: wrap; gap: var(--space-1); background: var(--fill); border-radius: var(--radius-m); padding: 2px; }
+.seg-row { display: flex; flex-wrap: wrap; gap: var(--space-1); background: var(--fill); border-radius: var(--radius-m); padding: var(--space-1); }
 .seg-row .seg-btn { min-height: var(--touch); flex: 1 1 auto; border-radius: var(--radius-s); }
 .seg-row .seg-btn[aria-pressed='true'] { background: var(--surface); box-shadow: var(--shadow-1); color: var(--accent); }
 .bench-zero, .bench-weigh { display: flex; flex-direction: column; align-items: flex-start; gap: var(--space-1); }
@@ -11,15 +11,16 @@
 .pull-speed .readout-label { grid-column: 1 / -1; }
 .pull-actions { display: flex; flex-wrap: wrap; gap: var(--space-2); }
 .pull-actions .btn { min-height: var(--touch); }
-.pull-read { min-height: 56px; font-size: 1.1rem; width: 100%; touch-action: manipulation; }
+/* the one primary of a panel is the timed press: larger than a normal button */
+.pull-read { min-height: calc(var(--touch) + var(--space-3)); font: var(--text-headline); width: 100%; touch-action: manipulation; }
 .pull-actions .pull-read { flex: 1 1 100%; }
 
 .gauge { width: 100%; max-height: 120px; display: block; }
 .gauge-body { fill: var(--device); stroke: var(--metal-ink); stroke-width: 1; }
 .gauge-tick { stroke: var(--device-ink); stroke-width: 1.2; }
-.gauge-num { fill: var(--device-ink); font: 600 11px var(--font); font-variant-numeric: tabular-nums; }
-.gauge-unit { font-size: 10px; }
-.gauge-needle { stroke: var(--danger); stroke-width: 3; stroke-linecap: round; }
+.gauge-num { fill: var(--device-ink); font: var(--text-caption); font-weight: 600; font-variant-numeric: tabular-nums; }
+.gauge-unit { font: var(--text-caption); }
+.gauge-needle { stroke: var(--needle-red); stroke-width: 3; stroke-linecap: round; }
 
 .incline-course label { flex: 1 1 100%; }
 .incline-course { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-2); }
@@ -37,7 +38,7 @@
 .data-table { border-collapse: separate; border-spacing: 0; font-variant-numeric: tabular-nums; width: 100%; }
 .data-table th, .data-table td { border-bottom: var(--stroke-hair) solid var(--separator); padding: 0; }
 .data-table .col-head { font: var(--text-caption); color: var(--label-2); padding: var(--space-1); text-align: center; background: var(--surface-2); }
-.data-table .corner, .data-table .row-head { background: var(--surface-2); font: var(--text-callout); font-weight: 600; text-align: center; border-right: var(--stroke-hair) solid var(--separator); padding: 0 var(--space-1); }
+.data-table .corner, .data-table .row-head { white-space: nowrap; background: var(--surface-2); font: var(--text-callout); font-weight: 600; text-align: center; border-right: var(--stroke-hair) solid var(--separator); padding: 0 var(--space-1); }
 .data-table .corner { font: var(--text-caption); color: var(--label-2); padding: var(--space-1); }
 .data-table .kind-head { background: var(--surface-2); font: var(--text-caption); color: var(--label-2); text-align: center; padding: var(--space-1); }
 .data-table .calc-line { padding: var(--space-1) var(--space-2); background: var(--surface-2); font: var(--text-footnote); color: var(--label); white-space: nowrap; text-align: right; }
@@ -60,19 +61,23 @@
 .plot { width: 100%; height: auto; display: block; }
 .plot-grid { stroke: var(--separator); stroke-width: 1; }
 .plot-axis { stroke: var(--label-2); stroke-width: 1.2; }
-.plot-num { fill: var(--label-2); font: 10px var(--font); font-variant-numeric: tabular-nums; }
-.plot-lab { fill: var(--label); font: 600 11px var(--font); }
+.plot-num { fill: var(--label-2); font: var(--text-caption); font-variant-numeric: tabular-nums; }
+.plot-lab { fill: var(--label); font: var(--text-caption); font-weight: 600; }
+.plot-end { stroke: none; }
 .plot-line { stroke-width: 2; }
+.plot-dash { stroke-dasharray: 5 4; }
 .plot-s1 { stroke: var(--phys-a); fill: var(--phys-a); }
 .plot-s2 { stroke: var(--phys-b); fill: var(--phys-b); }
 .plot-line.plot-s1, .plot-line.plot-s2 { fill: none; }
 .plot-err { stroke-width: 1.5; }
 .plot-hline { stroke-width: 1.2; stroke-dasharray: 5 4; fill: none; }
-.plot-hlab { font: 600 10px var(--font); stroke: none; }
+.plot-hlab { font: var(--text-caption); font-weight: 600; stroke: none; }
 .plot-h1 { stroke: var(--phys-c); fill: var(--phys-c); }
 .plot-h2 { stroke: var(--phys-d); fill: var(--phys-d); }
 .plot-hline.plot-h1, .plot-hline.plot-h2 { fill: none; }
-.leg-s1::before, .leg-s2::before { content: ''; display: inline-block; width: 0.8rem; height: 0.8rem; border-radius: 50%; margin-right: var(--space-2); vertical-align: -1px; }
+.leg-s1::before, .leg-s2::before { content: ''; display: inline-block; width: 0.8rem; height: 0.8rem; margin-right: var(--space-2); vertical-align: -1px; }
+.leg-s1::before { border-radius: 50%; }
+.leg-s2::before { border-radius: 0; }
 .leg-s1::before { background: var(--phys-a); }
 .leg-s2::before { background: var(--phys-b); }
 
@@ -94,10 +99,15 @@
 .s2d-bar { stroke-width: 8; stroke-linecap: butt; stroke: var(--stage-white); }
 .s2d-bar.wood { stroke: var(--stage-yellow); }
 .s2d-bar.iron { stroke: var(--stage-ink-2); }
-.s2d-label { fill: var(--stage-white); font: 600 11px var(--font); }
+.s2d-label { fill: var(--stage-white); font: var(--text-caption); font-weight: 600; }
 
 /* touch targets and contrast */
 .inv-row .link-btn { min-width: var(--touch); min-height: var(--touch); }
 .stage-mode .seg-btn { min-height: var(--touch); }
-:root { --label-2: rgba(60, 60, 67, 0.8); }
 .card.focus { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+.data-table .row-head { font: var(--text-footnote); font-weight: 600; }
+.tbl-caption { font: var(--text-footnote); color: var(--label-2); text-align: left; padding: var(--space-1) var(--space-2); }
+.pull-actions .btn[hidden] { display: none; }
+.btn[aria-disabled='true'] { opacity: 0.5; }
+.an-legend { list-style: none; padding: 0; margin: var(--space-2) 0; display: flex; flex-wrap: wrap; gap: var(--space-3); font: var(--text-footnote); }

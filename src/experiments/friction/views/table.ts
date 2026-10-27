@@ -48,7 +48,8 @@ export function mountForceTable(table: '4.1' | '4.2'): MountView {
       clear.textContent = T.clear; clearAll.textContent = T.clearAll; csv.textContent = T.csv
       tbl.replaceChildren(); inputs.clear(); means.clear()
       const head = el('tr')
-      head.append(el('th', 'corner', table === '4.1' ? T.massCol : T.faceCol, { scope: 'col' }))
+      head.append(el('th', 'corner', table === '4.1' ? T.caseCol : T.faceCol, { scope: 'col' }))
+      if (table === '4.1') tbl.append(el('caption', 'tbl-caption', T.massCol))
       for (let n = 0; n < T4_READINGS; n++) head.append(el('th', 'col-head', fmt(T.reading, { n: n + 1 }), { scope: 'col' }))
       head.append(el('th', 'col-head', T.mean, { scope: 'col' }))
       const thead = el('thead'); thead.append(head); tbl.append(thead)

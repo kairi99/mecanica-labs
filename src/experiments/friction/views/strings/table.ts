@@ -11,6 +11,7 @@ export interface TableStrings {
   bar: { wood: string; aluminium: string; iron: string }
   massCol: string
   faceCol: string
+  caseCol: string
   massVal: string
   reading: string
   mean: string
@@ -42,6 +43,7 @@ export const strings: Strings<TableStrings> = {
     bar: { wood: 'Madera', aluminium: 'Aluminio', iron: 'Hierro' },
     massCol: 'Cara · masa sobre el taco',
     faceCol: 'Cara',
+    caseCol: 'Caso',
     massVal: '{g} g',
     reading: 'F{n} [N]',
     mean: 'F̄ ± ΔF [N]',
@@ -71,6 +73,7 @@ export const strings: Strings<TableStrings> = {
     bar: { wood: 'Wood', aluminium: 'Aluminium', iron: 'Iron' },
     massCol: 'Face · mass on the block',
     faceCol: 'Face',
+    caseCol: 'Case',
     massVal: '{g} g',
     reading: 'F{n} [N]',
     mean: 'F̄ ± ΔF [N]',

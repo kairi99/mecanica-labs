@@ -118,4 +118,4 @@ export function trackCoach(app: FrictionApparatus, gate: CoachGate<CoachKey>, no
 
 export const COACH_DEF: CoachDef<FrictionApparatus, ApparatusEvent, CoachKey> = { strings, candidates: coachCandidates }
 
-export function mountCoach(ctx: ViewContext): { relabel(): void; destroy(): void } { return mountCoreCoach(ctx, COACH_DEF) }
+export function mountCoach(ctx: ViewContext): { relabel(): void; clear(): void; destroy(): void } { return mountCoreCoach(ctx, COACH_DEF) }

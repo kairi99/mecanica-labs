@@ -45,6 +45,6 @@
 .th-wheel { fill: var(--label-2); }
 .th-accent { fill: var(--accent); }
 .th-dots { stroke: var(--accent); stroke-width: 2.5; stroke-dasharray: 0.1 7; stroke-linecap: round; }
-.th-needle { stroke: var(--accent); stroke-width: 3; stroke-linecap: round; }
+.th-needle { stroke: var(--needle-red); stroke-width: 3; stroke-linecap: round; }
 .th-ring { fill: none; stroke: var(--label-2); stroke-width: 3; }
 .th-paper { fill: var(--label-2); }

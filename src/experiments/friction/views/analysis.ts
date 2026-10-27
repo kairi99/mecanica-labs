@@ -107,10 +107,14 @@ export function mountAnalysis(opts: { teacher: boolean }): MountView {
           const fMax = Math.max(...a.t41.fits.flatMap((f) => f.F_N.map((x, i) => x + f.dF_N[i]!)), 0.1)
           const series: PlotSeries[] = []
           a.t41.fits.forEach((f, fi) => {
-            series.push({ kind: 'points', cls: `plot-s${fi + 1}`, pts: f.W_N.map((x, i) => [x, f.F_N[i]!] as [number, number]), bars: f.dF_N })
-            if (f.fit) series.push({ kind: 'line', cls: `plot-s${fi + 1}`, pts: [[0, f.fit.intercept], [wMax, f.fit.slope * wMax + f.fit.intercept]] })
+            series.push({ kind: 'points', cls: `plot-s${fi + 1}`, marker: fi === 0 ? 'circle' : 'square', pts: f.W_N.map((x, i) => [x, f.F_N[i]!] as [number, number]), bars: f.dF_N })
+            if (f.fit) series.push({ kind: 'line', cls: `plot-s${fi + 1}`, dash: fi === 1, label: fi === 0 ? T.plotS1 : T.plotS2, pts: [[0, f.fit.intercept], [wMax, f.fit.slope * wMax + f.fit.intercept]] })
           })
-          body.append(linePlot({ aria: T.plotAria, xLabel: T.axisW, yLabel: T.axisF, xMax: wMax, yMax: Math.max(fMax, ...a.t41.fits.map((f) => (f.fit ? f.fit.slope * wMax + f.fit.intercept : 0))) * 1.05, series, lang: ctx.lang() }))
+          const yTop = Math.max(fMax, ...a.t41.fits.map((f) => (f.fit ? f.fit.slope * wMax + f.fit.intercept : 0))) * 1.05
+          body.append(linePlot({ aria: T.plotAria, xLabel: T.axisW, yLabel: T.axisF, xMax: wMax, yMax: yTop, series, lang: ctx.lang() }))
+          // error bars smaller than the 7 px marker (plot area is about 170 px high): say so, so a missing bar is not read as a missing error
+          const px = (d: number): number => (d / yTop) * 170
+          if (a.t41.fits.every((f) => f.dF_N.every((d) => px(d) < 7))) body.append(el('p', 'muted', T.errSmall))
           const leg = el('ul', 'an-legend')
           FACE_ORDER.forEach((f, i) => leg.append(el('li', `leg-s${i + 1}`, T.face[f])))
           body.append(leg, el('h4', 'an-h', T.fitHead))
@@ -138,8 +142,8 @@ export function mountAnalysis(opts: { teacher: boolean }): MountView {
       })
       // ---- literature
       body.append(el('h3', 'sub-title', T.lit), el('p', 'muted', T.litIntro))
-      a.t41?.fits.forEach((f) => body.append(litRow(`k-${f.face}`, `μk, ${T.face[f.face]} (${T.s1.split(' · ')[0]})`, f.mu_k, f.sigma_mu_k)))
-      a.t42.forEach((r, i) => body.append(litRow(`s-${FACE_ORDER[i]}`, `μs, ${T.face[FACE_ORDER[i]!]} (${T.s2.split(' · ')[0]})`, r?.mu_s ?? null, r?.sigma_mu_s ?? null)))
+      a.t41?.fits.forEach((f) => body.append(litRow(`k-${f.face}`, `μ, ${T.face[f.face]} (${T.s1.split(' · ')[0]})`, f.mu_k, f.sigma_mu_k)))
+      a.t42.forEach((r, i) => body.append(litRow(`s-${FACE_ORDER[i]}`, `μ, ${T.face[FACE_ORDER[i]!]} (${T.s2.split(' · ')[0]})`, r?.mu_s ?? null, r?.sigma_mu_s ?? null)))
       a.t43.forEach((m, bi) => body.append(litRow(`b-${BAR_ORDER[bi]}`, `μ, ${T.bar[BAR_ORDER[bi]!]} (${T.s3.split(' · ')[0]})`, m.mu, m.delta_mu)))
       // ---- notes
       body.append(el('h3', 'sub-title', T.tasks), el('p', 'muted', T.tasksIntro))

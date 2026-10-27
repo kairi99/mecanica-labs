@@ -24,8 +24,8 @@
 <p>The coefficients μ<sub>s</sub> and μ<sub>k</sub> are dimensionless numbers that depend on <b>both</b> surfaces in contact, not on one. It is common for μ<sub>s</sub> to be larger than μ<sub>k</sub>, and that is one of the questions your data have to answer.</p>
 <h3>Block on a horizontal table (experiments 1 and 2)</h3>
 <p>Draw the free-body diagram of the block: the weight <em>W</em> = (<em>M</em> + <em>m</em>)·<em>g</em> down, the normal <em>N</em> up, the spring-scale force <em>F</em> horizontal and friction opposing it. Horizontally there is no acceleration when the block is about to move or moves at constant speed, and vertically <em>N</em> = <em>W</em>. So:</p>
-<div class="eq">F<sub>max</sub> = μ<sub>s</sub>·M·g &nbsp; (about to move, no added masses)<br>F = μ<sub>k</sub>·(M + m)·g &nbsp; (constant speed)</div>
-<p>The second equation is a straight line: if you plot <em>F</em> against the weight <em>W</em>, the slope is the kinetic coefficient. What exactly the slope represents, and what the intercept says, you answer with your diagram.</p>
+<div class="eq">F<sub>max</sub> = μ·M·g &nbsp; (about to move, no added masses)<br>F = μ·(M + m)·g &nbsp; (constant speed)</div>
+<p>If you plot <em>F</em> against the weight <em>W</em> you get a straight line. What its slope and its intercept represent you work out yourself from your diagram (tasks 1 and 3).</p>
 <h3>Bar on a raised rail (experiment 3)</h3>
 <p>On a plane inclined by an angle θ the weight has a component <em>mg</em>·sin θ along the plane and <em>mg</em>·cos θ perpendicular to it, which is the normal. The bar stays at rest while <em>mg</em>·sin θ ≤ μ<sub>s</sub>·<em>mg</em>·cos θ, that is, while tan θ ≤ μ<sub>s</sub>. Once it slides:</p>
 <div class="eq">m·a = m·g·sin θ − μ·m·g·cos θ<br>μ = tan θ − a / (g·cos θ)</div>
@@ -62,14 +62,14 @@
 <div class="eq">sin θ = h / L, &nbsp; L = 1.10 m</div>
 <p>The bar leaves the start mark (its front edge on the mark) and covers the distance you marked, 100 cm in the guide. If you keep turning the crank while the bar slides, the angle keeps growing and the acceleration is not constant; the simulator represents it as it is. If you stop it, the angle stays fixed.</p>
 <h3>What you actually measure</h3>
-<p>The height <em>h</em> at the start of sliding is information about <em>static</em> friction (tan θ = μ<sub>s</sub>), but the travel time gives the acceleration, which depends on the <em>kinetic</em> coefficient (μ = tan θ − <em>a</em>/(<em>g</em> cos θ)). The guide mixes both in one coefficient per bar, and deciding whether that value is static or kinetic is a real question of task 6. The closer μ<sub>s</sub> and μ<sub>k</sub> are, the slower and more scattered the fall right after it starts.</p>
+<p>The height <em>h</em> at which the bar starts sliding and the time it takes to cover the rail need not depend on the same coefficient. Think about which physical condition sets each one: deciding whether your μ is static or kinetic is task 6. Right at the start the acceleration is small and the times scatter a lot.</p>
 </section>
 
 <section id="incertidumbre"><h2>5. Uncertainty</h2>
 <ul>
 <li><b>Mean forces.</b> Type A: <em>s</em>/√<em>n</em> of the five readings. Type B: the spring scale's division divided by √12 (combined in quadrature; Type B does not shrink with repetition). The result is F̄ ± ΔF.</li>
 <li><b>F against W line.</b> Weighted fit with weights 1/(ΔF)². If the fit is poor, the slope's uncertainty is widened by √(reduced χ²). The uncertainties of W, a few hundredths of a newton, are negligible next to ΔF.</li>
-<li><b>μ<sub>s</sub> = F̄<sub>max</sub>/(M·g).</b> The uncertainties of F̄<sub>max</sub>, of the mass (balance) and of <em>g</em> are propagated.</li>
+<li><b>μ = F̄<sub>max</sub>/(M·g).</b> The uncertainties of F̄<sub>max</sub>, of the mass (balance) and of <em>g</em> are propagated.</li>
 <li><b>Experiment 3.</b> Each try propagates the time uncertainty (0.01 s display and a reaction bias of ±0.1 s) and that of <em>h</em> (1 mm tape and your judgment of the instant sliding starts), and <em>L</em> and <em>d</em> are added. The result is μ̄ ± δμ per material.</li>
 <li><b>Comparison.</b> Type the literature value and the source. The app computes the relative error and compares it with your uncertainty; it does not give you the value.</li>
 </ul>

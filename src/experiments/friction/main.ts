@@ -99,7 +99,11 @@ const PANEL_STEP: Record<string, number> = {
 if (showReference) PANEL_STEP.record = stepOf('record')
 if (showAnalysis) PANEL_STEP.analysis = stepOf('analysis')
 
-function progressOf(steps: ChecklistStep[], next: ChecklistStep | null): ProcedureProgress {
+/** Lab step (1-based key) that holds each checklist item: the "next" line shows the first unfinished item of the CURRENT step, else the first one overall. */
+const ITEM_STEP: Record<StepId, StepKey> = { assembly: 'assembly', mass: 'exp1', paper: 'exp1', zero: 'exp1', exp1: 'exp1', exp2: 'exp2', course: 'exp3', exp3: 'exp3' }
+function progressOf(steps: ChecklistStep[], overall: ChecklistStep | null): ProcedureProgress {
+  const cur = STEP_KEYS[(shell ? shell.currentStep() : 1) - 1]
+  const next = steps.find((s) => s.status === 'pending' && ITEM_STEP[s.id] === cur) ?? overall
   const ok = (ids: StepId[]): boolean => ids.every((id) => steps.find((s) => s.id === id)?.status === 'ok')
   const done: Record<StepKey, boolean> = {
     assembly: ok(['assembly']),
@@ -121,6 +125,8 @@ function progressOf(steps: ChecklistStep[], next: ChecklistStep | null): Procedu
 let scene3d: Scene3DView | null = null
 // `shell` is assigned at the end of this file; every use is inside a callback that runs later.
 let shell: Shell<FrictionApparatus>
+let coachHandle: { relabel(): void; clear(): void; destroy(): void } | null = null
+const areaForStep = (step: number): 'all' | 'exp12' | 'exp3' => (step === 2 || step === 3 ? 'exp12' : step === 4 ? 'exp3' : 'all')
 const presetForStep = (step: number): PresetName => (step === 2 || step === 3 ? 'scale' : step === 4 ? 'rail' : 'overview')
 function setCamera(name: PresetName): void {
   if (!scene3d || shell.effectiveMode() !== '3d') return
@@ -132,7 +138,7 @@ const load3d = async (): Promise<Stage3DModule<FrictionApparatus>> => {
   return {
     webgl2Available: mod.webgl2Available,
     mount(host: HTMLElement, ctx: ViewContext, opts) {
-      scene3d = mod.mountScene3D(host, ctx, { preset: cam ?? presetForStep(shell.currentStep()), openPanel: opts.openPanel, onFail: () => opts.onFail() })
+      scene3d = mod.mountScene3D(host, ctx, { preset: cam ?? presetForStep(shell.currentStep()), area: areaForStep(shell.currentStep()), openPanel: opts.openPanel, onFail: () => opts.onFail() })
       return scene3d
     },
   }
@@ -158,11 +164,16 @@ shell = mountShell<FrictionApparatus, ApparatusEvent>({
   refusalText: (e, lang) => (e.type === 'refused' ? reasonText(lang, e.reason) : null),
   reset() { clearSnapshot(); clearAnalysisState(); app.preset('empty'); resetUi() },
   save: () => saveSnapshot(app.snapshot()),
-  onStepChanged(step) { if (!cam) setCamera(presetForStep(step)) },
+  onStepChanged(step) {
+    scene3d?.setArea(areaForStep(step))
+    if (!cam) setCamera(presetForStep(step))
+    coachHandle?.clear() // a hint about another step is stale here
+    shell.relabelAll() // re-renders the checklist: its "next" line follows the current step
+  },
   tour: {
     mount: (ctx, hooks) => mountTour(ctx, hooks),
     stepOf: { inventory: 1, bench: 2, pull: 2, table: 2, incline: 4, ...(showReference ? { record: stepOf('record') } : {}), ...(showAnalysis ? { analysis: stepOf('analysis') } : {}) },
   },
-  coach: mountCoach,
+  coach: (ctx) => { const h = mountCoach(ctx); coachHandle = h; return h },
   params: shellParams,
 })

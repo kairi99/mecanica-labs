@@ -3,7 +3,18 @@ import { svg } from '../../../core/views/dom.ts'
 import { formatNum } from '../../../core/views/numfmt.ts'
 import type { Lang } from '../../../core/i18n.ts'
 
-export interface PlotSeries { pts: readonly [number, number][]; kind: 'line' | 'points'; cls: string; bars?: readonly number[] }
+export interface PlotSeries {
+  pts: readonly [number, number][]
+  kind: 'line' | 'points'
+  cls: string
+  bars?: readonly number[]
+  /** Marker shape of a 'points' series: colour is never the only cue. */
+  marker?: 'circle' | 'square'
+  /** Dashed line. */
+  dash?: boolean
+  /** Direct label drawn at the end of a line (or the last point). */
+  label?: string
+}
 export interface PlotHLine { y: number; cls: string; label: string }
 export interface PlotOpts {
   aria: string
@@ -46,12 +57,15 @@ export function linePlot(o: PlotOpts): SVGElement {
     root.append(svg('line', { class: `plot-hline ${h.cls}`, x1: L, x2: W - R, y1: Y(h.y), y2: Y(h.y) }), svg('text', { class: `plot-hlab ${h.cls}`, x: W - R - 2, y: Y(h.y) - 3, 'text-anchor': 'end' }, h.label))
   }
   for (const s of o.series) {
-    if (s.kind === 'line') root.append(svg('polyline', { class: `plot-line ${s.cls}`, fill: 'none', points: s.pts.map(([x, y]) => `${X(x).toFixed(1)},${Y(y).toFixed(1)}`).join(' ') }))
+    if (s.kind === 'line') root.append(svg('polyline', { class: `plot-line ${s.cls}${s.dash ? ' plot-dash' : ''}`, fill: 'none', points: s.pts.map(([x, y]) => `${X(x).toFixed(1)},${Y(y).toFixed(1)}`).join(' ') }))
     else s.pts.forEach(([x, y], i) => {
       const e = s.bars?.[i] ?? 0
       if (e > 0) root.append(svg('line', { class: `plot-err ${s.cls}`, x1: X(x), x2: X(x), y1: Y(y + e), y2: Y(Math.max(0, y - e)) }))
-      root.append(svg('circle', { class: `plot-pt ${s.cls}`, cx: X(x), cy: Y(y), r: 3.5 }))
+      if (s.marker === 'square') root.append(svg('rect', { class: `plot-pt ${s.cls}`, x: X(x) - 3.5, y: Y(y) - 3.5, width: 7, height: 7 }))
+      else root.append(svg('circle', { class: `plot-pt ${s.cls}`, cx: X(x), cy: Y(y), r: 3.5 }))
     })
+    const last = s.pts[s.pts.length - 1]
+    if (s.label && last && s.kind === 'line') root.append(svg('text', { class: `plot-lab plot-end ${s.cls}`, x: X(last[0]) - 6, y: Y(last[1]) - 8, 'text-anchor': 'end' }, s.label))
   }
   return root
 }

@@ -16,11 +16,14 @@ import { COURSE_m, RAIL_LENGTH_m, RAIL_SUPPORT_DIST_m, inclineAngle_rad } from '
 import { strings, type PresetName } from '../strings/scene3d.ts'
 import type { ViewContext } from '../view.ts'
 
-export interface SceneOptions { initialPreset: PresetName; onFail(reason: string): void }
+export type Area = 'all' | 'exp12' | 'exp3'
+export interface SceneOptions { initialPreset: PresetName; initialArea?: Area; onFail(reason: string): void }
 export interface Scene3D {
   update(): void
   setVisible(v: boolean): void
   setPreset(name: PresetName): void
+  /** Which half of the bench the current step uses: exps. 1 and 2 hide the rail, exp. 3 hides the block, 'all' shows everything. */
+  setArea(area: Area): void
   focus(targets: string[] | null): void
   relabel(): void
   destroy(): void
@@ -131,7 +134,7 @@ export function createScene(container: HTMLElement, ctx: ViewContext, opts: Scen
   }
   const scales = new Map<SpringScaleId, SpringScaleModel>()
   for (const id of ['1N', '2N'] as SpringScaleId[]) {
-    const m = buildSpringScale(kit, SPRING_SCALES[id])
+    const m = buildSpringScale(kit, SPRING_SCALES[id], { lang: ctx.lang() })
     m.root.rotation.y = Math.PI // hook toward the block (-x), ring toward the hand (+x)
     scene.add(m.root)
     scales.set(id, m)
@@ -170,10 +173,11 @@ export function createScene(container: HTMLElement, ctx: ViewContext, opts: Scen
   const pts = (min: Vec, max: Vec): Vec[] => boxCorners(min, max)
   const PRESET: Record<PresetName, { points: Vec[]; az: number; el: number }> = {
     overview: { points: pts([-60, 0, -40], [105, 60, 48]), az: 8, el: 30 },
-    scale: { points: pts([-42, 0, 22], [-4, 9, 34]), az: 0, el: 28 },
-    rail: { points: pts([-45, 0, -30], [100, 82, -10]), az: 0, el: 6 },
+    scale: { points: pts([-36, 0, 27], [-6, 4, 31]), az: 0, el: 22 },
+    rail: coarse ? { points: pts([-32, 0, -30], [62, 72, -12]), az: 20, el: 10 } : { points: pts([-45, 0, -30], [100, 82, -10]), az: 0, el: 6 },
     tape: { points: pts([-45, 0, -30], [-5, 62, -2]), az: 25, el: 14 },
   }
+  let area: Area = opts.initialArea ?? 'all'
   let preset: PresetName = opts.initialPreset
   let trans: { t0: number; fromP: THREE.Vector3; fromT: THREE.Vector3; toP: THREE.Vector3; toT: THREE.Vector3 } | null = null
   const aspect = (): number => Math.max(0.2, camera.aspect)
@@ -233,8 +237,9 @@ export function createScene(container: HTMLElement, ctx: ViewContext, opts: Scen
     const e_cm = (st.x_pull_m - st.x_block_m) * 100
     const xb = PAPER_X0 + 2.5 + st.x_block_m * 100
     const showBlock = s.items.block
-    blockG.visible = showBlock
-    paper.visible = s.items.paper && s.paper !== 'none'
+    const show12 = area !== 'exp3', show3 = area !== 'exp12'
+    blockG.visible = showBlock && show12
+    paper.visible = s.items.paper && s.paper !== 'none' && show12
     tapes.visible = paper.visible && s.paper === 'fixed'
     blockG.position.set(xb, 0.06, PAPER_Z)
     const sand = s.face === 'sandpaper'
@@ -242,7 +247,7 @@ export function createScene(container: HTMLElement, ctx: ViewContext, opts: Scen
     top.material = sand ? M.cloth : M.sand
     massGs.forEach((m, i) => { m.visible = i < s.addedMasses })
     for (const [id, m] of scales) {
-      const show = showBlock && s.scale === id
+      const show = showBlock && s.scale === id && show12
       m.root.visible = show
       if (show) {
         const reading = st.scale
@@ -253,11 +258,11 @@ export function createScene(container: HTMLElement, ctx: ViewContext, opts: Scen
     }
     // exp. 3
     const hasRail = s.items.rail
-    railG.visible = hasRail
+    railG.visible = hasRail && show3
     const th = inclineAngle_rad(inc.h_m)
     const h_cm = inc.h_m * 100
     const hasStand = s.items.rackStand && s.items.standBase
-    standG.visible = hasStand && hasRail
+    standG.visible = hasStand && hasRail && show3
     if (hasRail) {
       rail.root.position.set(0, 0, 0)
       railG.rotation.set(0, 0, -th)
@@ -279,7 +284,7 @@ export function createScene(container: HTMLElement, ctx: ViewContext, opts: Scen
         m.position.set(toLocal(START_FRONT_m - inc.s_m) - 5, 0.75 + 0.02, 0)
       }
       // tape beside the clamp: the blade runs from the table to the rail underside
-      tape.root.visible = s.items.tape
+      tape.root.visible = s.items.tape && show3
       if (s.items.tape) {
         tape.set('down', Math.max(2, h_cm))
         tape.root.position.set(standG.position.x + 6, h_cm, RAIL_Z + 9)
@@ -287,7 +292,7 @@ export function createScene(container: HTMLElement, ctx: ViewContext, opts: Scen
     } else { tape.root.visible = false }
     watch3.root.visible = s.items.stopwatch
     if (s.items.stopwatch) watch3.setText(lcd)
-    return [e_cm.toFixed(2), xb.toFixed(2), st.scale?.indicated_N.toFixed(3), s.face, s.addedMasses, s.scale, s.paper, s.bar, s.course_mark, inc.h_m.toFixed(4), inc.s_m.toFixed(3), lcd, hasRail, hasStand, Object.values(s.items).join('')].join('|')
+    return [e_cm.toFixed(2), xb.toFixed(2), st.scale?.indicated_N.toFixed(3), s.face, s.addedMasses, s.scale, s.paper, s.bar, s.course_mark, inc.h_m.toFixed(4), inc.s_m.toFixed(3), lcd, hasRail, hasStand, Object.values(s.items).join(''), area].join('|')
   }
 
   setPreset(preset, false)
@@ -313,8 +318,9 @@ export function createScene(container: HTMLElement, ctx: ViewContext, opts: Scen
     update,
     setVisible(v) { visible = v; if (v) { resize(); needsRender = true } },
     setPreset,
+    setArea(a) { area = a; needsRender = true },
     focus,
-    relabel() { canvas.setAttribute('aria-label', strings[ctx.lang()].canvasLabel) },
+    relabel() { canvas.setAttribute('aria-label', strings[ctx.lang()].canvasLabel); for (const m of scales.values()) m.setLang(ctx.lang()); needsRender = true },
     destroy() {
       ro.disconnect(); window.clearTimeout(helperTimer)
       controls.dispose()

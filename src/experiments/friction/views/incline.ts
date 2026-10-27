@@ -44,13 +44,18 @@ export const mountIncline: MountView = (root, ctx): View => {
   crankSlider.value = String(getCrank())
   const crankOut = el('output', 'readout-num', undefined, { for: crankId })
   crankRow.append(crankLabel, crankSlider, crankOut)
+  // one toggle: starts the crank, and is the timed press that stops it
+  const crankBtn = el('button', 'btn btn-primary pull-read', undefined, { type: 'button' })
+  crankBtn.dataset.k = 'crank'
+  onPress(crankBtn, (t) => {
+    if (app.inclineStatus(t).cranking) app.raiseStop(t)
+    else app.raiseStart(t, getCrank() / 1000)
+    ctx.changed()
+  })
+  const lower = button('', 'btn btn-sm', () => { if (app.inclineStatus(ctx.now()).cranking) return; app.lowerRail(ctx.now()); ctx.changed() })
+  lower.dataset.k = 'lower'
   const actions = el('div', 'pull-actions')
-  const raise = button('', 'btn btn-primary', () => { app.raiseStart(ctx.now(), getCrank() / 1000); ctx.changed() })
-  const stopCrank = el('button', 'btn btn-primary pull-read', undefined, { type: 'button' })
-  onPress(stopCrank, (t) => { app.raiseStop(t); ctx.changed() })
-  const lower = button('', 'btn', () => { app.lowerRail(ctx.now()); ctx.changed() })
-  raise.dataset.k = 'raise'; stopCrank.dataset.k = 'stopcrank'; lower.dataset.k = 'lower'
-  actions.append(raise, stopCrank, lower)
+  actions.append(crankBtn, lower)
   const phase = el('p', 'readout-text', undefined, { role: 'status' })
   // tape
   const tapeHead = el('h3', 'sub-title')
@@ -101,7 +106,7 @@ export const mountIncline: MountView = (root, ctx): View => {
     }
     crankLabel.textContent = T.crank
     crankOut.textContent = fmt(T.crankValue, { v: formatNum(getCrank(), 0, ctx.lang()) })
-    raise.textContent = T.raise; stopCrank.textContent = T.stopCrank; lower.textContent = T.lower
+    lower.textContent = T.lower
     tapeHead.textContent = T.tape; tapeBtn.textContent = T.tapeBtn
     watchHead.textContent = T.watch
     lcd.setAttribute('aria-label', T.watchAria)
@@ -120,6 +125,9 @@ export const mountIncline: MountView = (root, ctx): View => {
     const T = S()
     const st = app.inclineStatus(ctx.now())
     const p = T.phase[st.phase]
+    const ct = st.cranking ? T.stopCrank : T.raise
+    if (crankBtn.textContent !== ct) crankBtn.textContent = ct
+    lower.setAttribute('aria-disabled', String(st.cranking))
     if (phase.textContent !== p) phase.textContent = p
     const t = lcdText(app.stopwatchDisplay_s(ctx.now()))
     if (lcdTxt.textContent !== t) lcdTxt.textContent = t

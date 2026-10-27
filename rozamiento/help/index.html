@@ -24,8 +24,8 @@
 <p>Los coeficientes μ<sub>s</sub> y μ<sub>k</sub> son números sin unidad que dependen de <b>las dos</b> superficies en contacto, no de una sola. Es habitual que μ<sub>s</sub> sea mayor que μ<sub>k</sub>, y esa es una de las preguntas que tus datos tienen que responder.</p>
 <h3>Taco sobre una mesa horizontal (experimentos 1 y 2)</h3>
 <p>Dibuja el diagrama de cuerpo libre del taco: el peso <em>W</em> = (<em>M</em> + <em>m</em>)·<em>g</em> hacia abajo, la normal <em>N</em> hacia arriba, la fuerza <em>F</em> del dinamómetro en horizontal y el rozamiento en sentido contrario. En horizontal no hay aceleración cuando el taco está a punto de moverse o va con rapidez constante, y en vertical <em>N</em> = <em>W</em>. Así:</p>
-<div class="eq">F<sub>máx</sub> = μ<sub>s</sub>·M·g &nbsp; (a punto de moverse, sin masas añadidas)<br>F = μ<sub>k</sub>·(M + m)·g &nbsp; (rapidez constante)</div>
-<p>La segunda ecuación es una recta: si graficas <em>F</em> contra el peso <em>W</em>, la pendiente es el coeficiente cinético. Qué representa exactamente la pendiente, y qué dice la ordenada en el origen, lo respondes tú con tu diagrama.</p>
+<div class="eq">F<sub>máx</sub> = μ·M·g &nbsp; (a punto de moverse, sin masas añadidas)<br>F = μ·(M + m)·g &nbsp; (rapidez constante)</div>
+<p>Si graficas <em>F</em> contra el peso <em>W</em> obtienes una recta. Qué representan su pendiente y su ordenada en el origen lo deduces tú de tu diagrama (tareas 1 y 3).</p>
 <h3>Barra sobre un riel inclinado (experimento 3)</h3>
 <p>Sobre un plano inclinado un ángulo θ, el peso tiene una componente <em>mg</em>·sen θ a lo largo del plano y <em>mg</em>·cos θ perpendicular a él, que es la normal. La barra permanece quieta mientras <em>mg</em>·sen θ ≤ μ<sub>s</sub>·<em>mg</em>·cos θ, es decir, mientras tan θ ≤ μ<sub>s</sub>. Cuando se desliza:</p>
 <div class="eq">m·a = m·g·sen θ − μ·m·g·cos θ<br>μ = tan θ − a / (g·cos θ)</div>
@@ -62,14 +62,14 @@
 <div class="eq">sen θ = h / L, &nbsp; L = 1,10 m</div>
 <p>La barra sale de la marca de salida (su borde delantero sobre la marca) y recorre la distancia que marcaste, 100 cm en la guía. Si sigues girando la manivela mientras la barra se desliza, el ángulo sigue creciendo y la aceleración no es constante; el simulador lo representa tal cual. Si la paras, el ángulo se queda fijo.</p>
 <h3>Qué mides en realidad</h3>
-<p>La altura <em>h</em> del inicio del deslizamiento es información sobre el rozamiento <em>estático</em> (tan θ = μ<sub>s</sub>), pero el tiempo de recorrido da la aceleración, que depende del coeficiente <em>cinético</em> (μ = tan θ − <em>a</em>/(<em>g</em> cos θ)). La guía mezcla los dos en un mismo coeficiente por barra, y decidir si ese valor es estático o cinético es una pregunta real de la tarea 6. Cuanto más cerca estén μ<sub>s</sub> y μ<sub>k</sub>, más lenta y más dispersa es la caída justo al arrancar.</p>
+<p>La altura <em>h</em> a la que la barra empieza a deslizar y el tiempo que tarda en recorrer el riel no tienen por qué depender del mismo coeficiente. Piensa qué condición física fija cada uno: decidir si tu μ es estático o cinético es la tarea 6. Justo en el arranque la aceleración es pequeña y los tiempos se dispersan mucho.</p>
 </section>
 
 <section id="incertidumbre"><h2>5. Incertidumbre</h2>
 <ul>
 <li><b>Fuerzas promedio.</b> Tipo A: <em>s</em>/√<em>n</em> de las cinco lecturas. Tipo B: la división del dinamómetro entre √12 (se combinan en cuadratura; la tipo B no baja al repetir). El resultado es F̄ ± ΔF.</li>
 <li><b>Recta F contra W.</b> Ajuste ponderado con pesos 1/(ΔF)². Si el ajuste es pobre, la incertidumbre de la pendiente se amplía por √(χ² reducida). Las incertidumbres de W, de unas centésimas de newton, son despreciables junto a ΔF.</li>
-<li><b>μ<sub>s</sub> = F̄<sub>máx</sub>/(M·g).</b> Se propaga la incertidumbre de F̄<sub>máx</sub>, de la masa (balanza) y de <em>g</em>.</li>
+<li><b>μ = F̄<sub>máx</sub>/(M·g).</b> Se propaga la incertidumbre de F̄<sub>máx</sub>, de la masa (balanza) y de <em>g</em>.</li>
 <li><b>Experimento 3.</b> Cada intento propaga la incertidumbre del tiempo (0,01 s de pantalla y un sesgo de reacción de ±0,1 s) y de <em>h</em> (cinta de 1 mm y tu juicio del instante en que empieza a deslizar), y se agregan <em>L</em> y <em>d</em>. El resultado es μ̄ ± δμ por material.</li>
 <li><b>Comparación.</b> Escribe el valor de la literatura y la fuente. La aplicación calcula el error relativo y lo compara con tu incertidumbre; no te da el valor.</li>
 </ul>

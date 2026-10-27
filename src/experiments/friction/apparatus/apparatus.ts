@@ -439,7 +439,7 @@ export class FrictionApparatus {
     const tr = this.trialRec(this.activeTrial)
     if (!tr) {
       const h = this.rackH_m
-      return { phase: 'idle', trialId: null, h_m: h, theta_rad: inclineAngle_rad(h), s_m: 0, v_mps: 0, slipped: false }
+      return { phase: 'idle', trialId: null, h_m: h, theta_rad: inclineAngle_rad(h), s_m: 0, v_mps: 0, slipped: false, cranking: false }
     }
     const t_s = Math.max(0, (t_ms - tr.start_ms) / 1000)
     const h = heightAt_m(this.profileOf(tr), t_s)
@@ -457,7 +457,7 @@ export class FrictionApparatus {
       if (!this.announced.has(`s${tr.id}`)) { this.announced.add(`s${tr.id}`); this.emit({ type: 'barSlips', trialId: tr.id, h_m: run.onset_h_m! }, tr.start_ms + run.onset_t_s * 1000) }
       if (phase === 'finished' && !this.announced.has(`f${tr.id}`)) { this.announced.add(`f${tr.id}`); this.emit({ type: 'barFinished', trialId: tr.id }, t_ms) }
     }
-    return { phase, trialId: tr.id, h_m: h, theta_rad: theta, s_m: Math.min(s, tr.course_m + 0.05), v_mps: v, slipped }
+    return { phase, trialId: tr.id, h_m: h, theta_rad: theta, s_m: Math.min(s, tr.course_m + 0.05), v_mps: v, slipped, cranking: lastRate !== 0 && h < RACK_H_MAX_m }
   }
   /** Reference record of a trial (true onset and slide time; mu_s and mu_k of the trial). */
   referenceTrial(trialId: number): InclineReference | null {

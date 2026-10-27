@@ -40,7 +40,7 @@ export function mountPull(table: TableKey): MountView {
       return { b, k, v }
     })
     const actions = el('div', 'pull-actions')
-    const start = button('', 'btn btn-primary', () => { app.pullStart(ctx.now(), getPullSpeed() / 100); ctx.changed() })
+    const start = button('', 'btn', () => { app.pullStart(ctx.now(), getPullSpeed() / 100); ctx.changed() })
     const stopHand = button('', 'btn', () => { app.pullStop(ctx.now()); ctx.changed() })
     const release = button('', 'btn', () => { app.pullEnd(ctx.now()); ctx.changed() })
     start.dataset.k = 'start'; stopHand.dataset.k = 'stop'; release.dataset.k = 'release'
@@ -60,7 +60,8 @@ export function mountPull(table: TableKey): MountView {
     copy.dataset.k = 'copy'
     const copyTo = el('span', 'muted')
     const keys = el('p', 'muted')
-    c.body.append(hint, gauge, speedRow, presets, actions, read, status, last, warn, copy, copyTo, keys)
+    // the gauge sits right above "Read" so the needle and the button are on screen together on a phone
+    c.body.append(hint, speedRow, presets, actions, gauge, read, status, last, warn, copy, copyTo, keys)
     root.append(c.root)
 
     function apply(): void {
@@ -125,9 +126,9 @@ export function mountPull(table: TableKey): MountView {
       const wtxt = lr && lr.overRange ? T.over : lr && lr.belowZero ? T.low : ''
       if (warn.textContent !== wtxt) warn.textContent = wtxt
       const s = app.getState()
-      start.setAttribute('aria-disabled', String(s.pulling))
-      stopHand.setAttribute('aria-disabled', String(!s.pulling))
-      release.setAttribute('aria-disabled', String(!s.pulling))
+      start.hidden = s.pulling
+      stopHand.hidden = !s.pulling
+      release.hidden = !s.pulling
       read.setAttribute('aria-disabled', String(!s.pulling))
     }
     return {

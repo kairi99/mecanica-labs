@@ -50,6 +50,7 @@ export interface AnalysisStrings {
   teacher: string
   teacherLine: string
   plotS1: string
+  errSmall: string
   plotS2: string
 }
 
@@ -99,6 +100,7 @@ export const strings: Strings<AnalysisStrings> = {
     csvTables: 'Descargar las tablas (CSV)', csvResults: 'Descargar los resultados (CSV)',
     teacher: 'Modo docente', teacherLine: 'Valor del modelo para {what}: {v}',
     plotS1: 'Tela', plotS2: 'Lija',
+    errSmall: 'Barras de error menores que el marcador. Tela: círculos y línea continua; lija: cuadrados y línea discontinua.',
   },
   en: {
     title: 'Analysis',
@@ -145,5 +147,6 @@ export const strings: Strings<AnalysisStrings> = {
     csvTables: 'Download the tables (CSV)', csvResults: 'Download the results (CSV)',
     teacher: 'Teacher mode', teacherLine: 'Model value for {what}: {v}',
     plotS1: 'Cloth', plotS2: 'Sandpaper',
+    errSmall: 'Error bars smaller than the marker. Cloth: circles and solid line; sandpaper: squares and dashed line.',
   },
 }
