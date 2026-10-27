@@ -1,7 +1,7 @@
 # Mecánica labs: Newtonian-mechanics virtual lab
 
 Browser-based, physics-driven, educational simulations of Newtonian-mechanics lab practices: **Práctica 1, MRUV**
-(a PHYWE DigiCart rolling down a metal rail inclined at 1.30 degrees) **Práctica 2, projectile motion** (a marble
+(a PHYWE DigiCart rolling down a metal rail inclined at 1.30 degrees), **Práctica 2, projectile motion** (a marble
 and a ping-pong ball launched horizontally from a table edge), **Práctica 3, force and acceleration** (a DigiCart on a level
 rail pulled by a hanging mass over a pulley) and **Práctica 4, friction** (a friction block pulled with a spring scale, and
 bars sliding down a raised rail). Spanish first (English available), mobile first, light
