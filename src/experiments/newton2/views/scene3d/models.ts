@@ -93,33 +93,30 @@ export function buildScalePost(kit: Kit, height: number, armLength: number): THR
 }
 
 // ------------------------------------------------------------------------------------------------------------------ small parts
-export function buildBrassScrew(): THREE.Group {
+export function buildBrassScrew(kit: Kit): THREE.Group {
   const g = new THREE.Group()
   tag(g, 'brassScrew')
-  const mat = new THREE.MeshStandardMaterial({ color: 0xc9a227, metalness: 0.85, roughness: 0.35 })
+  const mat = kit.M.brass
   cyl(0.35, 0.35, 2.4, mat, g, 12).position.y = 1.2
   cyl(0.6, 0.6, 0.4, mat, g, 12).position.y = 2.6
-  g.userData.ownMaterial = mat
   return g
 }
 /** A coil of string (torus), origin on the bench. */
-export function buildStringCoil(): THREE.Group {
+export function buildStringCoil(kit: Kit): THREE.Group {
   const g = new THREE.Group()
   tag(g, 'string')
-  const mat = new THREE.MeshStandardMaterial({ color: 0xd9d2c0, roughness: 0.9 })
+  const mat = kit.M.cord
   const t = new THREE.Mesh(new THREE.TorusGeometry(2.2, 0.35, 8, 24), mat)
   t.rotation.x = Math.PI / 2
   t.position.y = 0.35
   t.castShadow = true
   g.add(t)
-  g.userData.ownMaterial = mat
   return g
 }
-export function buildPlasticScrewBag(): THREE.Group {
+export function buildPlasticScrewBag(kit: Kit): THREE.Group {
   const g = new THREE.Group()
   tag(g, 'plasticScrews')
-  const mat = new THREE.MeshStandardMaterial({ color: 0xf3f1ea, roughness: 0.6 })
+  const mat = kit.M.white
   for (let i = 0; i < 3; i++) { const s = cyl(0.3, 0.3, 1.8, mat, g, 10); s.rotation.z = Math.PI / 2; s.position.set(0, 0.35 + i * 0.1, -1 + i); const h = cyl(0.55, 0.55, 0.3, mat, g, 10); h.rotation.z = Math.PI / 2; h.position.set(0.95, 0.35 + i * 0.1, -1 + i) }
-  g.userData.ownMaterial = mat
   return g
 }

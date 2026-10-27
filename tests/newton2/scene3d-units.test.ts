@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest'
 import { RAIL_LENGTH_m, SUPPORT_SEPARATION_m } from '../../src/experiments/newton2/apparatus/index.ts'
 import { BENCH_HEIGHT_m, CANISTER_HANG_m, STRING_ABOVE_RAIL_m } from '../../src/experiments/newton2/physics/index.ts'
 import {
-  BENCH, BENCH_MASS_SLOT, CANISTER_H_cm, FLOOR_Y_cm, PRESET_NAMES, PRESET_VIEWS, RAIL, SCALE_POST, STAGING, STRING_ABOVE_RAIL_cm,
+  BENCH, BENCH_EDGE_X_cm, BENCH_MASS_SLOT, PORTRAIT_OVERVIEW, CANISTER_H_cm, FLOOR_Y_cm, PRESET_NAMES, PRESET_VIEWS, RAIL, SCALE_POST, STAGING, STRING_ABOVE_RAIL_cm,
   drawnRailTilt_rad, parsePreset, railLocalToWorld, railLocalX_cm, railPosFromLocalX_mm,
 } from '../../src/experiments/newton2/views/scene3d/units.ts'
 import { KNOT_H_cm } from '../../src/experiments/newton2/views/scene3d/models.ts'
@@ -35,6 +35,21 @@ describe('scene units match the apparatus', () => {
     const p = railLocalToWorld([-5, 7, 0], drawnRailTilt_rad(0.07, 0.06, SUPPORT_SEPARATION_m), [110, 0, 0])
     expect(p[1]).toBeLessThan(7)
     expect(p[0]).toBeCloseTo(-5 + 110 * Math.cos(drawnRailTilt_rad(0.07, 0.06, SUPPORT_SEPARATION_m)), 9)
+  })
+})
+
+describe('bench edge', () => {
+  it('the receiver sits flush at the bench edge and the canister hangs beyond it', () => {
+    const rootX = -5 // scene.ts: rail root at -SUPPORT_FROM_END
+    const receiverX = rootX + RAIL.length
+    expect(BENCH.x + BENCH.width / 2).toBeCloseTo(BENCH_EDGE_X_cm, 9)
+    expect(receiverX).toBeCloseTo(BENCH_EDGE_X_cm, 9)
+    const canisterX = receiverX + 0.9 + 2.4 // pulley offset + string offset (scene.ts)
+    expect(canisterX).toBeGreaterThan(BENCH.x + BENCH.width / 2)
+  })
+  it('the portrait overview frames its box on a phone stage', () => {
+    const v = PORTRAIT_OVERVIEW
+    expect(framed(v.min, v.max, v.azimuth, v.elevation, 0.5)).toBe(true)
   })
 })
 

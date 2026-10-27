@@ -6,8 +6,6 @@ import { createCoreMaterials, type CoreMaterials } from '../../../../core/scene3
 export { createOutlineMaterial } from '../../../../core/scene3d/materials.ts'
 
 export interface Materials extends CoreMaterials {
-  floor: THREE.MeshStandardMaterial
-  tableSide: THREE.MeshStandardMaterial
   legs: THREE.MeshStandardMaterial
   edge: THREE.MeshBasicMaterial
   paper: THREE.MeshStandardMaterial
@@ -23,8 +21,6 @@ export interface Materials extends CoreMaterials {
 export function createMaterials(probe: HTMLElement): Materials {
   const core = createCoreMaterials(probe)
   const m: Materials = Object.assign(core, {
-    floor: new THREE.MeshStandardMaterial({ color: 0xb9bcc4, metalness: 0, roughness: 0.92 }),
-    tableSide: new THREE.MeshStandardMaterial({ color: 0xa9adb5, metalness: 0.02, roughness: 0.7 }),
     legs: new THREE.MeshStandardMaterial({ color: 0x2a2d33, metalness: 0.5, roughness: 0.5 }),
     edge: new THREE.MeshBasicMaterial({ color: 0x0071e3, transparent: true, opacity: 0.9 }),
     paper: new THREE.MeshStandardMaterial({ color: 0xfbfbf8, metalness: 0, roughness: 0.92, polygonOffset: true, polygonOffsetFactor: -1, polygonOffsetUnits: -1 }),
@@ -52,7 +48,7 @@ export function createMaterials(probe: HTMLElement): Materials {
   m.refresh = () => { refreshCore(); shade() }
   m.dispose = () => {
     disposeCore()
-    for (const x of [m.floor, m.tableSide, m.legs, m.edge, m.paper, m.carbon, m.markDot, m.markRing, m.marbleGlass, m.pingPong, m.plumb, m.trail]) x.dispose()
+    for (const x of [m.legs, m.edge, m.paper, m.carbon, m.markDot, m.markRing, m.marbleGlass, m.pingPong, m.plumb, m.trail]) x.dispose()
   }
   shade()
   return m

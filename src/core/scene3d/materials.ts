@@ -13,10 +13,15 @@ export interface CoreMaterials {
   rubber: THREE.MeshStandardMaterial
   red: THREE.MeshStandardMaterial
   tape: THREE.MeshStandardMaterial
+  brass: THREE.MeshStandardMaterial
+  cord: THREE.MeshStandardMaterial
   levelBody: THREE.MeshStandardMaterial
   glass: THREE.MeshStandardMaterial
   bubble: THREE.MeshStandardMaterial
   table: THREE.MeshStandardMaterial
+  /** Floor (darker than the table in light theme, so the two never read as one grey) and the side faces of a table or bench. */
+  floor: THREE.MeshStandardMaterial
+  tableSide: THREE.MeshStandardMaterial
   ghost: THREE.MeshStandardMaterial
   /** DigiCart skirt, receiver housing, and the red of a cart that cannot be put there. */
   skirt: THREE.MeshStandardMaterial
@@ -48,10 +53,14 @@ export function createCoreMaterials(probe: HTMLElement): CoreMaterials {
     rubber: std(0x131316, 0, 0.85),
     red: std(0xd23b30, 0.05, 0.5),
     tape: std(0xf2b01e, 0, 0.7),
+    brass: std(0xc9a227, 0.85, 0.35),
+    cord: std(0xd9d2c0, 0, 0.9),
     levelBody: std(0xe0a526, 0.1, 0.5),
     glass: new THREE.MeshStandardMaterial({ color: 0xbfe8c8, transparent: true, opacity: 0.45, roughness: 0.1, metalness: 0, depthWrite: false }),
     bubble: std(0xf6fff4, 0, 0.2),
     table: std(0xdadce1, 0.02, 0.62),
+    floor: new THREE.MeshStandardMaterial({ color: 0xb9bcc4, metalness: 0, roughness: 0.92 }),
+    tableSide: new THREE.MeshStandardMaterial({ color: 0xa9adb5, metalness: 0.02, roughness: 0.7 }),
     ghost: new THREE.MeshStandardMaterial({ color: 0x0071e3, transparent: true, opacity: 0.38, roughness: 0.5, metalness: 0, depthWrite: false }),
     skirt: std(0x2b2e34, 0.1, 0.55),
     slate: std(0x4a6a8a, 0, 0.7),
@@ -63,10 +72,12 @@ export function createCoreMaterials(probe: HTMLElement): CoreMaterials {
       // light grey laminate: the surface-2 token, a little darker so white parts stand out; dark theme stays dark grey
       const lum = surface2.r * 0.3 + surface2.g * 0.59 + surface2.b * 0.11
       m.table.color.copy(surface2).multiplyScalar(lum > 0.5 ? 0.62 : 1.4)
+      m.floor.color.copy(surface2).multiplyScalar(lum > 0.5 ? 0.36 : 0.9)
+      m.tableSide.color.copy(m.table.color).multiplyScalar(0.7)
       m.ghost.color.copy(accent)
     },
     dispose() {
-      for (const x of [m.alu, m.aluDark, m.black, m.steel, m.blue, m.white, m.rubber, m.red, m.tape, m.levelBody, m.glass, m.bubble, m.table, m.ghost, m.skirt, m.slate, m.invalid]) x.dispose()
+      for (const x of [m.alu, m.aluDark, m.black, m.steel, m.blue, m.white, m.rubber, m.red, m.tape, m.brass, m.cord, m.levelBody, m.glass, m.bubble, m.table, m.floor, m.tableSide, m.ghost, m.skirt, m.slate, m.invalid]) x.dispose()
     },
   }
   m.refresh()

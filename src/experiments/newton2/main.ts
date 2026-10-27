@@ -126,6 +126,7 @@ function progressOf(steps: ChecklistStep[], next: ChecklistStep | null): Procedu
 let scene3d: Scene3DView | null = null
 // `shell` is assigned at the end of this file; every use is inside a callback that runs later.
 let shell: Shell<Apparatus>
+let coachHandle: { relabel(): void; clear(): void; destroy(): void } | null = null
 function setCamera(name: ScenePreset): void {
   if (!scene3d || shell.effectiveMode() !== '3d') return
   scene3d.setPreset(name)
@@ -168,6 +169,7 @@ shell = mountShell<Apparatus, ApparatusEvent>({
   save: () => saveSnapshot(app.snapshot()),
   persist: !demoTable,
   tour: { mount: (ctx, hooks) => mountTour(ctx, hooks), stepOf: TOUR_STEP },
-  coach: mountCoach,
+  onStepChanged() { coachHandle?.clear() }, // a hint about another step is stale here
+  coach: (ctx) => { const h = mountCoach(ctx); coachHandle = h; return h },
   params: shellParams,
 })

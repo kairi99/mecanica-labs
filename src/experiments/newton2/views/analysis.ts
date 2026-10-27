@@ -10,7 +10,7 @@ import { analysisFromApparatus } from '../analysis/fromApparatus.ts'
 import { analysisCSV } from '../analysis/csv.ts'
 import type { AnalysisResult } from '../analysis/compute.ts'
 import { numText, pmText } from '../../../core/views/format.ts'
-import { readPalette, withAlpha, type Palette } from '../../../core/views/analysisPlots.ts'
+import { readPalette, type Palette } from '../../../core/views/analysisPlots.ts'
 import { fmt } from '../../../core/pedagogy/dom.ts'
 
 export interface AnalysisOptions {
@@ -59,11 +59,21 @@ export function mountAnalysis(opts: AnalysisOptions): MountView {
     s1.body.append(t1Body); s4.body.append(t4Body); s78.body.append(t78Body)
     const t23Intro = el('p', 'muted'), t23Host = el('div'), uncNote = el('p', 'muted'), reactNote = el('p', 'muted')
     s23.body.append(t23Intro, t23Host, uncNote, reactNote)
-    const gate5 = el('p', 'note'), t5Intro = el('p', 'muted'), plotHost = el('div', 'plot'), legend = el('p', 'muted an-legend')
-    const fitPair = el('div', 'an-pair'), slopeP = el('p', 'readout-value'), interP = el('p', 'readout-value')
-    fitPair.append(slopeP, interP)
+    const gate5 = el('p', 'note'), t5Intro = el('p', 'muted'), plotHost = el('div', 'plot')
+    const fitPair = el('div', 'an-pair an-fit')
+    const fitCard = (): { root: HTMLElement; cap: HTMLElement; val: HTMLElement } => {
+      const root = el('p', 'fit-card'), cap = el('span', 'fit-cap'), val = el('span', 'fit-val')
+      root.append(cap, val)
+      return { root, cap, val }
+    }
+    const slopeC = fitCard(), interC = fitCard()
+    fitPair.append(slopeC.root, interC.root)
+    const errNote = el('p', 'muted')
+    const legend2 = el('ul', 'an-legend an-legend-keys')
+    const legPts = el('li'), legFit = el('li')
+    legend2.append(legPts, legFit)
     const chi2 = el('p', 'readout-text'), chi2Hint = el('p', 'muted'), t5Prompt = el('p', 'note')
-    s5.body.append(gate5, t5Intro, plotHost, legend, fitPair, chi2, chi2Hint, t5Prompt)
+    s5.body.append(gate5, t5Intro, plotHost, errNote, legend2, fitPair, chi2, chi2Hint, t5Prompt)
     const gate6 = el('p', 'note'), mFit = el('p', 'readout-text'), mMeas = el('p', 'readout-text'), errP = el('p', 'readout-value')
     const agree = el('p', 'readout-text'), t6Note = el('p', 'muted'), plasticNote = el('p', 'muted'), reactEff = el('p', 'muted')
     s6.body.append(gate6, mFit, mMeas, errP, agree, t6Note, plasticNote, reactEff)
@@ -78,6 +88,7 @@ export function mountAnalysis(opts: AnalysisOptions): MountView {
     let plot: uPlot | null = null
     let sig = ''
     let last: AnalysisResult | null = null
+    let errSmall = false
 
     function download(): void {
       if (!last) return
@@ -91,7 +102,7 @@ export function mountAnalysis(opts: AnalysisOptions): MountView {
     }
 
     function drawPlot(r: AnalysisResult): void {
-      plot?.destroy(); plot = null
+      plot?.destroy(); plot = null; errSmall = false
       plotHost.replaceChildren()
       const f = r.fit
       const pts = r.points
@@ -104,6 +115,7 @@ export function mountAnalysis(opts: AnalysisOptions): MountView {
       const xv = [0, ...xs.map((q) => q.a_mps2), xMax]
       const yPts = [null, ...xs.map((q) => q.F_N), null]
       const yFit = xv.map((x) => f.M_kg * x + f.F0_N)
+      const ink = getComputedStyle(plotHost).color // --label: hollow circles and bars read as data, the fit line is the accent
       const font = `12px ${p.font}`
       const axis = (label: string, size: number): uPlot.Axis => ({ stroke: p.text, grid: { stroke: p.grid, width: 1 }, ticks: { stroke: p.grid, width: 1 }, font, labelFont: font, labelSize: 18, label, size })
       plot = new uPlot({
@@ -112,25 +124,32 @@ export function mountAnalysis(opts: AnalysisOptions): MountView {
         axes: [axis(T.axisA, 36), axis(T.axisF, 52)],
         series: [
           {},
-          { label: T.legendPoints, stroke: p.pos, fill: p.pos, paths: () => null, points: { show: true, size: 8, fill: p.pos, stroke: p.pos }, spanGaps: false },
+          { label: T.legendPoints, stroke: ink, paths: () => null, points: { show: true, size: 8, width: 1.5, fill: 'transparent', stroke: ink }, spanGaps: false },
           { label: T.fitLine, stroke: p.accent, width: 2, points: { show: false } },
         ],
         hooks: {
           draw: [(u) => {
             const g = u.ctx
             g.save()
-            g.strokeStyle = withAlpha(p.pos, 0.8)
-            g.lineWidth = 1.5 * (typeof devicePixelRatio === 'number' ? devicePixelRatio : 1)
+            const dpr = typeof devicePixelRatio === 'number' ? devicePixelRatio : 1
+            const cap = 4 * dpr
+            g.strokeStyle = ink
+            g.lineWidth = 1.5 * dpr
             for (const q of xs) {
               const cx = u.valToPos(q.a_mps2, 'x', true), cy = u.valToPos(q.F_N, 'y', true)
               const x0 = u.valToPos(q.a_mps2 - q.u_a_mps2, 'x', true), x1 = u.valToPos(q.a_mps2 + q.u_a_mps2, 'x', true)
               const y0 = u.valToPos(q.F_N - q.u_F_N, 'y', true), y1 = u.valToPos(q.F_N + q.u_F_N, 'y', true)
-              g.beginPath(); g.moveTo(x0, cy); g.lineTo(x1, cy); g.moveTo(cx, y0); g.lineTo(cx, y1); g.stroke()
+              g.beginPath(); g.moveTo(x0, cy); g.lineTo(x1, cy); g.moveTo(cx, y0); g.lineTo(cx, y1)
+              g.moveTo(x0, cy - cap); g.lineTo(x0, cy + cap); g.moveTo(x1, cy - cap); g.lineTo(x1, cy + cap)
+              g.moveTo(cx - cap, y0); g.lineTo(cx + cap, y0); g.moveTo(cx - cap, y1); g.lineTo(cx + cap, y1); g.stroke()
             }
             g.restore()
           }],
         },
       }, [xv, yPts, yFit] as uPlot.AlignedData, plotHost)
+      // bars shorter than the 4 px marker radius are hidden behind the circle: say so
+      const pl = plot
+      errSmall = xs.every((q) => Math.abs(pl.valToPos(q.F_N + q.u_F_N, 'y') - pl.valToPos(q.F_N, 'y')) < 4 && Math.abs(pl.valToPos(q.a_mps2 + q.u_a_mps2, 'x') - pl.valToPos(q.a_mps2, 'x')) < 4)
       plotHost.setAttribute('role', 'img')
       plotHost.setAttribute('aria-label', T.plotAria)
     }
@@ -143,7 +162,10 @@ export function mountAnalysis(opts: AnalysisOptions): MountView {
       s23.h.textContent = T.t23; t23Intro.textContent = T.t23Intro; uncNote.textContent = T.uncertaintyNote
       s4.h.textContent = T.t4; t4Body.textContent = T.t4Body
       s5.h.textContent = T.t5; t5Intro.textContent = T.t5Intro; gate5.textContent = T.gate5; t5Prompt.textContent = T.t5Prompt
-      legend.textContent = `${T.legendPoints} · ${T.legendFit}`
+      slopeC.cap.textContent = T.slopeCaption; interC.cap.textContent = T.interceptCaption
+      errNote.textContent = T.errSmall
+      legPts.replaceChildren(el('span', 'leg-mark leg-pt', undefined, { 'aria-hidden': 'true' }), document.createTextNode(T.legendPoints))
+      legFit.replaceChildren(el('span', 'leg-mark leg-line', undefined, { 'aria-hidden': 'true' }), document.createTextNode(T.legendFit))
       chi2Hint.textContent = T.chi2Hint
       s6.h.textContent = T.t6; gate6.textContent = T.gate6; t6Note.textContent = T.t6Note; plasticNote.textContent = T.plasticNote
       s78.h.textContent = T.t78; t78Body.textContent = T.t78Body
@@ -174,10 +196,10 @@ export function mountAnalysis(opts: AnalysisOptions): MountView {
       // task 5
       const f = r.fit
       gate5.hidden = f !== null
-      for (const x of [t5Intro, plotHost, legend, fitPair, chi2, chi2Hint, t5Prompt]) x.hidden = f === null
+      for (const x of [t5Intro, plotHost, legend2, fitPair, chi2, chi2Hint, t5Prompt]) x.hidden = f === null
       if (f) {
-        slopeP.textContent = fmt(T.slope, { m: pmText(f.M_kg, f.sigma_M_kg, L()) })
-        interP.textContent = fmt(T.intercept, { f: pmText(f.F0_N, f.sigma_F0_N, L()) })
+        slopeC.val.textContent = fmt(T.slopeValue, { m: pmText(f.M_kg, f.sigma_M_kg, L()) })
+        interC.val.textContent = fmt(T.interceptValue, { f: pmText(f.F0_N, f.sigma_F0_N, L()) })
         chi2.textContent = fmt(T.chi2, { c: f.fit.chi2_red === null ? '—' : numText(f.fit.chi2_red, 2, L()) })
       }
       // task 6
@@ -195,6 +217,7 @@ export function mountAnalysis(opts: AnalysisOptions): MountView {
       exportBtn.disabled = r.trials.every((t) => t.n === 0)
       const key = `${L()}|${plotHost.clientWidth}|${JSON.stringify(r.points)}`
       if (key !== sig) { sig = key; drawPlot(r) }
+      errNote.hidden = f === null || !errSmall
     }
 
     const ro = new ResizeObserver(() => { if (plotHost.clientWidth > 0 && plot && Math.abs(plot.width - plotHost.clientWidth) > 2) { sig = ''; w.touch() } })

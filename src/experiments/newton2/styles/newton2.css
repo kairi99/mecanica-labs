@@ -13,3 +13,14 @@
 .needle-fill { position: absolute; inset: 0 auto 0 0; width: var(--needle); background: var(--accent-fill); transition: width var(--dur-needle) var(--ease-out); }
 .warn { font-weight: 600; color: var(--danger); }
 @media (prefers-reduced-motion: reduce) { .needle-fill { transition: none; } }
+
+/* analysis, task 5: legend keys by shape, fit cards (caption above, value never wraps) */
+.an-legend-keys { list-style: none; padding: 0; margin: var(--space-2) 0; display: flex; flex-wrap: wrap; justify-content: center; gap: var(--space-3); font: var(--text-footnote); color: var(--label-2); }
+.an-legend-keys li { display: inline-flex; align-items: center; gap: var(--space-2); }
+.leg-mark { display: inline-block; flex: none; }
+.leg-pt { width: 10px; height: 10px; border-radius: 50%; border: 1.5px solid var(--label); }
+.leg-line { width: 22px; height: 0; border-top: 2px solid var(--accent); }
+.an-pair.an-fit { grid-template-columns: repeat(auto-fit, minmax(12rem, 1fr)); }
+.fit-card { display: flex; flex-direction: column; gap: var(--space-1); }
+.fit-cap { font: var(--text-caption); color: var(--label-2); }
+.fit-val { font: var(--text-value); font-variant-numeric: tabular-nums; white-space: nowrap; }

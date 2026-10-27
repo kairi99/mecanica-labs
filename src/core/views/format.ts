@@ -7,7 +7,8 @@ const mark = (s: string, lang: Lang): string => (lang === 'es' ? s.replace('.', 
 /** "1.02 ± 0.06" (ES: decimal comma). */
 export function pmText(value: number, sigma: number, lang: Lang): string {
   const r = roundWithUncertainty(value, sigma)
-  return `${mark(r.valueText, lang)} ± ${mark(r.sigmaText, lang)}`
+  const neg = (t: string): string => t.replace(/^-/, '\u2212') // a true minus sign, as the percentage error uses
+  return `${neg(mark(r.valueText, lang))} ± ${mark(r.sigmaText, lang)}`
 }
 
 /** Fixed decimals with the language's decimal mark. */

@@ -136,12 +136,15 @@ export const mountTimingBar: MountView = (root, ctx): View => {
     const ph = phaseNow()
     const runnable = ph === 'atStart' && app.canRun().ok
     const back = ph === 'stopped' || ph === 'stuck'
-    const key = `${ph}|${runnable}|${ctx.lang()}`
+    const key = `${ph}|${runnable}|${app.getState().stopwatch.running}|${ctx.lang()}`
     if (key === releaseKey) return
     releaseKey = key
     release.text.textContent = back ? T.returnStart : T.release
     const blocked = !runnable && !back
-    release.b.classList.toggle('ready', runnable)
+    // only the next action is accent-filled: start/stop while the cart runs or the watch counts, otherwise the release
+    const startNext = app.getState().stopwatch.running || ph === 'rolling' || ph === 'coasting'
+    release.b.classList.toggle('ready', runnable && !startNext)
+    start.b.classList.toggle('secondary', !startNext)
     if (blocked) release.b.setAttribute('aria-disabled', 'true'); else release.b.removeAttribute('aria-disabled')
     release.b.title = back ? T.returnStart : runnable ? T.readyHint : ph === 'rolling' || ph === 'coasting' ? T.whyRolling : ph === 'unplaced' ? T.whyUnplaced : T.whyNoRun
   }

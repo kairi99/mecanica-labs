@@ -35,14 +35,14 @@ figcaption { font: var(--text-footnote); color: var(--label-2); margin-top: var(
 .f-hit { stroke: var(--danger); stroke-width: 2.4; }
 .f-guide { stroke: var(--danger); stroke-width: 1; stroke-dasharray: 4 3; }
 .f-zero { stroke: var(--accent); stroke-width: 1.6; }
-.f-num { fill: var(--metal-ink); font: 600 13px var(--font); }
-.f-note { fill: var(--label); font: 500 13px var(--font); }
+.f-num { fill: var(--metal-ink); font: var(--text-tick); }
+.f-note { fill: var(--label); font: var(--text-footnote); }
 .g-ax { stroke: var(--label-2); stroke-width: 1.5; fill: none; }
 .g-curve { fill: none; stroke-width: 2.5; stroke-linecap: round; }
 .g-x { stroke: var(--phys-a); }
 .g-v { stroke: var(--phys-b); }
 .g-a { stroke: var(--phys-c); }
-.g-lab { fill: var(--label-2); font: 600 14px var(--font); }
+.g-lab { fill: var(--label-2); font: var(--text-tick); }
 .credits { color: var(--label-2); font: var(--text-footnote); margin-top: var(--space-6); }
 .skip-link { position: absolute; left: var(--space-2); top: -4rem; z-index: 2; min-height: var(--touch); display: inline-flex; align-items: center; padding: 0 var(--space-4); border-radius: var(--radius-s); background: var(--accent-fill); color: var(--on-accent); font: var(--text-callout); font-weight: 600; text-decoration: none; }
 .skip-link:focus { top: var(--space-2); }

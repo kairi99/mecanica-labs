@@ -98,7 +98,7 @@ export const mountAdjust: MountView = (root, ctx): View => {
     const row = el('div', 'inline-row')
     const label = el('label', 'field-label', undefined, { for: id })
     const input = el('input', 'num', undefined, { type: 'text', inputmode: 'decimal', id, autocomplete: 'off', value: kind === 'start' ? '100' : '1000' })
-    const put = button('', 'btn btn-primary btn-sm', () => {
+    const put = button('', 'btn btn-sm', () => {
       const v = parseDecimal(input.value)
       if (Number.isNaN(v)) { input.setAttribute('aria-invalid', 'true'); markWhy.textContent = S().invalidNumber; return }
       input.removeAttribute('aria-invalid'); markWhy.textContent = ''
@@ -120,7 +120,7 @@ export const mountAdjust: MountView = (root, ctx): View => {
   const cartLabel = el('label', 'field-label', undefined, { for: cartId })
   const cartInput = el('input', 'num', undefined, { type: 'text', inputmode: 'decimal', id: cartId, autocomplete: 'off', value: '100' })
   const cartRow = el('div', 'inline-row')
-  const cartPlace = button('', 'btn btn-primary btn-sm', () => {
+  const cartPlace = button('', 'btn btn-sm', () => {
     const v = parseDecimal(cartInput.value)
     if (Number.isNaN(v)) { cartInput.setAttribute('aria-invalid', 'true'); cartWhy.textContent = S().invalidNumber; return }
     cartInput.removeAttribute('aria-invalid'); cartWhy.textContent = ''
@@ -139,7 +139,7 @@ export const mountAdjust: MountView = (root, ctx): View => {
   const strLabel = el('label', 'field-label', undefined, { for: strId })
   const strInput = el('input', 'num', undefined, { type: 'text', inputmode: 'decimal', id: strId, autocomplete: 'off', value: '150' })
   const strRow = el('div', 'inline-row')
-  const strSet = button('', 'btn btn-primary btn-sm', () => {
+  const strSet = button('', 'btn btn-sm', () => {
     const v = parseDecimal(strInput.value)
     if (Number.isNaN(v)) { strInput.setAttribute('aria-invalid', 'true'); strWhy.textContent = S().invalidNumber; return }
     strInput.removeAttribute('aria-invalid'); strWhy.textContent = ''
@@ -205,6 +205,11 @@ export const mountAdjust: MountView = (root, ctx): View => {
     const pr = app.procedure()
     markDistance.textContent = pr.distance_m === null ? '' : `${fill(T.distanceLine, { d: formatNum(pr.distance_m * 100, 1, L()) })} ${pr.distanceOk ? T.distanceOk : T.distanceOff}`
     markWhy.textContent = s.items.markers && s.items.rail ? markWhy.textContent : T.needRailMarks
+    // one primary per panel: only the next action (a missing mark, then the cart, then a string that does not reach the pulley)
+    const missing = markRows.find((r) => (r.kind === 'start' ? mk.start_mm : mk.end_mm) === null)
+    for (const r of markRows) r.put.classList.toggle('btn-primary', r === missing)
+    cartPlace.classList.toggle('btn-primary', !missing && !s.cart.placed)
+    strSet.classList.toggle('btn-primary', !missing && s.cart.placed && (app.hangBelowPulley_m() ?? 0) < 0)
     // cart
     cartRead.textContent = s.cart.placed && s.cart.startRailPos_mm !== null ? fill(T.cartAt, { x: num(s.cart.startRailPos_mm) }) : T.cartNone
     // string

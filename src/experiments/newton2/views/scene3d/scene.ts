@@ -18,7 +18,7 @@ import {
   DEFAULT_CART_DIMS, KNOT_H_cm, type Kit,
 } from './models.ts'
 import {
-  BENCH, BENCH_MASS_SLOT, FLOOR_Y_cm, PRESET_NAMES, PRESET_VIEWS, RAIL, SCALE_POST, STAGING, STRING_ABOVE_RAIL_cm, SUPPORT_FROM_END_cm,
+  BENCH, BENCH_MASS_SLOT, FLOOR_Y_cm, PORTRAIT_OVERVIEW, PRESET_NAMES, PRESET_VIEWS, RAIL, SCALE_POST, STAGING, STRING_ABOVE_RAIL_cm, SUPPORT_FROM_END_cm,
   drawnRailTilt_rad, railLocalToWorld, railLocalX_cm, type PresetName, type Slot,
 } from './units.ts'
 
@@ -107,7 +107,7 @@ export function createScene(container: HTMLElement, ctx: ViewContext, opts: Scen
   scene.add(sun, sun.target)
 
   // ---------- bench, legs, floor ----------
-  const bench = new THREE.Mesh(new THREE.BoxGeometry(BENCH.width, BENCH.thickness, BENCH.depth), M.table)
+  const bench = new THREE.Mesh(new THREE.BoxGeometry(BENCH.width, BENCH.thickness, BENCH.depth), [M.tableSide, M.tableSide, M.table, M.tableSide, M.tableSide, M.tableSide])
   bench.position.set(BENCH.x, -BENCH.thickness / 2, BENCH.z)
   bench.receiveShadow = true
   tag(bench, 'bench')
@@ -115,9 +115,9 @@ export function createScene(container: HTMLElement, ctx: ViewContext, opts: Scen
   for (const [sx, sz] of [[-1, -1], [1, -1], [-1, 1], [1, 1]] as const) {
     box(4, -FLOOR_Y_cm - BENCH.thickness, 4, M.aluDark, BENCH.x + sx * (BENCH.width / 2 - 4), (FLOOR_Y_cm - BENCH.thickness) / 2, BENCH.z + sz * (BENCH.depth / 2 - 4), scene)
   }
-  const floor = new THREE.Mesh(new THREE.PlaneGeometry(600, 400), M.table)
+  const floor = new THREE.Mesh(new THREE.PlaneGeometry(600, 400), M.floor)
   floor.rotation.x = -Math.PI / 2
-  floor.position.set(BENCH.x, FLOOR_Y_cm, 0)
+  floor.position.set(BENCH.x + 40, FLOOR_Y_cm, 0)
   floor.receiveShadow = true
   tag(floor, 'floor')
   scene.add(floor)
@@ -141,9 +141,9 @@ export function createScene(container: HTMLElement, ctx: ViewContext, opts: Scen
   const balance = buildBalance(kit)
   const post = buildScalePost(kit, SCALE_POST.height, SCALE_POST.armLength)
   const twoLeg = buildTwoLeg(kit)
-  const coil = buildStringCoil()
-  const brass = buildBrassScrew()
-  const plastics = buildPlasticScrewBag()
+  const coil = buildStringCoil(kit)
+  const brass = buildBrassScrew(kit)
+  const plastics = buildPlasticScrewBag(kit)
   const tapeRoll = new THREE.Mesh(new THREE.TorusGeometry(1.9, 0.6, 12, 32), M.tape)
   tapeRoll.rotation.x = Math.PI / 2
   tapeRoll.position.y = 0.6
@@ -159,7 +159,7 @@ export function createScene(container: HTMLElement, ctx: ViewContext, opts: Scen
   const flags = (['start', 'end'] as const).map(() => { const f = new THREE.Mesh(new THREE.BoxGeometry(0.7, 0.06, RAIL.halfW * 2 + 0.2), M.tape); f.castShadow = false; return f })
   const flagPoles = (['start', 'end'] as const).map(() => { const f = new THREE.Mesh(new THREE.BoxGeometry(0.4, 0.4, 0.04), M.tape); return f })
   const supportBlock = box(6, 1, 4, M.aluDark, 0, 0, 0, scene)
-  const stringMat = new THREE.LineBasicMaterial({ color: 0x3a3a3a })
+  const stringMat = new THREE.LineBasicMaterial({ color: 0x20242b })
   const stringGeo = new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(), new THREE.Vector3(), new THREE.Vector3(), new THREE.Vector3()])
   const stringLine = new THREE.Line(stringGeo, stringMat)
   stringLine.frustumCulled = false
@@ -309,7 +309,8 @@ export function createScene(container: HTMLElement, ctx: ViewContext, opts: Scen
       const pw = receiver.localToWorld(pulleyLocal.clone())
       const recvTop = railLocalToWorld([rail.root.position.x, rail.root.position.y, 0], rail.root.rotation.z, [RAIL.length, 0, 0])
       const hang = (a.hangBelowPulley_m() ?? 0.05) * 100 + st.canisterDrop_m * 100
-      const knotY = recvTop[1] + STRING_ABOVE_RAIL_cm - hang
+      // the canister hangs past the bench edge; its height follows the apparatus drop, and it rests on the floor when the apparatus says so
+      const knotY = st.canisterOnFloor ? FLOOR_Y_cm + KNOT_H_cm : Math.max(recvTop[1] + STRING_ABOVE_RAIL_cm - hang, FLOOR_Y_cm + KNOT_H_cm)
       const cx = pw.x + 2.4
       canister.root.position.set(cx, knotY - KNOT_H_cm, pw.z); canister.root.rotation.set(0, 0, 0)
       const front = cart.root.localToWorld(new THREE.Vector3(0.2, DEFAULT_CART_DIMS.bodyBottom + DEFAULT_CART_DIMS.bodyHeight - 0.3, 0))
@@ -381,7 +382,7 @@ export function createScene(container: HTMLElement, ctx: ViewContext, opts: Scen
 
   // ---------- camera presets ----------
   const poseFor = (name: PresetName): { target: THREE.Vector3; pos: THREE.Vector3 } => {
-    const v = PRESET_VIEWS[name]
+    const v = name === 'overview' && camera.aspect < 1 ? PORTRAIT_OVERVIEW : PRESET_VIEWS[name]
     const f = fitView(boxCorners(v.min, v.max) as Vec[], v.azimuth, v.elevation, FOV, camera.aspect, name === 'overview' ? 0.04 : 0.1)
     return { target: new THREE.Vector3(...f.target), pos: new THREE.Vector3(...f.position) }
   }
@@ -440,6 +441,9 @@ export function createScene(container: HTMLElement, ctx: ViewContext, opts: Scen
     M.refresh()
     ;(scene.background as THREE.Color).copy(M.tokens.bg)
     outlineMat.color.copy(M.tokens.accent)
+    // the string reads on both the light and the dark stage
+    const bg = M.tokens.bg
+    stringMat.color.set(bg.r * 0.3 + bg.g * 0.59 + bg.b * 0.11 > 0.5 ? 0x20242b : 0xe6e8ee)
     requestRender()
   }
   const mo = new MutationObserver(onTheme)

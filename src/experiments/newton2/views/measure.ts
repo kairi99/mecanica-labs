@@ -34,7 +34,7 @@ export const mountMeasure: MountView = (root, ctx): View => {
     chips.append(b)
     return { t, b }
   })
-  const weighBtn = button('', 'btn btn-primary', () => {
+  const weighBtn = button('', 'btn', () => {
     const r = app.weigh([...picked])
     ctx.changed()
     if (r.ok) { lastReading_kg = r.reading_kg; balWhy.textContent = '' } else balWhy.textContent = reasonText(L(), r.reason, r.item)
@@ -71,7 +71,7 @@ export const mountMeasure: MountView = (root, ctx): View => {
     scaleSeg.append(b)
     return { id, b }
   })
-  const readBtn = button('', 'btn btn-primary', () => {
+  const readBtn = button('', 'btn', () => {
     const r = app.dynamometerRead(chosen)
     ctx.changed()
     dynWhy.textContent = r.ok ? '' : reasonText(L(), r.reason, r.item)
@@ -116,6 +116,9 @@ export const mountMeasure: MountView = (root, ctx): View => {
     for (const { t, b } of chipBtns) { b.setAttribute('aria-pressed', String(picked.has(t))); b.classList.toggle('active', picked.has(t)) }
     lcd.textContent = lastReading_kg === null ? T.readingNone : fill(T.reading, { m: formatNum(lastReading_kg * 1000, 1, L()) })
     const mt = app.mtRecorded_kg()
+    // one primary per panel: weigh until Mt is noted, then hang the canister and read the force
+    weighBtn.classList.toggle('btn-primary', mt === null)
+    readBtn.classList.toggle('btn-primary', mt !== null)
     mtNow.textContent = mt === null ? T.mtNone : fill(T.mtNow, { m: formatNum(mt * 1000, 1, L()) })
     // scales on the table
     const have = { '1N': s.items.dynamometer, '2N': s.items.dynamometer2N }

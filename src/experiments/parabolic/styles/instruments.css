@@ -56,7 +56,6 @@
 .readout-num { font: var(--text-value); font-variant-numeric: tabular-nums; }
 
 /* timing bar (parabolic only: the bar with the mark/repetition target). Only the next action is accent-filled. */
-.timing:has(.tb-target) .tb-start.secondary:not(.running) { background: var(--device-hi); color: var(--device-ink); }
 .timing:has(.tb-target) .tb-release.ready { background: var(--accent-fill); color: var(--on-accent); }
 .timing:has(.tb-target) .tb-release .tb-text { overflow: hidden; text-overflow: ellipsis; }
 @media (max-width: 819px) {

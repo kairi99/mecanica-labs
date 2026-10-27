@@ -7,14 +7,15 @@ import {
 import { BENCH_HEIGHT_m, CANISTER_HANG_m, STRING_ABOVE_RAIL_m, SUPPORT_BASE_HEIGHT_m } from '../physics/index.ts'
 import type { MountView, View } from './view.ts'
 import { el, svg, watch } from '../../../core/views/dom.ts'
+import { formatNum } from '../../../core/views/numfmt.ts'
 import { strings } from './strings/side2d.ts'
 
 const MM = 1000
 const X0 = 100 // x of the rail's printed 0 mm
-const VB_W = 1540
-const H_TOP = 1180 // height drawn at the top edge of the view, mm above the floor
+const VB_W = 1520 // the bench edge is at X0 + the rail length; about 300 mm of air to its right for the hanging canister
+const H_TOP = 1190 // height drawn at the top edge of the view, mm above the floor
 const Y = (h_mm: number): number => H_TOP - h_mm
-const VB_H = H_TOP + 60
+const VB_H = 1250
 
 export const mountSide2d: MountView = (root, ctx): View => {
   const app = ctx.apparatus
@@ -31,9 +32,9 @@ export const mountSide2d: MountView = (root, ctx): View => {
 
   let kPx = 1
   const ro = new ResizeObserver(() => {
-    const wpx = g.getBoundingClientRect().width
-    if (wpx <= 0) return
-    const k = VB_W / wpx
+    const r = g.getBoundingClientRect()
+    if (r.width <= 0 || r.height <= 0) return
+    const k = Math.max(VB_W / r.width, VB_H / r.height) // 'meet' letterboxes: the smaller scale wins
     if (Math.abs(k - kPx) > 0.01) { kPx = k; g.style.setProperty('--k', String(k)); w.touch() }
   })
   ro.observe(g)
@@ -49,11 +50,15 @@ export const mountSide2d: MountView = (root, ctx): View => {
     L.push(svg('rect', { x: 0, y: Y(0), width: VB_W, height: 60, class: 's2d-table' }))
     L.push(svg('line', { x1: 0, y1: Y(0), x2: VB_W, y2: Y(0), class: 's2d-ground' }))
     L.push(svg('text', { x: 12, y: Y(0) + 34, class: 's2d-label' }, T.floor))
-    L.push(svg('rect', { x: X0 - 80, y: Y(bench_h), width: RAIL_LENGTH_m * MM + 160, height: 40, class: 's2d-metal' }))
-    L.push(svg('rect', { x: X0 + 420, y: Y(bench_h) + 40, width: 20, height: bench_h - 40, class: 's2d-leg thin' }))
-    L.push(svg('text', { x: X0 - 70, y: Y(bench_h) - 8, class: 's2d-label' }, T.bench))
     const geo = s.geometry
     const endLeft = s.joints.rackClamp === 'E1' || s.joints.rackClamp === null
+    // the bench ends at the receiver (the rail end): the canister hangs past that edge, not over the bench top
+    const benchX0 = endLeft ? X0 - 80 : X0
+    const edgeX = endLeft ? X0 + RAIL_LENGTH_m * MM : X0
+    const farX = endLeft ? benchX0 : X0 + RAIL_LENGTH_m * MM + 80
+    L.push(svg('rect', { x: benchX0, y: Y(bench_h), width: RAIL_LENGTH_m * MM + 80, height: 40, class: 's2d-metal' }))
+    for (const lx of [edgeX + (endLeft ? -20 : 20), farX + (endLeft ? 20 : -20)]) L.push(svg('line', { x1: lx, y1: Y(bench_h) + 40, x2: lx, y2: Y(0), class: 's2d-leg thin' }))
+    L.push(svg('text', { x: benchX0 + 10, y: Y(bench_h) - 8, class: 's2d-label' }, T.bench))
     if (!s.items.rail) {
       L.push(svg('text', { x: X0 + 300, y: Y(rail_top(0)) - 20, class: 's2d-label' }, T.noRail))
     } else {
@@ -75,7 +80,7 @@ export const mountSide2d: MountView = (root, ctx): View => {
         const py = Y((endLeft ? right : left) + STRING_ABOVE_RAIL_m * MM)
         L.push(svg('circle', { cx: pxn + (endLeft ? 10 : -10), cy: py - 4, r: 24, class: 's2d-pulley' }))
         L.push(svg('line', { x1: recX, y1: Y(bench_h + 40), x2: recX, y2: Y(endLeft ? right : left) + 40, class: 's2d-leg thin' }))
-        L.push(svg('text', { x: pxn + (endLeft ? 20 : -20), y: py - 40, class: 's2d-label', 'text-anchor': 'end' }, T.receiver))
+        L.push(svg('text', { x: pxn + (endLeft ? 20 : -20), y: py - 40, class: 's2d-label', 'text-anchor': endLeft ? 'end' : 'start' }, T.receiver))
       }
       if (geo === null && !s.joints.receiver) { /* loose rail: nothing more */ }
       // marks
@@ -128,7 +133,14 @@ export const mountSide2d: MountView = (root, ctx): View => {
         const cx = px + dir * 24
         L.push(svg('rect', { x: cx - 18, y: top, width: 36, height: CANISTER_HANG_m * MM - 10, rx: 4, class: 's2d-cart-body' }))
         for (let i = 0; i < nCan; i++) L.push(svg('rect', { x: cx - 14, y: top + 10 + i * 9, width: 28, height: 7, class: 's2d-metal-hi' }))
-        L.push(svg('text', { x: cx, y: top + CANISTER_HANG_m * MM + 22, class: 's2d-label', 'text-anchor': 'middle' }, `${T.canister} · ${nCan} ${T.masses}`))
+        L.push(svg('text', { x: cx + dir * 30, y: top + 24, class: 's2d-label', 'text-anchor': endLeft ? 'start' : 'end' }, `${T.canister} · ${nCan} ${T.masses}`))
+        // height of the canister bottom above the floor, read from the drawn geometry (not a physics result)
+        const bottom = top + CANISTER_HANG_m * MM - 10
+        const h_m = Math.max(0, (Y(0) - bottom) / MM)
+        const dx = cx + dir * 130
+        L.push(svg('line', { x1: dx, y1: bottom, x2: dx, y2: Y(0), class: 's2d-dim' }))
+        for (const yy of [bottom, Y(0)]) L.push(svg('line', { x1: dx - 14, y1: yy, x2: dx + 14, y2: yy, class: 's2d-dim' }))
+        L.push(svg('text', { x: dx + dir * 20, y: (bottom + Y(0)) / 2 + 6, class: 's2d-label', 'text-anchor': endLeft ? 'start' : 'end' }, T.height.replace('{h}', formatNum(h_m, 2, ctx.lang()))))
       }
     }
     dynLayer.replaceChildren(...L)

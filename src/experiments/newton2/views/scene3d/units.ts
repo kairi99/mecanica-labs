@@ -8,12 +8,14 @@ import { BENCH_HEIGHT_m, CANISTER_HANG_m, STRING_ABOVE_RAIL_m } from '../../phys
 
 export const CM_PER_M = 100
 
-/** Bench top (top face at y = 0), centimetres. */
-export const BENCH = { x: 62, z: 0, width: 200, depth: 90, thickness: 3 }
 /** Floor level, y in scene cm. */
 export const FLOOR_Y_cm = -BENCH_HEIGHT_m * CM_PER_M
 export const RAIL = { halfW: 1.25, height: 2.0, length: RAIL_LENGTH_m * CM_PER_M }
 export const SUPPORT_FROM_END_cm = SUPPORT_FROM_END_m * CM_PER_M
+/** The rail root sits at -SUPPORT_FROM_END_cm (the stand), so the rail end / receiver is here: the bench ends flush with it and the canister hangs past it. */
+export const BENCH_EDGE_X_cm = RAIL.length - SUPPORT_FROM_END_cm
+/** Bench top (top face at y = 0), centimetres: its right edge is the receiver. */
+export const BENCH = { x: BENCH_EDGE_X_cm - 90, z: 0, width: 180, depth: 90, thickness: 3 }
 /** Height of the string above the rail top at the cart, cm; canister body height. */
 export const STRING_ABOVE_RAIL_cm = STRING_ABOVE_RAIL_m * CM_PER_M
 export const CANISTER_H_cm = (CANISTER_HANG_m - 0.01) * CM_PER_M
@@ -47,25 +49,25 @@ export const STAGING: Record<Exclude<ItemId, 'rail'>, Slot> = {
   standBase: { x: 6, z: -33, rotY: 0 },
   receiver: { x: 84, z: 36, rotY: 0 },
   screws: { x: 52, z: 36, rotY: 0 },
-  level: { x: 130, z: 34, rotY: -0.03 },
-  string: { x: 112, z: 36, rotY: 0.2 },
-  canister: { x: 150, z: -10, rotY: 0 },
+  level: { x: 60, z: -24, rotY: -0.03 },
+  string: { x: 104, z: 36, rotY: 0.2 },
+  canister: { x: 46, z: -24, rotY: 0 },
   brassScrew: { x: 70, z: 36, rotY: 0.4 },
   plasticScrews: { x: 62, z: 36, rotY: 0.2 },
-  masses: { x: 132, z: 8, rotY: 0 },
-  balance: { x: 150, z: -30, rotY: -0.2 },
-  dynamometer: { x: 118, z: -36, rotY: 0 },
-  dynamometer2N: { x: 128, z: -36, rotY: 0 },
+  masses: { x: 27, z: -24, rotY: 0 },
+  balance: { x: 100, z: -24, rotY: -0.2 },
+  dynamometer: { x: 13, z: -24, rotY: 0 },
+  dynamometer2N: { x: 20, z: -24, rotY: 0 },
   stopwatch: { x: 96, z: -34, rotY: 0.3 },
   markers: { x: 76, z: -34, rotY: 0 },
   twoLegStand: { x: 36, z: -34, rotY: 0 },
-  mass50: { x: 148, z: 24, rotY: 0 },
-  marble: { x: 155, z: 30, rotY: 0 },
+  mass50: { x: 80, z: -24, rotY: 0 },
+  marble: { x: 88, z: -24, rotY: 0 },
 }
 /** Where the 10 g masses wait on the bench (index 0..3) when left out of the system. */
-export const BENCH_MASS_SLOT: Slot = { x: 140, z: 20, rotY: 0 }
+export const BENCH_MASS_SLOT: Slot = { x: 27, z: -24, rotY: 0 }
 /** The post that holds the dynamometer when it weighs the canister, and the hook height. */
-export const SCALE_POST = { x: 150, z: 10, rotY: 0, armLength: 10, height: 70 }
+export const SCALE_POST = { x: 100, z: 16, rotY: 0, armLength: 10, height: 70 }
 
 export type PresetName = 'overview' | 'start' | 'pulley' | 'floor' | 'balance' | 'scale'
 export const PRESET_NAMES: readonly PresetName[] = ['overview', 'start', 'pulley', 'floor', 'balance', 'scale']
@@ -77,10 +79,12 @@ export function parsePreset(s: string | null | undefined): PresetName | null {
 export type Vec = readonly [number, number, number]
 /** Box (min, max) in scene cm to frame for each preset, and the viewing angles (deg). */
 export const PRESET_VIEWS: Record<PresetName, { min: Vec; max: Vec; azimuth: number; elevation: number }> = {
-  overview: { min: [-15, -4, -24], max: [158, 38, 36], azimuth: 10, elevation: 22 },
+  overview: { min: [-12, -35, -24], max: [124, 38, 36], azimuth: 10, elevation: 22 },
   start: { min: [-12, -2, -14], max: [38, 20, 14], azimuth: -28, elevation: 20 },
   pulley: { min: [96, -30, -12], max: [140, 14, 12], azimuth: 30, elevation: 14 },
   floor: { min: [90, FLOOR_Y_cm - 6, -20], max: [150, 12, 20], azimuth: 28, elevation: 8 },
-  balance: { min: [140, -2, -42], max: [162, 14, -20], azimuth: -20, elevation: 24 },
-  scale: { min: [140, 0, 0], max: [162, 80, 20], azimuth: -10, elevation: 8 },
+  balance: { min: [88, -2, -34], max: [112, 14, -14], azimuth: -20, elevation: 24 },
+  scale: { min: [84, 0, 4], max: [108, 80, 28], azimuth: -10, elevation: 8 },
 }
+/** Overview for a portrait stage (phones): a closer, steeper view of the rail end, pulley and hanging canister. */
+export const PORTRAIT_OVERVIEW = { min: [-10, -35, -24] as Vec, max: [122, 30, 36] as Vec, azimuth: 55, elevation: 24 }
