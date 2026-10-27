@@ -147,3 +147,82 @@ Device and bench values of the Practica 2 apparatus layer. Date of all rows: 202
 | Coach thresholds (timing) | start press < 0.3 s before or > 0.45 s after the edge; reading > 0.3 s from 0.39 s | s | ASSUMED teaching thresholds, not physics. Typed range within 2 cm of (true range + gap) counts as measured from the rail tip. |
 
 Simplifications: no longitudinal table tilt; the table is long enough for any rail position; the rail is a rigid beam on its contacts (rack clamp, tabletop at the low end, two-leg stand when higher than the free line), exact in the angle; after the first bounce the ball follows the hop and roll-out model above; marks are the first contact only. With the physics rolling resistance (`c_rr` 1.5e-3 and 5e-3) a ball does not stop on a 0.6 m gap: only a nearly flat rail stops it.
+
+## Práctica 4 (`src/experiments/friction`)
+
+Date of every row: 2026-10-27. **ASSUMED** = chosen by us from typical values and physical reasoning, not measured; no friction coefficient here is a lab measurement, and none was tuned to reach a target. Literature ranges are those of common engineering handbook tables (order of magnitude only; the student looks up and cites their own value in task 7, the app never supplies one).
+
+### Spring scales (`src/core/instruments/springScale.ts`, shared)
+
+| Parameter | Value | Unit | Source |
+|---|---|---|---|
+| 1 N scale: range / smallest division / printed length / `k_Npm` | 1 / 0.02 / 0.10 / 10 | N, N, m, N/m | ASSUMED (a plausible 10 cm barrel, 50 divisions 2 mm apart; k = range / length by Hooke). |
+| 2 N scale: range / smallest division / printed length / `k_Npm` | 2 / 0.05 / 0.10 / 20 | N, N, m, N/m | ASSUMED (40 divisions 2.5 mm apart). |
+| Reading convention | nearest division by eye; Type B u = d / sqrt(12) | - | `statistics.ts` `typeBAnalog` (GUM 4.3.7), same as the tape measure. |
+| Internal damping `damping_Nspm` (dashpot in parallel with the spring) | 1.0 | N s/m | ASSUMED. Chosen so that the needle settles in a few tenths of a second (damping ratio 0.4 to 0.8 with the block alone, 0.3 to 0.5 with all masses); a pull at v adds c v to the force on the block at breakaway (0.01 to 0.1 N at 1 to 10 cm/s: a slight speed dependence of the peak). The needle shows the spring force k e only. |
+| Moving mass (rod, hook, needle) `movingMass_kg` | 2 (1 N), 3 (2 N) | g | ASSUMED. A scale zeroed hanging and used horizontally reads low by m g (0.020 N and 0.029 N). The zero screw, turned horizontally, removes it. |
+| Over-range | needle held at the full-scale stop, flagged | - | The model keeps the spring linear past the stop (the real scale becomes rigid); only the displayed value is clamped. |
+
+### Block, masses, balance (`physics/constants.ts`, `apparatus/constants.ts`)
+
+| Parameter | Value | Unit | Source |
+|---|---|---|---|
+| Friction block mass `BLOCK_MASS_NOMINAL_kg` / per-bench spread | 0.100 / uniform +-0.006 | kg | ASSUMED (a small wooden block with hook; the real block was not weighed). The student weighs it. |
+| Silver masses `MASS_NOMINAL_kg`, count / per-mass sigma | 0.050, 3 / 0.5 % | kg, -, - | Nominal and count from the guide; the 0.5 % scatter ASSUMED (slotted masses). The student uses the nominal value unless weighed. |
+| Balance (omitted from the guide's list; the procedure needs M) | digit 0.1 g, repeatability sigma 0.05 g | g | ASSUMED. |
+| Bar mass `BAR_MASS_kg` wood / aluminium / iron | 0.026 / 0.100 / 0.300 | kg | ASSUMED from a 10 x 2.5 x 1.5 cm bar and handbook densities (700, 2700, 7870 kg/m^3). The bar mass does not enter mu (m cancels). |
+| Bar length `BAR_LENGTH_m` | 0.10 | m | ASSUMED. With the front edge on the start mark (1.10 m from the low end) the rear edge is at the end of the 1.2 m rail. |
+
+### Friction coefficients (`FACE_PAIRS`, `BAR_PAIRS`, `PAPER_ON_TABLE`, `BLOCK_ON_TABLE`)
+
+| Pair | mu_s / mu_k | Literature range of mu_s | Source |
+|---|---|---|---|
+| Cloth on paper | 0.40 / 0.30 | 0.3 to 0.5 | ASSUMED (textile on paper in handbook tables). |
+| Sandpaper on paper | 0.72 / 0.55 | 0.5 to 1.0 | ASSUMED (abrasive paper on paper; wide range). |
+| Paper on the bare table (paper not fixed) | 0.35 / 0.28 | 0.25 to 0.5 | ASSUMED. The loaded paper carries the block with it and this pair sets the reading. |
+| Block on the bare table (after leaving the A4 sheet) | 0.35 / 0.28 | 0.25 to 0.5 | ASSUMED. |
+| Wood bar on the aluminium rail | 0.40 / 0.30 | 0.2 to 0.6 | ASSUMED (wood on metal). |
+| Aluminium bar on the aluminium rail | 0.50 / 0.40 | 0.4 to 0.7 | ASSUMED (lightly anodised/oxidised; clean bare aluminium on aluminium is much higher). |
+| Iron bar on the aluminium rail | 0.58 / 0.46 | 0.4 to 0.7 | ASSUMED (steel on aluminium about 0.6 static). |
+| Rail material | aluminium | - | ASSUMED (the profile of the shared rail). |
+
+In every pair mu_s > mu_k. The coefficients do not depend on weight or contact area (Amontons-Coulomb laws); the model has no velocity dependence of mu except the scale damping above.
+
+### Run variability (`FACE_SCATTER`, `BAR_SCATTER`, `LOOSE_PAPER_SCATTER`, `sampleHand`)
+
+| Parameter | Value | Unit | Source |
+|---|---|---|---|
+| Face on paper: relative sigma of mu_s / mu_k per trial | 5 / 3 | % | ASSUMED (patch of surface under the block, dust, fibres). |
+| Bar on rail: relative sigma of mu_s / mu_k per trial | 6 / 4 | % | ASSUMED (oxide film, handling). With a ratio mu_s / mu_k of only 1.25 the acceleration (proportional to mu_s - mu_k) scatters by about 20 to 30 %: slide times at the onset scatter that much (teacher key). |
+| Loose paper | 15 / 10 | % | ASSUMED (erratic, three times the face scatter). |
+| Guard `MIN_MU_RATIO` | 1.02 | - | Numerical: a draw cannot make mu_s smaller than 1.02 mu_k (static friction is the larger one). One-sided; it acts in under 1 % of draws. |
+| Hand: lag `HAND_TAU_s` (x 0.7 to 1.3), speed wobble amplitude, wobble frequency | 0.15, 4 to 10 %, 1 to 2.5 | s, %, Hz | ASSUMED (uneven pulling). |
+
+### Spring-block model (exps. 1 and 2)
+
+| Parameter | Value | Unit | Source |
+|---|---|---|---|
+| Equations | stuck: breaks away when abs(k e + c v) >= mu_s N; sliding: M u' = k e + c e' - mu_k N, e' = v_pull - u, N = M g | - | Coulomb friction with a dashpot-in-parallel spring. Exact damped-oscillator update per step, events (breakaway, arrest, re-stick or reverse slip) found by bisection. |
+| Step `PULL_DT_s`, stored sample `PULL_SAMPLE_s` | 1, 5 | ms | Numerical. The result does not depend on the step (test: split vs single advance). |
+| Pull speeds offered | 2 to 200 | mm/s | ASSUMED (hand pulling). |
+| Paper travel `PAPER_TRAVEL_m` | 0.20 | m | ASSUMED (A4 sheet 297 mm along the pull minus the block length and margins). Past it the block is on the bare table (above). |
+| Pull angle | 0 (horizontal) | - | Simplification: no cosine factor. |
+
+### Exp. 3: rail geometry (`RAIL_SUPPORT_DIST_m` etc.)
+
+| Parameter | Value | Unit | Source |
+|---|---|---|---|
+| Geometry definition | the rail pivots on the lower edge of its low end on the table; the rack stand clamps it at `RAIL_SUPPORT_DIST_m` along the rail; h = height of the rail underside at the clamp above the table; sin(theta) = h / L | - | Rigid beam. The help page states this. |
+| `RAIL_SUPPORT_DIST_m` (L) | 1.10 | m | ASSUMED (same as Practica 1 and 2). |
+| Rail length | 1.2 | m | Guide. |
+| Course `COURSE_m` | 1.00 | m | Guide (100 cm). Start mark: bar front edge 1.10 m from the low end; longest course allowed `COURSE_MAX_m` = 1.08 m. |
+| Mark placement | snap 1 mm, sigma 1 mm | mm | ASSUMED. |
+| Rack stand reach `RACK_H_MAX_m` | 0.70 | m | ASSUMED (a taller rod than Practica 1 and 2, so that tan(theta) up to 0.82 is reachable; the iron bar needs h = 0.55 m). |
+| Crank rate offered | 0.5 to 20 | mm/s | ASSUMED. |
+| theta(t) during the slide | follows h(t): if the student keeps cranking the angle keeps increasing; if the crank stops, theta is frozen | - | Choice, documented. RK4 step 1 ms; closed form a t^2 / 2 at constant angle (tested). |
+| Tape reading of h | 1 mm division, placement sigma 0.5 mm | mm | ASSUMED (tape model of core; MPE reported not applied). Refused while the crank is turning. |
+| Slide uncertainty of t | display 0.01 s and reaction-bias half-width 0.1 s in quadrature (0.058 s) | s | As Practica 1 and 2 (`reactionBiasTypeB_s`). |
+
+### Simplifications
+
+No speed dependence of mu; no rolling or tipping of the bar or block; no friction in the rack stand; the block cannot tip. The 1 N scale's stop is not a rigid wall in the dynamics. Gravity is the Quito value. The guide's list omits the rack-and-pinion stand and its base, a stopwatch and a balance; the app offers them and the help page says so.
