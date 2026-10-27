@@ -9,23 +9,24 @@
 //    (`reactionEffect`), never as a per-point weight (GUM F.1.2.4, Taylor ch. 4).
 //  * Distance d = 0.90 m between the two marks: two scale readings, sigma_d = sqrt(2) * 1 mm/sqrt(12).
 //  * a = 2 d / t_bar^2 (rest start, constant acceleration), sigma_a^2/a^2 = (sigma_d/d)^2 + (2 u/t_bar)^2 (GUM 5.1.2).
-//  * Force: the dynamometer reading, Type B u_F = resolution/sqrt(12).
+//  * Force: the spring-scale reading, Type B u_F = division/sqrt(12) (springScaleUncertainty_N: 0.0058 N for the 1 N scale, 0.0144 N for the 2 N scale).
 //  * Fit F = M_fit a + F0 by weighted least squares with the effective-variance method (Orear 1982; Taylor ch. 8): the noisy
 //    variable a is the abscissa, sigma_eff^2 = u_F^2 + (M_fit u_a)^2, iterated.
 import {
   combinedUncertainty, compareToExpected, reactionBiasTypeB_s, repeatedStats, STOPWATCH_RESOLUTION_s, typeBAnalog, typeBDigital,
   weightedLinearFit, type Comparison, type WeightedFit,
 } from '../../../core/physics/index.ts'
+import { SPRING_SCALES, springScaleUncertainty_N } from '../../../core/instruments/springScale.ts'
 import { RAIL_DIVISION_m, balanceTypeB_kg } from '../physics/instruments.ts'
-import { DISTANCE_TARGET_m, FORCE_RESOLUTION_N, TRIAL_MASSES_IN_CANISTER } from '../apparatus/constants.ts'
+import { DISTANCE_TARGET_m, TRIAL_MASSES_IN_CANISTER } from '../apparatus/constants.ts'
 
 export type { Comparison }
 /** Distance of the run, m (the guide's 90 cm). */
 export const DISTANCE_m = DISTANCE_TARGET_m
 /** sigma_d of the 90 cm between two mark readings on the millimetre scale, m. */
 export const SIGMA_D_m = Math.SQRT2 * typeBAnalog(RAIL_DIVISION_m)
-/** Type B uncertainty of a dynamometer force reading, N. */
-export const SIGMA_F_N = typeBDigital(FORCE_RESOLUTION_N)
+/** Type B uncertainty of a force reading with the default 1 N spring scale, N. */
+export const SIGMA_F_N = springScaleUncertainty_N(SPRING_SCALES['1N'])
 export const MIN_READINGS = 2
 export const MIN_TRIALS_FOR_FIT = 2
 
@@ -97,8 +98,8 @@ export interface AnalysisInput {
   Mt_kg?: number | null
   /** Distance, m (default 0.90). */
   distance_m?: number
-  /** Uncertainty of a force reading, N. */
-  uF_N?: number
+  /** Uncertainty of a force reading, N: one value for all rows or one per row (the scale each force was read with). */
+  uF_N?: number | readonly number[]
   uMt_kg?: number
 }
 
@@ -142,9 +143,9 @@ export function linearFitEffectiveVariance(
   return { fit, iterations: it }
 }
 
-function fitPoints(trials: readonly TrialStat[], uF: number): FitPoint[] {
+function fitPoints(trials: readonly TrialStat[], uF: number | readonly number[]): FitPoint[] {
   return trials.flatMap((t) => (t.a_mps2 !== null && t.u_a_mps2 !== null && t.F_N !== null
-    ? [{ row: t.row, a_mps2: t.a_mps2, u_a_mps2: t.u_a_mps2, F_N: t.F_N, u_F_N: uF }]
+    ? [{ row: t.row, a_mps2: t.a_mps2, u_a_mps2: t.u_a_mps2, F_N: t.F_N, u_F_N: typeof uF === 'number' ? uF : uF[t.row] ?? SIGMA_F_N }]
     : []))
 }
 function fitOf(points: readonly FitPoint[]): ForceFit | null {

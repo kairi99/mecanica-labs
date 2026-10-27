@@ -51,8 +51,7 @@ export const DIGICART_TAIL_s = 0.5
 export const DIGICART_MAX_s = 20
 
 // ---- Instruments ------------------------------------------------------------------------------------------------------
-/** Placeholder dynamometer (phase 1): resolution of the canister weight reading, N. ASSUMED. TODO phase 2: core spring scale. */
-export const FORCE_RESOLUTION_N = 0.01
+/** Largest force accepted in Tabla 3.1, N (the 2 N spring scale). */
 export const FORCE_MAX_N = 2
 
 // ---- Distractor parts ---------------------------------------------------------------------------------------------------
@@ -68,7 +67,7 @@ export const TRIAL_MASSES_IN_CANISTER: readonly number[] = [4, 3, 2, 1, 0]
 export const TABLE_MAX_TIME_s = 30
 /** Stopwatch shows two decimals, so typed values with more are rejected. */
 export const TABLE_MAX_DECIMALS = 2
-/** Typed forces: at most 2 decimals (dynamometer 0.01 N), up to FORCE_MAX_N. */
+/** Typed forces: at most 2 decimals (spring-scale divisions are 0.02 N and 0.05 N), up to FORCE_MAX_N. */
 export const FORCE_MAX_DECIMALS = 2
 /** Typed total mass Mt in g, one decimal (balance 0.1 g), up to the balance capacity. */
 export const MT_MAX_g = 600

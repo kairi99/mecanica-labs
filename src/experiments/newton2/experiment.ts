@@ -1,5 +1,5 @@
 // Manifest of the force-acceleration experiment (data only: see ../manifest.ts).
-// Status 'soon' (the manifest type has no 'planned'): listed but not built until the views exist (phase 2). Not in the registry yet.
+// Status 'ready': page segunda-ley/index.html (Practica 3).
 import type { ExperimentManifest } from '../manifest.ts'
 
 export const manifest: ExperimentManifest = {
@@ -14,5 +14,5 @@ export const manifest: ExperimentManifest = {
   page: 'segunda-ley/index.html',
   help: { es: 'segunda-ley/help/index.html', en: 'segunda-ley/help/en.html' },
   thumb: 'pulley',
-  status: 'soon',
+  status: 'ready',
 }

@@ -1,0 +1,126 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<title>Help guide: force and acceleration</title>
+<link rel="stylesheet" href="./help.css">
+<script type="module" src="./help.ts"></script>
+</head>
+<body>
+<a class="skip-link" href="#main">Skip to main content</a>
+<header class="bar"><a class="pill accent" href="../index.html">Back to the lab</a><nav class="pills" aria-label="Language"><a class="pill" href="index.html" hreflang="es" lang="es">Español</a></nav></header>
+<main id="main" tabindex="-1">
+<h1>Help guide: force and acceleration</h1>
+<p class="lede">A companion of the virtual lab for Practice 3: Newton's second law applied to the DigiCart–canister system, what comes out of the force against acceleration graph, where the differences from the ideal case come from, how the uncertainties are computed and what the simulator does at each step.</p>
+<nav class="toc" aria-label="Contents">
+<a href="#theory">Theory</a><a href="#use">Using the lab</a><a href="#instruments">Instruments</a><a href="#uncertainty">Uncertainty</a><a href="#errors">Error sources</a><a href="#model">Honest model</a><a href="#keys">Keys</a><a href="#accessibility">Accessibility</a><a href="#credits">Credits</a>
+</nav>
+
+<section id="theory"><h2>1. Theory: Newton's second law for the DigiCart–canister system</h2>
+<p>The DigiCart (mass <em>M</em><sub>c</sub> with everything it carries) is tied by a string over a pulley to a hanging canister of mass <em>m</em>. If the string is ideal and there is no friction, both bodies have the same acceleration <em>a</em> and the second law, applied to each, gives</p>
+<p><em>m g</em> − <em>T</em> = <em>m a</em> &nbsp;&nbsp; and &nbsp;&nbsp; <em>T</em> = <em>M</em><sub>c</sub> <em>a</em> &nbsp;⇒&nbsp; <em>m g</em> = (<em>M</em><sub>c</sub> + <em>m</em>) <em>a</em> = <em>M</em><sub>t</sub> <em>a</em>.</p>
+<p>Here <em>F</em> = <em>m g</em> is the weight of the canister with its masses (what the dynamometer reads) and <em>M</em><sub>t</sub> is the total mass being accelerated. That is why, in each trial, a 10 g mass moves from the canister to the DigiCart: the force goes down but the total mass hardly changes, and the graph of <em>F</em> against <em>a</em> is a straight line whose slope is <em>M</em><sub>t</sub> in the ideal case.</p>
+<p>Starting from rest with constant acceleration, the distance <em>d</em> = 90 cm is covered in a time <em>t</em> with <em>d</em> = ½ <em>a t</em><sup>2</sup>, so <em>a</em> = 2<em>d</em>/<em>t</em><sup>2</sup>. That is the acceleration the analysis computes for each force.</p>
+<h3>What the ideal case leaves out</h3>
+<ul>
+<li><b>Rotational inertia.</b> The wheels of the DigiCart and the pulley roll and spin as they move; their rotational kinetic energy behaves like an extra mass (Σ<em>I</em>/<em>r</em><sup>2</sup> of the wheels and <em>I</em><sub>p</sub>/<em>r</em><sub>p</sub><sup>2</sup> of the pulley). The string has mass too. The effective mass is larger than <em>M</em><sub>t</sub>, and the slope of the line approaches it.</li>
+<li><b>Friction.</b> Rolling resistance, the wheel bearings and the pulley axle take an almost constant force away from <em>F</em>. The line of <em>F</em> against <em>a</em> does not go through the origin: <em>F</em> = <em>M</em> <em>a</em> + <em>F</em><sub>0</sub>, with <em>F</em><sub>0</sub> positive. The slope is the mass that the force accelerates; the intercept is the part of the force that produces no acceleration.</li>
+<li><b>Residual tilt.</b> A "horizontal" rail with a centred bubble can still have a very small tilt: the weight of the DigiCart adds or subtracts <em>M</em><sub>c</sub> <em>g</em> sin θ from the force, and that moves <em>F</em><sub>0</sub>.</li>
+<li><b>The plastic screws.</b> Every mass that moves to the DigiCart brings its plastic screw (0.8 g in this model, assumed): the total mass grows a little in each trial, just as the force goes down. It is a real, small effect that changes the slope and the intercept of the fit; it is not an app error.</li>
+<li><b>The weight of the hanging string</b> also pulls on the system (a little more at the end of the run).</li>
+</ul>
+</section>
+
+<section id="use"><h2>2. How to use the lab</h2>
+<ol>
+<li><b>Assembly.</b> Put the materials on the table and make the connections: stand on its base, rail in the stand, receiver with pulley on the other end, string tied to the DigiCart with the brass screw, over the pulley and tied to the canister. The box holds things this practice does not use (a 50 g mass, a marble, a two-leg stand).</li>
+<li><b>Settings.</b> Level the rail (the height of the stand end in mm and the fine screw of the receiver), stick the start mark and the 90 cm mark, put the DigiCart with its front on the start mark and choose the string length: long enough to reach the pulley, short enough that the canister does not touch the floor before 90 cm. The four masses start in the canister.</li>
+<li><b>Measurements.</b> Weigh the system with the balance and record Mt. Hang the canister from the dynamometer and record F in Table 3.1. Release the DigiCart with <kbd>S</kbd>, start the stopwatch with <kbd>Space</kbd> and stop it when the front passes the 90 cm mark; <kbd>Enter</kbd> copies the time. Repeat 10 times. Move a mass from the canister to the DigiCart (with its plastic screw), read F again and repeat with 3, 2 and 1 masses in the canister (an optional fifth row uses the empty canister).</li>
+<li><b>DigiCart log</b> (hidden with <code>?reference=0</code>). The position of the DigiCart during each run, measured by its own sensor, and a comparison with your stopwatch.</li>
+<li><b>Analysis.</b> Mean time with its uncertainty, acceleration with its uncertainty, graph of <em>F</em> against <em>a</em> with the fitted line, fitted mass against <em>M</em><sub>t</sub> and percent error; export a CSV. The explanation questions of the guide are yours to answer: the app does not answer them.</li>
+</ol>
+<p>A note on the guide: the procedure asks to measure the weight of the canister with a <b>dynamometer</b>, which is not in its materials list. The virtual lab offers two (1 N and 2 N) and the balance.</p>
+<p>If something goes wrong, the simulator shows it as it would happen on the bench: a string that is too long leaves the canister on the floor before 90 cm (the string goes slack and the DigiCart coasts on, slowing down); too short, it does not reach the pulley; without the brass screw nothing pulls the DigiCart; taking a mass out of the system changes the total mass.</p>
+</section>
+
+<section id="instruments"><h2>3. The instruments</h2>
+<ul>
+<li><b>Digital balance</b>, 0.1 g resolution (assumed). Type B uncertainty of a reading: 0.1 g/√12 = 0.029 g.</li>
+<li><b>Spring dynamometer</b>, read to the nearest division: 0.02 N on the 1 N one and 0.05 N on the 2 N one (assumed). It is used hanging, with its zero set hanging, so it has no zero error. Type B uncertainty: division/√12.</li>
+<li><b>Digital stopwatch</b>, 0.01 s; the displayed time is truncated. You start and stop with your own reaction (about 0.2 s), which adds scatter and a possible bias.</li>
+<li><b>Printed rail scale</b>, in millimetres. For the 90 cm between two marks there are two readings: <em>u</em> = √2 · 1 mm/√12 = 0.41 mm.</li>
+</ul>
+</section>
+
+<section id="uncertainty"><h2>4. Uncertainty</h2>
+<p>The GUM (JCGM 100) and J. R. Taylor's book are followed. For each force:</p>
+<ul>
+<li>The mean time of the <em>n</em> readings, with type A uncertainty <em>s</em>/√<em>n</em>, type B of the resolution (0.01 s/√12) and type B of the reaction bias (assumed half-width of 0.1 s, rectangular), combined in quadrature: that is the Δ<em>t</em> shown.</li>
+<li>The acceleration <em>a</em> = 2<em>d</em>/<em>t</em><sup>2</sup>, with Δ<em>a</em> propagated: (Δ<em>a</em>/<em>a</em>)<sup>2</sup> = (Δ<em>d</em>/<em>d</em>)<sup>2</sup> + (2Δ<em>t</em>/<em>t</em>)<sup>2</sup>. Only the statistical part of Δ<em>t</em> enters the weights of the fit; the reaction bias is common to all readings and does not average out, so it is shown apart (how much the fitted mass would change).</li>
+<li>The weighted least-squares fit <em>F</em> = <em>M</em><sub>fit</sub> <em>a</em> + <em>F</em><sub>0</sub> by the effective-variance method (Orear): the uncertainty of <em>a</em> is carried over to <em>F</em> multiplied by the slope. It gives the slope, the intercept, their uncertainties and the reduced χ².</li>
+<li>The comparison with <em>M</em><sub>t</sub>: percent error and the difference in units of the combined uncertainty.</li>
+</ul>
+<p>With 4 points and 2 parameters there are only 2 degrees of freedom: the reduced χ² is very variable and a single pair of points can pull the line. Do not read it as a test but as a warning.</p>
+</section>
+
+<section id="errors"><h2>5. Error sources the simulation contains</h2>
+<ul>
+<li>Reaction time and rounding of the stopwatch (the dominant error: with times of 1 to 2.5 s, a 0.1 s bias changes the fitted mass by tens of percent).</li>
+<li>Rotational inertia of the wheels, the pulley and the string; rolling, bearing and axle friction; air drag.</li>
+<li>Residual tilt of the rail and the effect of the level.</li>
+<li>Tolerance of the masses and the canister (±0.1 g and ±0.3 g, assumed) and the plastic screws.</li>
+<li>Resolution of the balance and of the dynamometer.</li>
+<li>Releasing with a small push or off the mark; the weight of the string.</li>
+<li>The canister hitting the floor, the DigiCart reaching the receiver, a badly tied string: set-up errors that change the experiment.</li>
+</ul>
+<p>How to reduce these errors and which ones dominate is part of what the guide asks you to answer (tasks 7 and 8).</p>
+</section>
+
+<section id="model"><h2>6. An honest model</h2>
+<p>The masses, the resistances and the bench heights are <b>assumptions</b> documented with value, unit and date in <code>PARAMETERS.md</code> (Practice 3 section); none is a PHYWE specification and none was tuned to make the result "come out right". The equations: <em>m</em><sub>hang</sub> <em>g</em> + <em>M</em><sub>c</sub> <em>g</em> sin θ − <em>F</em><sub>res</sub>(<em>v</em>) = <em>M</em><sub>eff</sub> <em>a</em>, with rolling inertia and the weight of the string included; after the canister hits the floor the string goes slack and the DigiCart slows down by friction alone.</p>
+<p>The acceleration of the model is lower than <em>F</em>/<em>M</em><sub>t</sub>, and the fitted line is not exactly the ideal one. If your data do not match the ideal, that is information, not a failure.</p>
+</section>
+
+<section id="keys"><h2>7. Keyboard shortcuts</h2>
+<table>
+<thead><tr><th>Key</th><th>Action</th></tr></thead>
+<tbody>
+<tr><td><kbd>S</kbd></td><td>Release the DigiCart (or take it back to the start if it already ran)</td></tr>
+<tr><td><kbd>Space</kbd></td><td>Start or stop the stopwatch (it counts the instant of the press)</td></tr>
+<tr><td><kbd>R</kbd></td><td>Reset the stopwatch</td></tr>
+<tr><td><kbd>Enter</kbd></td><td>Copy the stopped reading to Table 3.1</td></tr>
+<tr><td><kbd>Arrows</kbd></td><td>In Table 3.1: move between cells</td></tr>
+<tr><td><kbd>Tab</kbd></td><td>Move through the controls. Everything can be operated with the keyboard; the shortcuts do not fire on buttons, cells or text fields</td></tr>
+<tr><td><kbd>Esc</kbd></td><td>Close the first-visit tour</td></tr>
+</tbody></table>
+</section>
+
+<section id="accessibility"><h2>8. Accessibility</h2>
+<p>This lab was checked against the Web Content Accessibility Guidelines (WCAG) 2.0 level AA, the basis of the NTE INEN-ISO/IEC 40500 standard. The check combined an automatic tool (axe-core) on every page, in Spanish and English, in light and dark themes, at phone and desktop sizes, with manual tests: keyboard-only use, colour contrast, text zoom to 200 %, a 320 px width and respect for "reduce motion".</p>
+<ul>
+<li>Everything can be done with the keyboard. The first link of each page skips to the main content. <kbd>Esc</kbd> closes menus, dialogs and the tour and returns focus to where it was.</li>
+<li>Coach hints and refusals are announced through a status region and do not disappear on their own; you close them with their button.</li>
+<li>Colour is never the only cue: every state also has text or a mark.</li>
+</ul>
+<h3>Known limits</h3>
+<ul>
+<li>The 3D view is visual. Everything done in it has an equivalent control in the panels (number fields, sliders and buttons), and the 2D side view and the panels give the same information as text.</li>
+<li>The charts have a name and a short description; their values are in the tables and the text next to them.</li>
+<li>Timing is a timed task by design: measuring a time with your own presses is the experiment. Nothing else has a time limit.</li>
+</ul>
+<h3>How to report a problem</h3>
+<p>If you find an accessibility barrier, open an issue on <a href="https://github.com/kairi99/mecanica-labs/issues">the project's issues page</a> and tell us the page, the device and the assistive technology you use.</p>
+</section>
+
+<section id="credits"><h2>9. Credits</h2>
+<p>This virtual lab is based on the guide "Práctica 3: Relación Fuerza – Aceleración" of the Laboratorio de Física, Escuela Politécnica Nacional (Quito). It is a free, open-source educational project. PHYWE and DigiCart are trademarks of their respective owners, mentioned only to identify the real lab equipment; <b>this project is not affiliated with, sponsored or endorsed by PHYWE</b>. The masses, resistances and heights are assumptions documented in <code>PARAMETERS.md</code>.</p>
+<p>Methods: GUM (JCGM 100) and J. R. Taylor, <em>An Introduction to Error Analysis</em>. Code under the MIT licence and educational content under CC BY 4.0.</p>
+<p>Privacy: your progress is stored only in your browser (<code>localStorage</code>); nothing is sent to any server. "Start over" deletes it.</p>
+<p>Parts of the code were written with the help of AI tools and reviewed by the authors. Licences of the libraries used (three.js, uPlot, MIT): <a href="../../THIRD-PARTY-NOTICES.txt">third-party notices</a>.</p>
+</section>
+<p class="credits"><a href="../index.html">Back to the lab</a></p>
+</main>
+</body>
+</html>

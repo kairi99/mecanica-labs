@@ -4,7 +4,7 @@
 import {
   CANISTER_HANG_m, DEFAULT_PULLEY, G_QUITO_mps2, NOMINAL_PARTS, NO_VARIABILITY, PULLEY_AHEAD_OF_STOP_m, STRING_ABOVE_RAIL_m,
   BENCH_HEIGHT_m, SUPPORT_BASE_HEIGHT_m, constantAcceleration_mps2, crossingTime_s, deg2rad, effectiveMass_kg, idealAcceleration_mps2,
-  linearFit, reactionBiasTypeB_s, totalMass_kg, wheelInertiaMass_kg, type Newton2Params, type RunGeometry,
+  MIN_HANG_m, STRING_LINEAR_DENSITY_kgpm, linearFit, reactionBiasTypeB_s, totalMass_kg, wheelInertiaMass_kg, type Newton2Params, type RunGeometry,
 } from '../physics/index.ts'
 import { DISTANCE_TARGET_m, TABLE_TILT_MAX_deg, createApparatus, type RunRecord } from '../apparatus/index.ts'
 import { DISTANCE_m, analyse } from '../analysis/compute.ts'
@@ -60,7 +60,7 @@ export function teacherKey(): string {
   const tiltBig = fitTilt(TABLE_TILT_MAX_deg)
   const tiltNeg = fitTilt(-0.025)
   const noFriction = modelFit(four, (p) => ({
-    ...p, cart: { ...p.cart, c_rr: 0, F_bearing_N: 0, Cd: 0, F_breakaway_N: 0, wheelMass_kg: 0 }, pulley: { inertiaMass_kg: 0, F_friction_N: 0 }, mString_kg: 0,
+    ...p, cart: { ...p.cart, c_rr: 0, F_bearing_N: 0, Cd: 0, F_breakaway_N: 0, wheelMass_kg: 0 }, pulley: { inertiaMass_kg: 0, F_friction_N: 0 }, mString_kg: 0, stringLinDensity_kgpm: 0,
   }))
   const sReceiver = first.geo.sReceiver_m
   const hang0 = BENCH_HEIGHT_m + SUPPORT_BASE_HEIGHT_m + STRING_ABOVE_RAIL_m - CANISTER_HANG_m - first.geo.sFloor_m
@@ -77,7 +77,7 @@ export function teacherKey(): string {
     '',
     `- Rail 1.2 m, stand end at one end (rack stand), receiver with pulley at the other, supports ${f(1.1, 2)} m apart. The cart front starts at the 0 cm mark (100 mm on the printed scale in the \`assembled\` preset) and runs ${f(DISTANCE_TARGET_m * 100, 0)} cm to the end mark; the receiver stop is ${f(sReceiver * 100, 1)} cm from the start (${f((sReceiver - DISTANCE_TARGET_m) * 100, 1)} cm of free travel after the end mark).`,
     `- Level: the bench tilt is hidden, uniform in +-${f(TABLE_TILT_MAX_deg, 2)} deg. A centred bubble allows up to about +-0.025 deg (0.5 mm of bubble); the receiver foot (0.05 mm steps) trims it.`,
-    `- String: from the brass screw over the pulley to the canister knot. The pulley contact is ${f(PULLEY_AHEAD_OF_STOP_m * 100, 1)} cm beyond the stop face, so the hanging length at the release is hang0 = L - ${f((sReceiver + PULLEY_AHEAD_OF_STOP_m) * 100, 1)} cm. Too short (hang0 < 0): the string does not reach the pulley from the start mark. Too long: the canister (bottom ${f(CANISTER_HANG_m * 100, 0)} cm below the knot; string ${f((BENCH_HEIGHT_m + SUPPORT_BASE_HEIGHT_m + STRING_ABOVE_RAIL_m) * 100, 0)} cm above the floor) meets the floor after ${f(first.geo.sFloor_m * 100, 1)} cm of travel with hang0 = ${f(hang0 * 100, 1)} cm; it must be farther than ${f(DISTANCE_TARGET_m * 100, 0)} cm, so hang0 must lie between 0 and ${f(hangMax * 100, 1)} cm.`,
+    `- String: from the brass screw over the pulley to the canister knot. The pulley contact is ${f(PULLEY_AHEAD_OF_STOP_m * 100, 1)} cm beyond the stop face, so the hanging length at the release is hang0 = L - ${f((sReceiver + PULLEY_AHEAD_OF_STOP_m) * 100, 1)} cm. Too short (hang0 < ${f(MIN_HANG_m * 100, 1)} cm; the knot cannot sit in the pulley groove): the string does not reach the pulley from the start mark. Too long: the canister (bottom ${f(CANISTER_HANG_m * 100, 0)} cm below the knot; string ${f((BENCH_HEIGHT_m + SUPPORT_BASE_HEIGHT_m + STRING_ABOVE_RAIL_m) * 100, 0)} cm above the floor) meets the floor after ${f(first.geo.sFloor_m * 100, 1)} cm of travel with hang0 = ${f(hang0 * 100, 1)} cm; it must be farther than ${f(DISTANCE_TARGET_m * 100, 0)} cm, so hang0 must lie between ${f(MIN_HANG_m * 100, 1)} and ${f(hangMax * 100, 1)} cm.`,
     `- After the canister hits the floor the string goes slack and the cart coasts and decelerates (rolling resistance, bearings, air): its timing is no longer a constant-force run. The run record says so (\`canisterHitsFloor\`).`,
     `- Local g (Quito, 2800 m) = ${f(g, 4)} m/s^2.`,
     '',
@@ -86,7 +86,7 @@ export function teacherKey(): string {
     `Nominal: bare cart ${f(P0.cart.m_kg * 1000, 1)} g, brass screw ${f(NOMINAL_PARTS.brassScrew_kg * 1000, 1)} g, canister with lid ${f(NOMINAL_PARTS.canister_kg * 1000, 1)} g, four masses 4 x 10.0 g, plastic screw ${f(NOMINAL_PARTS.plasticScrew_kg * 1000, 1)} g each. Hidden per-bench tolerance: masses +-0.1 g, canister +-0.3 g (so the balance, 0.1 g, shows about the nominal values).`,
     `- Mt as the guide defines it (cart with brass screw, canister with lid, four masses) = **${f(Mt * 1000, 1)} g**.`,
     `- Each mass moved to the cart needs a plastic screw (${f(NOMINAL_PARTS.plasticScrew_kg * 1000, 1)} g): trial with k masses on the cart has a total mass Mt + k x ${f(NOMINAL_PARTS.plasticScrew_kg * 1000, 1)} g. This real effect is kept; it is 0.8 % of Mt after three moves and explains a small part of any mass discrepancy.`,
-    `- Rotational inertia: the four wheels add ${f(mWheel * 1000, 1)} g and the pulley ${f(DEFAULT_PULLEY.inertiaMass_kg * 1000, 1)} g to the inertia, string ${f(P0.mString_kg * 1000, 1)} g (all ASSUMED): M_eff = Mt + ${f((effectiveMass_kg(P0) - totalMass_kg(P0)) * 1000, 1)} g.`,
+    `- Rotational inertia: the four wheels add ${f(mWheel * 1000, 1)} g and the pulley ${f(DEFAULT_PULLEY.inertiaMass_kg * 1000, 1)} g to the inertia, string ${f(P0.mString_kg * 1000, 1)} g (all ASSUMED): M_eff = Mt + ${f((effectiveMass_kg(P0) - totalMass_kg(P0)) * 1000, 1)} g. The hanging part of the string also pulls: ${f(STRING_LINEAR_DENSITY_kgpm * 1000, 1)} g/m x g x (hang0 + s) = ${f(STRING_LINEAR_DENSITY_kgpm * g * (hang0 + DISTANCE_m) * 1000, 1)} mN at the end of the run, about ${f((STRING_LINEAR_DENSITY_kgpm * g * (hang0 + DISTANCE_m / 2)) / (P0.mHang_kg * g) * 100, 1)} % of F on average (full model only; the ideal columns leave it out).`,
     '',
     '## Expected values per trial (task 2 and 3 reference)',
     '',
@@ -113,7 +113,7 @@ export function teacherKey(): string {
     `| Full model, tilt -0.025 deg | ${f(tiltNeg.M * 1000, 1)} | ${f((tiltNeg.M - Mt) * 1000, 1)} | ${f(tiltNeg.F0 * 1000, 2)} |`,
     `| Full model, unlevelled bench ${f(TABLE_TILT_MAX_deg, 2)} deg | ${f(tiltBig.M * 1000, 1)} | ${f((tiltBig.M - Mt) * 1000, 1)} | ${f(tiltBig.F0 * 1000, 2)} |`,
     '',
-    `With no resistance the slope of F(a) is close to the total mass Mt: slightly below it and with a small positive intercept, because each force step adds a plastic screw to the cart (the total mass grows as F falls). With the model the slope is larger than Mt (wheel, pulley and string inertia) and the intercept F0 is positive: it is the friction force the canister has to overcome. A tilt toward the pulley lowers F0 (the cart's weight helps), a tilt away raises it; the slope barely changes.`,
+    `**Do not read F0 as friction alone.** With no resistance at all the intercept is already ${f(noFriction.F0 * 1000, 1)} mN (${f((noFriction.F0 / base.F0) * 100, 0)} % of the full-model F0 of ${f(base.F0 * 1000, 1)} mN) and the slope is a little below Mt, because each force step moves a mass to the cart with a plastic screw (the total mass grows as F falls). The rest of F0 is friction (rolling resistance, bearings, pulley axle) and the weight of the hanging string works the other way. With the model the slope is larger than Mt (wheel, pulley and string inertia). A tilt toward the pulley lowers F0 (the cart's weight helps), a tilt away raises it; the slope barely changes.`,
     '',
     '## Effect of a stop lag on the timings',
     '',

@@ -18,6 +18,10 @@ export interface CoreMaterials {
   bubble: THREE.MeshStandardMaterial
   table: THREE.MeshStandardMaterial
   ghost: THREE.MeshStandardMaterial
+  /** DigiCart skirt, receiver housing, and the red of a cart that cannot be put there. */
+  skirt: THREE.MeshStandardMaterial
+  slate: THREE.MeshStandardMaterial
+  invalid: THREE.MeshStandardMaterial
   tokens: { bg: THREE.Color; accent: THREE.Color; surface: THREE.Color }
   refresh(): void
   dispose(): void
@@ -49,6 +53,9 @@ export function createCoreMaterials(probe: HTMLElement): CoreMaterials {
     bubble: std(0xf6fff4, 0, 0.2),
     table: std(0xdadce1, 0.02, 0.62),
     ghost: new THREE.MeshStandardMaterial({ color: 0x0071e3, transparent: true, opacity: 0.38, roughness: 0.5, metalness: 0, depthWrite: false }),
+    skirt: std(0x2b2e34, 0.1, 0.55),
+    slate: std(0x4a6a8a, 0, 0.7),
+    invalid: std(0xe5675e, 0.05, 0.5),
     tokens: { bg: new THREE.Color(), accent: new THREE.Color(), surface: new THREE.Color() },
     refresh() {
       const bg = col('--bg'), surface2 = col('--surface-2'), accent = col('--accent')
@@ -59,7 +66,7 @@ export function createCoreMaterials(probe: HTMLElement): CoreMaterials {
       m.ghost.color.copy(accent)
     },
     dispose() {
-      for (const x of [m.alu, m.aluDark, m.black, m.steel, m.blue, m.white, m.rubber, m.red, m.tape, m.levelBody, m.glass, m.bubble, m.table, m.ghost]) x.dispose()
+      for (const x of [m.alu, m.aluDark, m.black, m.steel, m.blue, m.white, m.rubber, m.red, m.tape, m.levelBody, m.glass, m.bubble, m.table, m.ghost, m.skirt, m.slate, m.invalid]) x.dispose()
     },
   }
   m.refresh()

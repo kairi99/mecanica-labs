@@ -3,12 +3,12 @@ import {
   DEFAULT_DIGICART_BODY, DEFAULT_PULLEY, DEFAULT_VARIABILITY, G_QUITO_mps2, NOMINAL_PARTS, NO_VARIABILITY, RHO_AIR_QUITO_kgpm3,
   balanceReading_kg, balanceTypeB_kg, buildTrajectory, closedFormCrossing_s, constantAcceleration_mps2, crossingTime_s, deg2rad,
   drawPartMasses, effectiveMass_kg, floorTravel_m, hangAtRelease_m, idealAcceleration_mps2, linearFit, loading, mulberry32, railTilt_rad,
-  sampleRun, stringHeight_m, totalMass_kg, trajectoryAt, type Newton2Params, type RunGeometry,
+  sampleRun, stringHeight_m, totalMass_kg, trajectoryAt, stringWeight_N, acceleration_mps2, rk4Step, type Newton2Params, type RunGeometry,
 } from '../../src/experiments/newton2/physics/index.ts'
 
 const FAR: RunGeometry = { sFloor_m: 10, sReceiver_m: 10 }
 const mk = (mHang_kg: number, over: Partial<Newton2Params> = {}): Newton2Params => ({
-  g_mps2: G_QUITO_mps2, rho_air_kgpm3: RHO_AIR_QUITO_kgpm3, cart: DEFAULT_DIGICART_BODY, mCartLoad_kg: 0.005, mHang_kg, mString_kg: 0.0007,
+  g_mps2: G_QUITO_mps2, rho_air_kgpm3: RHO_AIR_QUITO_kgpm3, cart: DEFAULT_DIGICART_BODY, mCartLoad_kg: 0.005, mHang_kg, mString_kg: 0.0002, stringLinDensity_kgpm: 0, hang0_m: 0.02,
   pulley: DEFAULT_PULLEY, tilt_rad: 0, ...over,
 })
 const ideal = (m: number): Newton2Params => mk(m, {
@@ -73,6 +73,28 @@ describe('Newton second law for the pulled cart', () => {
     expect(constantAcceleration_mps2(p)).toBe(0)
     expect(crossingTime_s(0.9, p, FAR)).toBeNull()
     expect(buildTrajectory(p, FAR, { s_m: 0, v_mps: 0 }).tRest_s).toBe(0)
+  })
+})
+
+describe('string weight and static friction', () => {
+  it('the hanging string adds lambda g (hang0 + s) to the driving force in the full model, not in the constant-force reference', () => {
+    const p = mk(0.0495, { rho_air_kgpm3: 0, stringLinDensity_kgpm: 0.0002, hang0_m: 0.02 })
+    expect(stringWeight_N(p, 0.9)).toBeCloseTo(0.0002 * G_QUITO_mps2 * 0.92, 12)
+    expect(constantAcceleration_mps2(p)).toBeCloseTo(constantAcceleration_mps2({ ...p, stringLinDensity_kgpm: 0 }), 12)
+    const t0 = crossingTime_s(0.9, { ...p, stringLinDensity_kgpm: 0 }, FAR)!
+    const t1 = crossingTime_s(0.9, p, FAR)!
+    expect(t1).toBeLessThan(t0) // extra pull
+    // mean extra force ~ lambda g (hang0 + d/2): the time shift matches the constant-force estimate to first order
+    const extra = 0.0002 * G_QUITO_mps2 * (0.02 + 0.45)
+    const aWith = constantAcceleration_mps2({ ...p, stringLinDensity_kgpm: 0 }) + extra / effectiveMass_kg(p)
+    expect(Math.abs(t1 - Math.sqrt((2 * 0.9) / aWith))).toBeLessThan(0.003)
+  })
+  it('the breakaway force holds a cart at rest but not a moving one', () => {
+    const p = mk(0.0005, { rho_air_kgpm3: 0 }) // drive 4.9 mN: above the kinetic resistances (2.5 mN), below kinetic + breakaway (7.5 mN)
+    expect(acceleration_mps2(0, p)).toBe(0)
+    expect(acceleration_mps2(1e-6, p)).toBeGreaterThan(0)
+    expect(rk4Step({ s_m: 0, v_mps: 0 }, 0.01, p, 'driven').v_mps).toBe(0)
+    expect(rk4Step({ s_m: 0, v_mps: 0.05 }, 0.01, p, 'driven').v_mps).toBeGreaterThan(0.05)
   })
 })
 

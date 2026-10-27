@@ -1,14 +1,17 @@
 // Public types of the Practica 3 apparatus layer. Ids and enums only: no user-facing text (views translate them).
 import type { StopRecord as CoreStopRecord } from '../../../core/instruments/stopwatch.ts'
 import type { MassLocation } from '../physics/index.ts'
+import type { SpringScaleId } from '../../../core/instruments/springScale.ts'
 
 /** Required items first, then the distractors (marble, 50 g mass, two-leg stand: not needed for this practice). */
 export const REQUIRED_ITEM_IDS = [
   'rail', 'cart', 'rackStand', 'standBase', 'receiver', 'screws', 'level', 'string', 'canister', 'brassScrew', 'plasticScrews',
   'masses', 'balance', 'dynamometer', 'stopwatch', 'markers',
 ] as const
+/** Not required, but a valid choice: the 2 N spring scale (coarser divisions) in place of the 1 N one. */
+export const OPTIONAL_ITEM_IDS = ['dynamometer2N'] as const
 export const DISTRACTOR_ITEM_IDS = ['mass50', 'marble', 'twoLegStand'] as const
-export const ITEM_IDS = [...REQUIRED_ITEM_IDS, ...DISTRACTOR_ITEM_IDS] as const
+export const ITEM_IDS = [...REQUIRED_ITEM_IDS, ...OPTIONAL_ITEM_IDS, ...DISTRACTOR_ITEM_IDS] as const
 export type ItemId = (typeof ITEM_IDS)[number]
 
 /**
@@ -26,7 +29,7 @@ export type MarkKind = 'start' | 'end'
 export type Reason =
   | 'unknownItem' | 'itemNotOnTable' | 'itemAlreadyOnTable' | 'screwsInUse'
   | 'needStandBase' | 'needRackClamp' | 'needReceiver' | 'alreadyAttached' | 'notAttached' | 'noScrews' | 'railEndRequired'
-  | 'outOfRange' | 'notFinite' | 'levelNeedsRail'
+  | 'outOfRange' | 'notFinite' | 'levelNeedsRail' | 'overRange'
   | 'railNotAssembled' | 'noRail' | 'noCart' | 'cartOffRail' | 'cartNotAtStart' | 'cartMoving' | 'noStartPosition'
   | 'noReceiver' | 'railNotSupported' | 'cartNotPlaced'
   | 'outOfRail' | 'badMass' | 'noPlasticScrews' | 'canisterNeeded' | 'nothingToWeigh' | 'overload' | 'noForceReading'
@@ -56,13 +59,19 @@ export type WeighTarget =
 
 /** A force reading of the hanging canister. Local interface of phase 1; TODO phase 2: replaced by the core spring scale. */
 export interface ForceReading {
-  /** What the instrument shows, N (quantised). */
+  /** What the student reads to the nearest division, N. */
   reading_N: number
+  /** Smallest division, N. */
   resolution_N: number
-  /** Type B standard uncertainty, N: resolution / sqrt(12). */
+  /** Type B standard uncertainty, N: division / sqrt(12) (springScaleUncertainty_N). */
   uB_N: number
   /** Masses that were in the canister at the reading. */
   massesInCanister: number
+  scaleId: SpringScaleId
+  /** Needle position (unquantised), N, and spring extension, m: for drawing. */
+  indicated_N: number
+  extension_m: number
+  overRange: boolean
 }
 
 // ---- Events ------------------------------------------------------------------------------------------------------
@@ -80,7 +89,7 @@ export type ApparatusEventBody =
   | { type: 'massMoved'; index: number; to: MassLocation }
   | { type: 'weighed'; targets: WeighTarget[]; reading_kg: number }
   | { type: 'massRecorded'; value_g: number }
-  | { type: 'forceRead'; reading_N: number; massesInCanister: number }
+  | { type: 'forceRead'; reading_N: number; massesInCanister: number; scaleId: SpringScaleId }
   | { type: 'cartPlaced'; front_railPos_mm: number }
   | { type: 'cartReset'; front_railPos_mm: number }
   | { type: 'released'; runId: number; outcome: RunOutcome }
@@ -167,7 +176,7 @@ export interface DigicartRecord {
 export type StopRecord = CoreStopRecord<CrossingRecord>
 
 export interface TableCell { value_s: number | null; runId: number | null; stopId: number | null }
-export interface ForceCell { value_N: number | null; source: 'typed' | 'copied' | null }
+export interface ForceCell { value_N: number | null; source: 'typed' | 'copied' | null; scaleId: SpringScaleId | null }
 export interface TableData {
   /** Masses in the canister of each trial row: 4, 3, 2, 1, 0 (the last row is optional). */
   trialMasses: readonly number[]

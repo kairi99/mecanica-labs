@@ -15,6 +15,12 @@ import { strings as mruvScene } from '../../src/experiments/mruv/views/strings/s
 import { strings as parScene } from '../../src/experiments/parabolic/views/strings/scene3d.ts'
 import { strings as mruvCoach } from '../../src/experiments/mruv/pedagogy/strings/coach.ts'
 import { strings as parCoach } from '../../src/experiments/parabolic/pedagogy/strings/coach.ts'
+import { strings as n2Shell } from '../../src/experiments/newton2/views/strings/shell.ts'
+import { strings as n2Side } from '../../src/experiments/newton2/views/strings/side2d.ts'
+import { strings as n2Log } from '../../src/experiments/newton2/views/strings/log.ts'
+import { strings as n2An } from '../../src/experiments/newton2/views/strings/analysis.ts'
+import { strings as n2Scene } from '../../src/experiments/newton2/views/strings/scene3d.ts'
+import { strings as n2Coach } from '../../src/experiments/newton2/pedagogy/strings/coach.ts'
 
 type Bundle = { es: Record<string, unknown>; en: Record<string, unknown> }
 
@@ -34,6 +40,12 @@ const NAMES: Array<[string, Bundle, string[]]> = [
   ['parabolic 3d canvas', parScene as unknown as Bundle, ['canvasLabel']],
   ['mruv coach', mruvCoach as unknown as Bundle, ['dismiss']],
   ['parabolic coach', parCoach as unknown as Bundle, ['dismiss']],
+  ['newton2 shell', n2Shell as unknown as Bundle, ['regionMain', 'regionStage', 'panelRegion', 'stepsNav', 'stepsMenu', 'langSwitch', 'theme', 'help', 'more', 'viewMode', 'sheetToggle']],
+  ['newton2 side view', n2Side as unknown as Bundle, ['aria']],
+  ['newton2 log plot', n2Log as unknown as Bundle, ['plotAria']],
+  ['newton2 analysis chart', n2An as unknown as Bundle, ['plotAria']],
+  ['newton2 3d canvas', n2Scene as unknown as Bundle, ['canvasLabel']],
+  ['newton2 coach', n2Coach as unknown as Bundle, ['dismiss']],
 ]
 
 describe('accessible names exist in es and en', () => {
@@ -47,8 +59,8 @@ describe('accessible names exist in es and en', () => {
   }
 })
 
-const raw = import.meta.glob(['../../index.html', '../../mruv/**/*.html', '../../parabolico/**/*.html'], { query: '?raw', import: 'default', eager: true }) as Record<string, string>
-const PAGES = ['index.html', 'mruv/index.html', 'parabolico/index.html', 'mruv/help/index.html', 'mruv/help/en.html', 'parabolico/help/index.html', 'parabolico/help/en.html']
+const raw = import.meta.glob(['../../index.html', '../../mruv/**/*.html', '../../parabolico/**/*.html', '../../segunda-ley/**/*.html'], { query: '?raw', import: 'default', eager: true }) as Record<string, string>
+const PAGES = ['index.html', 'mruv/index.html', 'parabolico/index.html', 'mruv/help/index.html', 'mruv/help/en.html', 'parabolico/help/index.html', 'parabolico/help/en.html', 'segunda-ley/index.html', 'segunda-ley/help/index.html', 'segunda-ley/help/en.html']
 
 describe('every html page', () => {
   for (const p of PAGES) {

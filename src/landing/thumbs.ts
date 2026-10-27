@@ -46,8 +46,27 @@ function arcDrawing(): SVGElement[] {
   ]
 }
 
+function pulleyDrawing(): SVGElement[] {
+  // a level rail on a stand, a cart on it tied over a pulley at the end to a hanging weight above the floor
+  const ty = 46, x0 = 30, x1 = 232, fy = 108
+  return [
+    svg('line', { x1: 0, y1: fy, x2: W, y2: fy, class: 'th-ground' }),
+    svg('rect', { x: x0 - 3, y: ty + 4, width: 5, height: fy - ty - 4, class: 'th-leg' }),
+    svg('rect', { x: x0 - 20, y: fy - 4, width: 40, height: 4, rx: 2, class: 'th-leg' }),
+    svg('line', { x1: x0, y1: ty, x2: x1, y2: ty, class: 'th-rail' }),
+    svg('rect', { x: 92, y: ty - 18, width: 44, height: 13, rx: 4, class: 'th-body' }),
+    svg('rect', { x: 128, y: ty - 18, width: 8, height: 13, rx: 3, class: 'th-accent' }),
+    svg('circle', { cx: 104, cy: ty - 5, r: 4, class: 'th-wheel' }),
+    svg('circle', { cx: 124, cy: ty - 5, r: 4, class: 'th-wheel' }),
+    svg('circle', { cx: x1 + 6, cy: ty - 6, r: 9, class: 'th-body' }),
+    svg('line', { x1: 136, y1: ty - 12, x2: x1 + 6, y2: ty - 15, class: 'th-line' }),
+    svg('line', { x1: x1 + 15, y1: ty - 6, x2: x1 + 15, y2: 84, class: 'th-line' }),
+    svg('rect', { x: x1 + 7, y: 84, width: 16, height: 18, rx: 3, class: 'th-accent' }),
+  ]
+}
+
 export function thumb(kind: ExperimentManifest['thumb']): SVGElement {
   const s = svg('svg', { viewBox: `0 0 ${W} ${H}`, class: 'lp-thumb', 'aria-hidden': 'true', focusable: 'false' })
-  s.append(svg('rect', { width: W, height: H, class: 'th-bg' }), ...(kind === 'incline' ? inclineDrawing() : arcDrawing()))
+  s.append(svg('rect', { width: W, height: H, class: 'th-bg' }), ...(kind === 'incline' ? inclineDrawing() : kind === 'pulley' ? pulleyDrawing() : arcDrawing()))
   return s
 }

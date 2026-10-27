@@ -19,6 +19,7 @@ import {
   TABLE_ROWS, TABLE_TILT_MAX_deg, TRIAL_MASSES_IN_CANISTER,
 } from './constants.ts'
 import { readHangingForce } from './force.ts'
+import type { SpringScaleId } from '../../../core/instruments/springScale.ts'
 import { parseForceInput, parseMassInput_g, parseTimeInput } from './table.ts'
 import {
   ITEM_IDS, REQUIRED_ITEM_IDS,
@@ -43,7 +44,7 @@ export interface ApparatusOptions {
 
 const MAX_EVENTS = 5000
 const emptyCell = (): TableCell => ({ value_s: null, runId: null, stopId: null })
-const emptyForce = (): ForceCell => ({ value_N: null, source: null })
+const emptyForce = (): ForceCell => ({ value_N: null, source: null, scaleId: null })
 const emptyTable = (): TableCell[][] => Array.from({ length: TABLE_ROWS }, () => Array.from({ length: TABLE_COLS }, emptyCell))
 const emptyForces = (): ForceCell[] => Array.from({ length: TABLE_ROWS }, emptyForce)
 const snap = (v: number, step: number): number => Math.round(v / step) * step
@@ -225,7 +226,10 @@ export class Apparatus {
     const blocking: Partial<Record<ItemId, boolean>> = {
       rail: true, cart: true, rackStand: true, standBase: true, receiver: true, screws: true, string: true, canister: true, brassScrew: true,
     }
-    for (const id of REQUIRED_ITEM_IDS) if (!this.items.has(id)) out.push({ kind: 'item', id, reason: 'notOnTable', blocksRun: blocking[id] === true })
+    for (const id of REQUIRED_ITEM_IDS) {
+      if (id === 'dynamometer' && this.items.has('dynamometer2N')) continue // either spring scale will do
+      if (!this.items.has(id)) out.push({ kind: 'item', id, reason: 'notOnTable', blocksRun: blocking[id] === true })
+    }
     const has = (...ids: ItemId[]): boolean => ids.every((i) => this.items.has(i))
     const j = this.joints
     if (has('rackStand', 'standBase') && !j.standBase) out.push({ kind: 'joint', id: 'standBase', reason: 'notAttached', blocksRun: true })
@@ -412,14 +416,18 @@ export class Apparatus {
     return { ok: true, value_g: p.value }
   }
   mtRecorded_kg(): number | null { return this.mtRecorded_g === null ? null : this.mtRecorded_g / 1000 }
-  /** Hang the canister (with the masses now in it) on the dynamometer and read its weight. */
-  dynamometerRead(): Result<{ reading: ForceReading }> {
-    if (!this.items.has('dynamometer')) return this.refuse('dynamometerRead', 'itemNotOnTable', 'dynamometer')
+  /** The spring scale in use by default: the 1 N one if it is on the table, else the 2 N one, else null. */
+  defaultScale(): SpringScaleId | null { return this.items.has('dynamometer') ? '1N' : this.items.has('dynamometer2N') ? '2N' : null }
+  /** Hang the canister (with the masses now in it) on a spring scale (zeroed hanging: no zero error) and read its weight. `which` picks the scale when both are on the table. */
+  dynamometerRead(which?: SpringScaleId): Result<{ reading: ForceReading }> {
+    const id = which ?? this.defaultScale()
+    const item: ItemId = id === '2N' ? 'dynamometer2N' : 'dynamometer'
+    if (id === null || !this.items.has(item)) return this.refuse('dynamometerRead', 'itemNotOnTable', item)
     if (!this.items.has('canister')) return this.refuse('dynamometerRead', 'itemNotOnTable', 'canister')
     const l = this.loadingNow()
-    const reading = readHangingForce(l.mHang_kg * G_QUITO_mps2, this.massesInCanister())
+    const reading = readHangingForce(l.mHang_kg * G_QUITO_mps2, this.massesInCanister(), id)
     this.lastForce = reading
-    this.emit({ type: 'forceRead', reading_N: reading.reading_N, massesInCanister: reading.massesInCanister })
+    this.emit({ type: 'forceRead', reading_N: reading.reading_N, massesInCanister: reading.massesInCanister, scaleId: id })
     return { ok: true, reading }
   }
   lastForceReading(): ForceReading | null { return this.lastForce ? { ...this.lastForce } : null }
@@ -485,7 +493,9 @@ export class Apparatus {
     const l = this.loadingNow()
     return {
       g_mps2: G_QUITO_mps2, rho_air_kgpm3: RHO_AIR_QUITO_kgpm3, cart: this.cartBody, mCartLoad_kg: l.mCartLoad_kg, mHang_kg: l.mHang_kg,
-      mString_kg: this.items.has('string') ? STRING_LINEAR_DENSITY_kgpm * this.stringLength_m : 0, pulley: DEFAULT_PULLEY, tilt_rad,
+      mString_kg: this.items.has('string') ? STRING_LINEAR_DENSITY_kgpm * this.stringLength_m : 0,
+      stringLinDensity_kgpm: this.items.has('string') ? STRING_LINEAR_DENSITY_kgpm : 0, hang0_m: Math.max(0, hangAtRelease_m(this.stringLength_m, this.plan().sReceiver_m)),
+      pulley: DEFAULT_PULLEY, tilt_rad,
     }
   }
   /** Release the placed cart from rest at time t_ms. Samples this run's variability; the outcome says what physically happens. */
@@ -637,7 +647,7 @@ export class Apparatus {
     const f = this.rowCheck('tableSetForce', row); if (f) return f
     const p = parseForceInput(input)
     if (!p.ok) return this.refuse('tableSetForce', p.reason)
-    this.forceCells[row] = { value_N: p.value, source: 'typed' }
+    this.forceCells[row] = { value_N: p.value, source: 'typed', scaleId: this.lastForce?.scaleId ?? this.defaultScale() }
     this.emit({ type: 'forceRecorded', row, value_N: p.value, source: 'typed' })
     return { ok: true, value_N: p.value }
   }
@@ -646,7 +656,7 @@ export class Apparatus {
     const f = this.rowCheck('tableCopyForce', row); if (f) return f
     if (!this.lastForce) return this.refuse('tableCopyForce', 'noForceReading')
     const v = this.lastForce.reading_N
-    this.forceCells[row] = { value_N: v, source: 'copied' }
+    this.forceCells[row] = { value_N: v, source: 'copied', scaleId: this.lastForce.scaleId }
     this.emit({ type: 'forceRecorded', row, value_N: v, source: 'copied' })
     return { ok: true, value_N: v }
   }
@@ -744,6 +754,13 @@ export class Apparatus {
       stringLength_m: this.stringLength_m, masses: [...this.masses], plasticScrewsUsed: this.plasticUsed(), cart: { ...this.cart },
       stopwatch: { running: this.sw.running, linkStartToRelease: this.sw.linkStartToRelease }, geometry: this.geometry(),
     }
+  }
+  /**
+   * How far the canister hangs below the pulley with the cart at its start, m (what a student sees on the bench; negative: the string does
+   * not reach the pulley). null until the rail is held at both ends and the cart is on it.
+   */
+  hangBelowPulley_m(): number | null {
+    return this.geometry() !== null && this.cart.placed ? this.plan().hang0_m : null
   }
   /** Hidden truth for teacher mode and tests ONLY: views of the student experience must not show it. */
   hiddenTruth(): {

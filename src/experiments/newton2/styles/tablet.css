@@ -1,0 +1,19 @@
+/* DigiCart tablet panel. */
+.tablet { background: var(--device); border-radius: var(--radius-l); padding: var(--space-2); box-shadow: var(--shadow-1); color: var(--device-ink); min-width: 0; }
+.tablet-bar { display: flex; align-items: center; justify-content: space-between; gap: var(--space-3); padding: var(--space-1) var(--space-3) var(--space-2); }
+.tablet-app { font: var(--text-callout); font-weight: 600; }
+.tablet-select { min-height: var(--touch); background: var(--device-hi); color: var(--device-ink); border: 0; border-radius: var(--radius-s); padding: 0 var(--space-3); }
+.tablet-screen { background: var(--stage-plate); border-radius: var(--radius-m); padding: var(--space-3); display: flex; flex-direction: column; gap: var(--space-3); color: var(--stage-ink); min-width: 0; }
+.tablet-empty { display: flex; flex-direction: column; gap: var(--space-1); padding: var(--space-4) 0; color: var(--stage-ink-2); }
+.tablet-empty strong { color: var(--stage-ink); }
+.plot-host { width: 100%; min-width: 0; --font: inherit; }
+.plot-host .u-wrap { max-width: 100%; }
+.tablet-sub { font: var(--text-callout); font-weight: 600; }
+.tablet-note { font: var(--text-footnote); color: var(--stage-ink-2); }
+.tablet-note:empty { display: none; }
+.tablet-marks { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(9rem, 1fr)); gap: var(--space-1) var(--space-3); font: var(--text-footnote); font-variant-numeric: tabular-nums; }
+.tablet-table-wrap { overflow-x: auto; }
+.tablet-table { border-collapse: collapse; width: 100%; font: var(--text-footnote); font-variant-numeric: tabular-nums; }
+.tablet-table th, .tablet-table td { padding: var(--space-2); text-align: right; border-bottom: var(--stroke-hair) solid var(--stage-metal); white-space: nowrap; }
+.tablet-table thead th { color: var(--stage-ink-2); font-weight: 500; }
+.tablet-table tbody th { text-align: left; font-weight: 600; }

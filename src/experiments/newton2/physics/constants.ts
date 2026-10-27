@@ -14,8 +14,8 @@ export const BRASS_SCREW_kg = 0.005
 /** One plastic screw that fixes a mass to the cart, kg, and how many the kit has (guide: 5). ASSUMED mass. */
 export const PLASTIC_SCREW_kg = 0.0008
 export const PLASTIC_SCREW_COUNT = 5
-/** Linear density of the string, kg/m, and the string weight is neglected but its inertia is counted. ASSUMED. */
-export const STRING_LINEAR_DENSITY_kgpm = 0.0006
+/** Linear density of the string, kg/m (a thin thread): its inertia and the weight of the hanging part are both counted. ASSUMED. */
+export const STRING_LINEAR_DENSITY_kgpm = 0.0002
 
 /** Pulley of the receiver: mass, radius, inertia factor (0.5 = solid disc) and the friction force at its axle. ASSUMED. */
 export const PULLEY_MASS_kg = 0.004
@@ -33,5 +33,5 @@ export const STRING_ABOVE_RAIL_m = 0.03
 export const CANISTER_HANG_m = 0.06
 /** Distance from the receiver stop face (cart front stops there) to the string contact on the pulley, m. ASSUMED. */
 export const PULLEY_AHEAD_OF_STOP_m = 0.015
-/** Shortest hanging string below the pulley that lets the canister hang free at the release, m. ASSUMED. */
-export const MIN_HANG_m = 0
+/** Shortest hanging string below the pulley at the release, m: the knot cannot sit in the pulley groove. ASSUMED. */
+export const MIN_HANG_m = 0.015
