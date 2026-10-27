@@ -36,7 +36,7 @@ export const strings: Strings<LandingStrings> = {
     langSwitch: 'Cambiar a inglés',
     theme: 'Tema',
     themes: { auto: 'Automático', light: 'Claro', dark: 'Oscuro' },
-    credits: 'Basado en la guía de laboratorio de la EPN. Proyecto independiente y de código abierto, sin afiliación con la EPN ni con PHYWE.',
+    credits: 'Basado en la guía de laboratorio de la EPN. Proyecto de código abierto, sin afiliación con PHYWE.',
   },
   en: {
     title: 'Mechanics · Virtual lab',
@@ -52,6 +52,6 @@ export const strings: Strings<LandingStrings> = {
     langSwitch: 'Switch to Spanish',
     theme: 'Theme',
     themes: { auto: 'Automatic', light: 'Light', dark: 'Dark' },
-    credits: 'Based on the EPN lab guide. Independent open-source project, not affiliated with EPN or PHYWE.',
+    credits: 'Based on the EPN lab guide. Open-source project, not affiliated with PHYWE.',
   },
 }

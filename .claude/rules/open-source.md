@@ -10,5 +10,5 @@
   MIT/BSD/Apache/ISC; ask before adding GPL/AGPL or anything unclear.
 - Prefer few, small, well-maintained dependencies. Every dependency ships to students' phones.
 - Write for strangers: clear README, reproducible setup (`package-lock.json`), commit messages that explain why.
-- Not affiliated with the Escuela Politécnica Nacional or PHYWE; say so in the README and in the app footer. PHYWE and
+- Not affiliated with PHYWE; say so in the README and in the app footer. Make no statement about EPN affiliation either way. PHYWE and
   DigiCart are trademarks of their owners; use the names descriptively only, with no logos.

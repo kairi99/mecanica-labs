@@ -101,7 +101,7 @@ npm run teacher-key   # regenerate docs/teacher-key.md from the model
 Both experiments are based on lab guides of the Laboratorio de Física, Escuela Politécnica Nacional (EPN), Quito:
 "Práctica 1: MRUV" and "Práctica 2: Movimiento parabólico". The guides are **paraphrased** (objectives, assembly,
 procedure, table layouts, analysis tasks); their text, figures and the equipment photos are copyrighted and are not included.
-This is an independent project and is **not affiliated with EPN or PHYWE**; DigiCart and PHYWE are trademarks of their
+This project is **not affiliated with PHYWE**; DigiCart and PHYWE are trademarks of their
 owners and are used descriptively.
 
 Literature values behind the model (each cited in [PARAMETERS.md](PARAMETERS.md) next to its number, otherwise marked

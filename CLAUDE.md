@@ -6,7 +6,7 @@ Escuela Politécnica Nacional (Quito): a PHYWE DigiCart rolling down an inclined
 **assembles the setup from an inventory**, releases the cart, times it with a **virtual stopwatch driven by the
 student's own presses**, measures the stand heights and their separation with a **virtual tape measure** (flexómetro, analog), fills
 Table 1.1 and does the guide's analysis tasks. Public and **open source** (MIT code, CC BY 4.0 content). Spanish first.
-Not affiliated with EPN or PHYWE.
+Not affiliated with PHYWE. Make no statement about EPN affiliation either way (no "affiliated", no "not affiliated").
 
 Source documents live in `refs/` (gitignored, copyrighted). Use the `mruv-reference` and `parabolic-reference` skills instead of the PDFs/photos.
 
