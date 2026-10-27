@@ -72,6 +72,8 @@ export function mountAnalysis(opts: AnalysisOptions): MountView {
     s25.body.append(gridHost, vNoteRow, tip, t5)
 
     const gate6 = el('p', 'note'), gate78 = el('p', 'note'), gate9 = el('p', 'note'), gate10 = el('p', 'note')
+    /** A chart is an image for assistive technology: it gets a name and the text next to it carries the numbers. */
+    const setImg = (h: HTMLElement, label: string): void => { h.setAttribute('role', 'img'); h.setAttribute('aria-label', label) }
     const t6Note = el('p', 'muted'), xtHost = el('div', 'plot'), legend6 = el('p', 'muted an-legend')
     const coefHost = el('div'), chi2 = el('p', 'readout-text'), chi2Hint = el('p', 'muted')
     const slId = nextId('tg')
@@ -192,6 +194,7 @@ export function mountAnalysis(opts: AnalysisOptions): MountView {
         const hPush = (h: PlotHandle | null): void => { if (h) handles.push(h) }
         // task 6
         t6Note.textContent = T.t6Note
+        setImg(xtHost, T.xtAria)
         const tMax = f.tMax_s
         const t0 = tangentFrac * tMax
         const tan = tangentAt(f, t0)
@@ -214,6 +217,7 @@ export function mountAnalysis(opts: AnalysisOptions): MountView {
         tgQ.textContent = T.tangentQuestion
         // tasks 7 and 8
         t78Note.textContent = T.t78Note
+        setImg(vtHost, T.vtAria)
         hPush(plotVt(vtHost, { curve: vtCurve(f) }, pal, { t: T.axisT, v: T.axisV }))
         legend78.textContent = [T.legV, T.legBand].join('  ·  ')
         vOfT.textContent = fmt(T.vOfT, { c1: pmText(q.c1, q.sigma_c1, lang), c2: pmText(q.c2, q.sigma_c2, lang) })
@@ -232,6 +236,7 @@ export function mountAnalysis(opts: AnalysisOptions): MountView {
         }
         // task 10
         t10Body.textContent = T.t10Body
+        setImg(resHost, T.resAria)
         hPush(plotResiduals(resHost, { points: residualsMm(f), tMax }, pal, { t: T.axisT, r: T.axisRes }))
         legend10.textContent = [T.legRes, T.legZero].join('  ·  ')
       }

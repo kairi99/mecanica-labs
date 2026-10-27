@@ -8,6 +8,7 @@ export interface LandingStrings {
   heading: string
   subtitle: string
   regionMain: string
+  skipToMain: string
   /** "Práctica {n}" */
   guide: string
   open: string
@@ -28,6 +29,7 @@ export const strings: Strings<LandingStrings> = {
     heading: 'Laboratorio virtual de Mecánica Newtoniana',
     subtitle: 'Elige una práctica. Armas el montaje, tomas tus propias medidas y analizas los datos, en el navegador y también en el celular.',
     regionMain: 'Prácticas del laboratorio',
+    skipToMain: 'Saltar al contenido principal',
     guide: 'Práctica {n}',
     open: 'Abrir',
     openAria: 'Abrir: {title}',
@@ -44,6 +46,7 @@ export const strings: Strings<LandingStrings> = {
     heading: 'Newtonian Mechanics virtual lab',
     subtitle: 'Pick a practice. You assemble the setup, take your own measurements and analyse the data, in the browser and on your phone.',
     regionMain: 'Lab practices',
+    skipToMain: 'Skip to main content',
     guide: 'Practice {n}',
     open: 'Open',
     openAria: 'Open: {title}',

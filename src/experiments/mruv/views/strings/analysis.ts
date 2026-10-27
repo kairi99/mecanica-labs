@@ -38,6 +38,10 @@ export interface AnalysisStrings {
   plotXtAria: string
   axisT: string
   axisXm: string
+  /** Accessible names of the three charts (the numbers are in the text and tables next to each chart). */
+  xtAria: string
+  vtAria: string
+  resAria: string
   legReadings: string
   legMeans: string
   legFit: string
@@ -126,6 +130,9 @@ export const strings: Strings<AnalysisStrings> = {
     t6Note: 'Puntos claros: cada lectura. Cuadrados: media con barra horizontal ± u(t̄). Curva: ajuste cuadrático x = c₀ + c₁t + c₂t², con el método de varianza efectiva (los tiempos son la variable con ruido). El punto (0, 0) del lanzamiento entra en el ajuste con la incertidumbre de colocar el carro.',
     plotXtAria: 'Gráfica de posición x en función del tiempo t con las lecturas, las medias, el ajuste y la tangente',
     axisT: 't (s)', axisXm: 'x (m)',
+    xtAria: 'Gráfica de la posición x contra el tiempo t: tus lecturas, las medias con su incertidumbre, el ajuste cuadrático y la tangente. Los coeficientes del ajuste están en la tabla de abajo.',
+    vtAria: 'Gráfica de la velocidad v contra el tiempo t: una recta creciente (v = c1 + 2·c2·t) con su banda de incertidumbre. La ecuación está en el texto de abajo.',
+    resAria: 'Gráfica de los residuos (medida menos ajuste) contra el tiempo t, con su incertidumbre y la línea de cero. Sirve para ver si queda un patrón.',
     legReadings: 'Lecturas (○)', legMeans: 'Medias ± u (■)', legFit: 'Ajuste (—)', legTangent: 'Tangente (- -)',
     coefTitle: 'Coeficientes del ajuste',
     coefC0: 'c₀ (m)', coefC1: 'c₁ (m/s)', coefC2: 'c₂ (m/s²)',
@@ -201,6 +208,9 @@ export const strings: Strings<AnalysisStrings> = {
     t6Note: 'Light dots: every reading. Squares: mean with a horizontal ± u(t̄) bar. Curve: quadratic fit x = c₀ + c₁t + c₂t², with the effective-variance method (times are the noisy variable). The release point (0, 0) is in the fit with the uncertainty of placing the cart.',
     plotXtAria: 'Plot of position x against time t with the readings, the means, the fit and the tangent',
     axisT: 't (s)', axisXm: 'x (m)',
+    xtAria: 'Plot of position x against time t: your readings, the means with their uncertainty, the quadratic fit and the tangent. The fit coefficients are in the table below.',
+    vtAria: 'Plot of velocity v against time t: a rising straight line (v = c1 + 2·c2·t) with its uncertainty band. The equation is in the text below.',
+    resAria: 'Plot of the residuals (measured minus fit) against time t, with their uncertainty and the zero line. It shows whether a pattern is left.',
     legReadings: 'Readings (○)', legMeans: 'Means ± u (■)', legFit: 'Fit (—)', legTangent: 'Tangent (- -)',
     coefTitle: 'Fit coefficients',
     coefC0: 'c₀ (m)', coefC1: 'c₁ (m/s)', coefC2: 'c₂ (m/s²)',

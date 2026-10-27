@@ -44,3 +44,6 @@ figcaption { font: var(--text-footnote); color: var(--label-2); margin-top: var(
 .g-a { stroke: var(--phys-c); }
 .g-lab { fill: var(--label-2); font: 600 14px var(--font); }
 .credits { color: var(--label-2); font: var(--text-footnote); margin-top: var(--space-6); }
+.skip-link { position: absolute; left: var(--space-2); top: -4rem; z-index: 2; min-height: var(--touch); display: inline-flex; align-items: center; padding: 0 var(--space-4); border-radius: var(--radius-s); background: var(--accent-fill); color: var(--on-accent); font: var(--text-callout); font-weight: 600; text-decoration: none; }
+.skip-link:focus { top: var(--space-2); }
+main:focus { outline: none; }

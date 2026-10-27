@@ -28,3 +28,8 @@
 .an-h { max-width: 10rem; }
 .an-compact th, .an-compact td { padding: var(--space-2); font: var(--text-footnote); }
 .an-compact thead th { font: var(--text-caption); }
+
+/* 320 px reflow (WCAG 1.4.10): result tables wrap their cells instead of overflowing the page. */
+@media (max-width: 359px) {
+  .an-table th, .an-table td { white-space: normal; padding: var(--space-2); }
+}

@@ -108,3 +108,5 @@
 
 /* contrast: secondary text sits on --surface-2 in the table and notes, so the light --label-2 is a little darker here (>= 4.5:1). The dark theme keeps its own value (higher specificity in tokens.css). */
 :root { --label-2: rgba(60, 60, 67, 0.8); }
+/* The blade strip is a fixed light metal in both themes: its hint text must not follow the dark theme's light label colour. */
+.blade-scroll .muted { color: var(--metal-ink); }

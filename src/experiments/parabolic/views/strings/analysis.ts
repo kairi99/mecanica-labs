@@ -36,6 +36,7 @@ export interface AnalysisStrings {
   t3Spread: string
   t3Caption: string
   t3Plot: string
+  t6Plot: string
   axisTrial: string
   axisTime: string
   legMarble: string
@@ -140,6 +141,7 @@ export const strings: Strings<AnalysisStrings> = {
     t3Spread: '{ball}: de la marca con menor a la de mayor tiempo promedio hay {s} s; la incertidumbre de cada marca (sin el sesgo común de reacción) es de unos {u} s.',
     t3Caption: 'Las barras muestran la dispersión de los datos y la resolución del cronómetro. El sesgo de reacción, común a todas las marcas, no se dibuja porque se cancela al comparar una marca con otra.',
     t3Plot: 'Gráfica del tiempo promedio por marca con barras de incertidumbre, para la canica y la pelota de ping-pong.',
+    t6Plot: 'Gráfica del tiempo de vuelo medido por marca, con barras de incertidumbre, para la canica y la pelota de ping-pong, junto a la línea del tiempo teórico.',
     axisTrial: 'Marca (No.)',
     axisTime: 't [s]',
     legMarble: '● Canica',
@@ -240,6 +242,7 @@ export const strings: Strings<AnalysisStrings> = {
     t3Spread: '{ball}: from the mark with the smallest mean time to the largest there are {s} s; the uncertainty of each mark (without the common reaction bias) is about {u} s.',
     t3Caption: 'The bars show the scatter of the readings and the stopwatch resolution. The reaction bias, common to every mark, is not drawn because it cancels when one mark is compared with another.',
     t3Plot: 'Plot of the mean time per mark with uncertainty bars, for the marble and the ping-pong ball.',
+    t6Plot: 'Plot of the measured flight time per mark, with uncertainty bars, for the marble and the ping-pong ball, next to the line of the theoretical time.',
     axisTrial: 'Mark (No.)',
     axisTime: 't [s]',
     legMarble: '● Marble',

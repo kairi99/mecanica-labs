@@ -105,7 +105,7 @@ export const mountInventory: MountView = (root, ctx): View => {
       act(on ? app.removeItem(id) : app.addItem(id))
     })
     b.dataset.k = `item-${id}`
-    b.setAttribute('aria-label', fill(on ? T.removeAria : T.addAria, { x: T.items[id].name }))
+    b.setAttribute('aria-label', `${on ? T.remove : T.add}: ${T.items[id].name}`)
     setBlocked(b, lock)
     if (lock) b.addEventListener('click', () => app.removeItem(id)) // refusal feeds the shell's message line
     row.append(itemIcon(id), text, info, b)

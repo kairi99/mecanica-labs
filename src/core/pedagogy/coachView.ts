@@ -6,7 +6,8 @@ import { CoachGate, trackCoach, type EventSource, type Nudge } from './coach.ts'
 import { fmt } from './dom.ts'
 import { localiseParams } from './checklistView.ts'
 
-export const COACH_VISIBLE_MS = 14000
+/** No time limit (WCAG 2.2.1): a hint stays until it is dismissed or replaced. */
+export const COACH_VISIBLE_MS = Infinity
 
 export interface CoachStrings<K extends string> {
   label: string
@@ -52,7 +53,6 @@ export function mountCoach<A extends EventSource<E>, E, K extends string>(ctx: V
     label()
     box.hidden = false
     window.clearTimeout(timer)
-    timer = window.setTimeout(() => hide(false), COACH_VISIBLE_MS)
   })
   label()
   return { relabel: label, destroy() { off(); hide(false); box.remove() } }

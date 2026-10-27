@@ -18,8 +18,8 @@
 .tracker-tab.active { color: var(--label); font-weight: 600; background: var(--fill); }
 .tracker-tab.active .tracker-label { display: inline; }
 .tracker-tab.active .tracker-num { background: var(--accent-fill); color: var(--on-accent); }
-.tracker-tab.done .tracker-num { background: var(--success); color: var(--on-accent); }
-.tracker-tab.done.active .tracker-num { background: var(--success); }
+.tracker-tab.done .tracker-num { background: var(--success-fill); color: var(--on-accent); }
+.tracker-tab.done.active .tracker-num { background: var(--success-fill); }
 .tools { display: flex; align-items: center; gap: var(--space-1); flex: none; margin-left: auto; }
 .tool {
   min-height: var(--touch); min-width: var(--touch); padding: 0 var(--space-3); border: 0; border-radius: var(--radius-full);
@@ -81,7 +81,7 @@ body[data-step='1'] .timing-host, body[data-step='2'] .timing-host, body[data-st
 .tb-btn:active { transform: translateY(1px); box-shadow: none; }
 .tb-btn[aria-disabled='true'] { background: var(--fill); color: var(--stage-ink-2); box-shadow: none; cursor: not-allowed; }
 .tb-start { min-width: 120px; background: var(--accent-fill); color: var(--on-accent); }
-.tb-start.running { background: var(--danger); }
+.tb-start.running { background: var(--danger-fill); }
 .tb-start[aria-disabled='true'] { background: var(--fill); color: var(--stage-ink-2); }
 .tb-release.ready { background: var(--accent-fill); color: var(--on-accent); }
 .tb-kbd { font: var(--text-caption); opacity: 0.75; border: var(--stroke-hair) solid currentColor; border-radius: var(--radius-s); padding: 0 var(--space-1); }
@@ -120,7 +120,8 @@ body[data-step='1'] .timing-host, body[data-step='2'] .timing-host, body[data-st
 }
 /* tablet: stage and timing bar fill the screen, the step panel is a bottom sheet */
 @media (max-width: 1079px) {
-  .tb-copy .tb-text, .tb-kbd { display: none; }
+  .tb-copy .tb-text { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; } /* hidden visually, still the button name */
+  .tb-kbd { display: none; }
   .tb-btn { padding: 0 var(--space-3); }
 }
 @media (min-width: 820px) and (max-width: 1079px) {
@@ -164,9 +165,15 @@ body[data-step='1'] .timing-host, body[data-step='2'] .timing-host, body[data-st
   .tb-lcd { padding: var(--space-1) var(--space-2); }
   .lcd-digits { font-size: 22px; line-height: 28px; }
   .tb-row1 .tb-btn { min-height: var(--touch); min-width: var(--touch); padding: 0; box-shadow: none; }
-  .tb-copy .tb-text, .tb-kbd, .tb-caption { display: none; }
+  .tb-copy .tb-text { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+  .tb-kbd, .tb-caption { display: none; }
   .tb-mark { flex: none; }
   .tb-select { min-height: var(--touch); max-width: 6rem; padding: 0 var(--space-1); }
   .tb-start, .tb-release { min-width: 0; }
   body[data-step='3'] .coach { bottom: calc(var(--space-3) + var(--tb-h)); }
+}
+
+/* 320 px reflow (WCAG 1.4.10): the timing bar wraps instead of overflowing. */
+@media (max-width: 359px) {
+  .tb-row { flex-wrap: wrap; }
 }

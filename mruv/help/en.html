@@ -9,12 +9,13 @@
 <script type="module" src="./help.ts"></script>
 </head>
 <body>
-<div class="bar"><a class="pill accent" href="../index.html">Back to the lab</a><nav class="pills" aria-label="Language"><a class="pill" href="index.html" hreflang="es">Español</a></nav></div>
-<main>
+<a class="skip-link" href="#main">Skip to main content</a>
+<header class="bar"><a class="pill accent" href="../index.html">Back to the lab</a><nav class="pills" aria-label="Language"><a class="pill" href="index.html" hreflang="es" lang="es">Español</a></nav></header>
+<main id="main" tabindex="-1">
 <h1>Help guide: MRUV with the digital cart</h1>
 <p class="lede">A companion to the virtual lab: the theory of uniformly accelerated rectilinear motion (MRUV), how to use each instrument, how the uncertainties are computed, and what makes a real incline differ from a perfect MRUV. It does not replace the practice guide: it goes along with it.</p>
 <nav class="toc" aria-label="Contents">
-<a href="#theory">Theory</a><a href="#use">Using the lab</a><a href="#tape">Tape measure</a><a href="#stopwatch">Stopwatch</a><a href="#uncertainty">Uncertainty</a><a href="#errors">Sources of error</a><a href="#keys">Keys</a><a href="#credits">Credits</a>
+<a href="#theory">Theory</a><a href="#use">Using the lab</a><a href="#tape">Tape measure</a><a href="#stopwatch">Stopwatch</a><a href="#uncertainty">Uncertainty</a><a href="#errors">Sources of error</a><a href="#keys">Keys</a><a href="#accessibility">Accessibility</a><a href="#credits">Credits</a>
 </nav>
 
 <section id="theory"><h2>1. MRUV theory</h2>
@@ -128,7 +129,24 @@
 </tbody></table>
 </section>
 
-<section id="credits"><h2>8. Credits</h2>
+<section id="accessibility"><h2>8. Accessibility</h2>
+<p>This lab was checked against the Web Content Accessibility Guidelines (WCAG) 2.0 level AA, the basis of the NTE INEN-ISO/IEC 40500 standard. The check combined an automatic tool (axe-core) on every page, in Spanish and English, in light and dark themes, at phone and desktop sizes, with manual tests: keyboard-only use, colour contrast, text zoom to 200 %, a 320 px width and respect for "reduce motion".</p>
+<ul>
+<li>Everything can be done with the keyboard. The first link of each page skips to the main content. <kbd>Esc</kbd> closes menus, dialogs and the tour and returns focus to where it was.</li>
+<li>Coach hints and refusals are announced through a status region and do not disappear on their own; you close them with their button.</li>
+<li>Colour is never the only cue: every state also has text or a mark.</li>
+</ul>
+<h3>Known limits</h3>
+<ul>
+<li>The 3D view is visual. Actions done by dragging in it have an equivalent control in the panels (number fields, sliders and buttons), and the 2D side view and the panels give the same information as text.</li>
+<li>The charts have a name and a short description; their values are in the tables and the text next to them.</li>
+<li>Timing is a timed task by design: measuring a time with your own presses is the experiment. Nothing else has a time limit.</li>
+</ul>
+<h3>How to report a problem</h3>
+<p>If you find an accessibility barrier, open an issue on <a href="https://github.com/kairi99/mecanica-labs/issues">the project's issues page</a> and tell us the page, the device and the assistive technology you use.</p>
+</section>
+
+<section id="credits"><h2>9. Credits</h2>
 <p>This virtual lab is based on the guide "Práctica 1: Movimiento Rectilíneo Uniformemente Variado (MRUV)" of the Physics Laboratory of the Escuela Politécnica Nacional (Quito). It is a free, open-source educational project. PHYWE and DigiCart are trademarks of their respective owners, mentioned only to identify the real lab equipment; <b>this project is not affiliated with, sponsored or endorsed by PHYWE</b>. The cart parameters (mass, wheels, friction) are assumptions of the model, not manufacturer data.</p>
 <p>Methods: GUM (JCGM 100) and J. R. Taylor, <em>An Introduction to Error Analysis</em>. Code under the MIT licence and educational content under CC BY 4.0.</p>
 <p>Privacy: your progress is stored only in your browser (<code>localStorage</code>); nothing is sent to any server. "Start over" deletes it.</p>\n<p>Parts of the code were written with the help of AI tools and reviewed by the author. Licences of the libraries used (three.js, uPlot, MIT): <a href="../../THIRD-PARTY-NOTICES.txt">third-party notices</a>.</p>

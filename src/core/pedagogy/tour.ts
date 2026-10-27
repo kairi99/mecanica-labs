@@ -107,7 +107,9 @@ export function mountTour<Id extends string, A>(ctx: ViewContext<A>, def: TourDe
     store.set(def.storageKey, '1')
     document.removeEventListener('keydown', onKey, true)
     hooks?.end?.()
-    opener?.focus({ preventScroll: true })
+    // Started by a timer (first visit) there is no opener: focus goes to the main region instead of being lost on <body>.
+    const back = opener && opener !== document.body && opener.isConnected ? opener : document.querySelector<HTMLElement>('main')
+    back?.focus({ preventScroll: true })
   }
   const next = (): void => { if (idx >= steps.length - 1) close(); else show(idx + 1) }
   function onKey(e: KeyboardEvent): void {

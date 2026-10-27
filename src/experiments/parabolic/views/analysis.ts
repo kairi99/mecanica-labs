@@ -236,7 +236,7 @@ export function mountAnalysis(opts: AnalysisOptions = { reference: true }): Moun
       let plot6: HTMLElement | null = null
       if (exp) {
         plot6 = el('div', 'plot')
-        plot6.setAttribute('role', 'img'); plot6.setAttribute('aria-label', T.t3Plot)
+        plot6.setAttribute('role', 'img'); plot6.setAttribute('aria-label', T.t6Plot)
         t6.push(plot6, el('p', 'muted an-legend', `${T.legMarble}  ·  ${T.legPingpong}  ·  ${T.legTheo}`))
         for (const b of BALL_IDS) {
           const bt = a.balls[b]

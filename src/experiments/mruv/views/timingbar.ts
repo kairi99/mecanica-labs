@@ -68,7 +68,6 @@ export const mountTimingBar: MountView = (root, ctx): View => {
   const say = (text: string): void => {
     msg.textContent = text
     window.clearTimeout(msgTimer)
-    if (text) msgTimer = window.setTimeout(() => { msg.textContent = '' }, 6000)
   }
 
   const phaseNow = () => app.cartState(ctx.now()).phase
@@ -117,7 +116,7 @@ export const mountTimingBar: MountView = (root, ctx): View => {
     sel.value = String(getMarkRow())
     lcd.setAttribute('aria-label', T.lcdAria)
     reset.text.textContent = T.reset; reset.b.setAttribute('aria-label', T.reset); reset.b.title = T.reset
-    copy.text.textContent = T.copy; copy.b.setAttribute('aria-label', T.copy); copy.b.title = T.copy
+    copy.text.textContent = T.copy; copy.b.title = T.copy
     copy.kbd.textContent = 'Enter'
     start.kbd.textContent = '␣'
     release.kbd.textContent = 'S'

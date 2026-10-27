@@ -38,7 +38,7 @@ button, input, select { font: inherit; color: inherit; }
 }
 .btn-primary { background: var(--accent-fill); color: var(--on-accent); }
 .btn-quiet { background: var(--fill); }
-.btn-danger { background: var(--danger); color: var(--on-accent); }
+.btn-danger { background: var(--danger-fill); color: var(--on-accent); }
 .btn-wide { width: 100%; }
 .btn-sm { min-height: var(--touch); padding: 0 var(--space-3); font-weight: 500; }
 .link-btn { min-height: var(--touch); padding: 0 var(--space-2); border: 0; background: transparent; color: var(--label-2); font: var(--text-callout); font-weight: 600; cursor: pointer; border-radius: var(--radius-s); touch-action: manipulation; }
@@ -77,3 +77,11 @@ button, input, select { font: inherit; color: inherit; }
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { transition-duration: 0.01ms !important; animation-duration: 0.01ms !important; scroll-behavior: auto !important; }
 }
+
+/* Skip link: off screen until it has the keyboard focus. */
+.skip-link { position: absolute; left: var(--space-2); top: -4rem; z-index: var(--z-tour); min-height: var(--touch); display: inline-flex; align-items: center; padding: 0 var(--space-4); border-radius: var(--radius-s); background: var(--accent-fill); color: var(--on-accent); font: var(--text-callout); font-weight: 600; text-decoration: none; }
+.skip-link:focus { top: var(--space-2); }
+main:focus { outline: none; }
+.toast { display: flex; align-items: center; gap: var(--space-2); }
+.toast-text { flex: 1; min-width: 0; }
+.toast-close { flex: none; min-width: var(--touch); min-height: var(--touch); border: 0; border-radius: var(--radius-full); background: transparent; color: inherit; cursor: pointer; font: var(--text-headline); }

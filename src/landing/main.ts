@@ -15,6 +15,7 @@ import { readShellParams } from '../core/shell/params.ts'
 import { orderedExperiments, redirectTarget } from './order.ts'
 import { strings } from './strings.ts'
 import { thumb } from './thumbs.ts'
+import { mountSkipLink } from '../core/views/skip.ts'
 
 function run(): void {
   const target = redirectTarget(location.search, location.hash, experiments)
@@ -43,7 +44,8 @@ function run(): void {
   const grid = el('ul', 'lp-grid')
   main.append(hero, grid)
   const footer = el('footer', 'credits lp-credits')
-  root.append(header, main, footer)
+  const skip = mountSkipLink(main)
+  root.append(skip.link, header, main, footer)
 
   interface CardRefs { x: ExperimentManifest; guide: HTMLElement; last: HTMLElement; title: HTMLElement; summary: HTMLElement; action: HTMLElement }
   const cards: CardRefs[] = []
@@ -81,7 +83,8 @@ function run(): void {
     main.setAttribute('aria-label', t.regionMain)
     footer.textContent = t.credits
     langBtn.textContent = lang === 'es' ? 'EN' : 'ES'
-    langBtn.setAttribute('aria-label', t.langSwitch)
+    skip.setLabel(t.skipToMain)
+    langBtn.setAttribute('aria-label', `${langBtn.textContent}: ${t.langSwitch}`)
     themeBtn.replaceChildren(themeIcon(theme))
     themeBtn.setAttribute('aria-label', `${t.theme}: ${t.themes[theme]}`)
     themeBtn.title = `${t.theme}: ${t.themes[theme]}`

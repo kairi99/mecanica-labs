@@ -8,6 +8,7 @@ import type { EventSource } from '../pedagogy/coach.ts'
 import type { View, ViewContext } from '../views/view.ts'
 import { button, el, svg } from '../views/dom.ts'
 import { mountMenu } from '../views/menu.ts'
+import { mountSkipLink } from '../views/skip.ts'
 import { applyTheme, nextTheme, themeIcon } from '../views/theme.ts'
 import { readShellParams } from './params.ts'
 import { strings as coreStrings } from './strings.ts'
@@ -94,7 +95,11 @@ export function mountShell<A extends EventSource<E>, E>(config: ShellConfig<A, E
   const btn2d = button('', 'seg-btn')
   modeSeg.append(btn3d, btn2d)
   const stageNotice = el('p', 'stage-notice', undefined, { role: 'status' })
-  const toast = el('p', 'toast', undefined, { role: 'status', 'aria-live': 'polite' })
+  // Refusals stay until dismissed or replaced (no time limit, WCAG 2.2.1). The live region is the text, so the button is not announced.
+  const toast = el('div', 'toast')
+  const toastText = el('p', 'toast-text', undefined, { role: 'status', 'aria-live': 'polite' })
+  const toastClose = button('×', 'toast-close', () => { toast.hidden = true })
+  toast.append(toastText, toastClose)
   toast.hidden = true
   stageBody.append(host3d, host2d, modeSeg, stageNotice, toast)
   const timingHost = el('div', 'timing-host')
@@ -115,6 +120,8 @@ export function mountShell<A extends EventSource<E>, E>(config: ShellConfig<A, E
   const newNo = button('', 'btn btn-quiet', () => newDialog.close())
   newActions.append(newYes, newNo)
   newDialog.append(newText, newActions)
+  // The dialog was opened from a menu item that is hidden by now: focus goes back to the menu button, not to the page top.
+  newDialog.addEventListener('close', () => moreBtn.focus())
 
   // panel column: procedure bar and drawer, the step panes, previous / next, credits
   const panelCol = el('div', 'panel-col', undefined, { role: 'region' })
@@ -149,21 +156,25 @@ export function mountShell<A extends EventSource<E>, E>(config: ShellConfig<A, E
   panelCol.append(sheetHandle, procBar, procDrawer, ...panes, stepNav, footer)
 
   main.append(stageCol, panelCol)
-  rootEl.append(header, main, newDialog)
+  const skip = mountSkipLink(main)
+  rootEl.append(skip.link, header, main, newDialog)
 
   // ---- steps ---------------------------------------------------------------------------------------------------------------
   const trackerBtns: HTMLButtonElement[] = []
   const trackerMarks: HTMLElement[] = []
   const trackerLabels: HTMLElement[] = []
+  const trackerDone: HTMLElement[] = []
   for (let i = 0; i < STEP_COUNT; i++) {
     const li = el('li', 'tracker-item')
     const b = button('', 'tracker-tab', () => setStep(i + 1, { scroll: true }))
-    const mark = el('span', 'tracker-num', String(i + 1), { 'aria-hidden': 'true' })
+    // The name is the visible text (number, label) plus a hidden "(done)": WCAG 2.5.3 label in name.
+    const mark = el('span', 'tracker-num', String(i + 1))
     const label = el('span', 'tracker-label')
-    b.append(mark, label)
+    const doneText = el('span', 'visually-hidden')
+    b.append(mark, label, doneText)
     li.append(b)
     trackerList.append(li)
-    trackerBtns.push(b); trackerMarks.push(mark); trackerLabels.push(label)
+    trackerBtns.push(b); trackerMarks.push(mark); trackerLabels.push(label); trackerDone.push(doneText)
   }
   let stepDone: boolean[] = new Array<boolean>(STEP_COUNT).fill(false)
 
@@ -195,7 +206,7 @@ export function mountShell<A extends EventSource<E>, E>(config: ShellConfig<A, E
       if (active) b.setAttribute('aria-current', 'step'); else b.removeAttribute('aria-current')
       trackerMarks[i]!.textContent = stepDone[i] === true ? '✓' : String(i + 1)
       trackerLabels[i]!.textContent = t.stepNames[i]!
-      b.setAttribute('aria-label', `${i + 1}. ${t.stepNames[i]}${stepDone[i] ? ` (${t.stepDone})` : ''}`)
+      trackerDone[i]!.textContent = stepDone[i] === true ? ` (${t.stepDone})` : ''
     })
     stepMenuItems.forEach((b, i) => {
       b.textContent = `${stepDone[i] ? '✓' : String(i + 1)}  ${t.stepNames[i]}`
@@ -203,7 +214,8 @@ export function mountShell<A extends EventSource<E>, E>(config: ShellConfig<A, E
       b.classList.toggle('active', i + 1 === currentStep)
     })
     stepMenuBtn.replaceChildren(document.createTextNode(`${currentStep}/${STEP_COUNT} ${t.stepShort[currentStep - 1]}`), svg('svg', { viewBox: '0 0 24 24', 'aria-hidden': 'true', class: 'icon caret' }, svg('path', { d: 'M6 9l6 6 6-6' })))
-    stepMenuBtn.setAttribute('aria-label', `${t.stepsMenu}: ${t.stepOf.replace('{n}', String(currentStep)).replace('{total}', String(STEP_COUNT)).replace('{name}', t.stepNames[currentStep - 1]!)}`)
+    // The accessible name starts with the visible text (WCAG 2.5.3 label in name).
+    stepMenuBtn.setAttribute('aria-label', `${currentStep}/${STEP_COUNT} ${t.stepShort[currentStep - 1]}, ${t.stepsMenu}`)
     prevBtn.textContent = `‹ ${t.prevStep}`
     nextBtn.textContent = `${t.nextStep} ›`
     prevBtn.hidden = currentStep === 1
@@ -328,14 +340,11 @@ export function mountShell<A extends EventSource<E>, E>(config: ShellConfig<A, E
   btn2d.addEventListener('click', () => setMode('2d'))
 
   // ---- toast for refusals ---------------------------------------------------------------------------------------------------
-  let toastTimer = 0
   app.on((e) => {
     const text = config.refusalText(e, lang)
     if (text !== null) {
-      toast.textContent = text
+      toastText.textContent = text
       toast.hidden = false
-      window.clearTimeout(toastTimer)
-      toastTimer = window.setTimeout(() => { toast.hidden = true }, 7000)
     } else schedulePersist()
   })
 
@@ -344,6 +353,8 @@ export function mountShell<A extends EventSource<E>, E>(config: ShellConfig<A, E
     const t = S()
     document.documentElement.lang = lang
     document.title = t.title
+    skip.setLabel(C().skipToMain)
+    toastClose.setAttribute('aria-label', C().dismiss)
     titleLong.textContent = t.title
     titleShort.textContent = t.titleShort
     main.setAttribute('aria-label', t.regionMain)
@@ -351,7 +362,7 @@ export function mountShell<A extends EventSource<E>, E>(config: ShellConfig<A, E
     panelCol.setAttribute('aria-label', t.panelRegion)
     tracker.setAttribute('aria-label', t.stepsNav)
     langBtn.textContent = lang === 'es' ? 'EN' : 'ES'
-    langBtn.setAttribute('aria-label', t.langSwitch)
+    langBtn.setAttribute('aria-label', `${langBtn.textContent}: ${t.langSwitch}`)
     themeBtn.replaceChildren(themeIcon(theme))
     themeBtn.setAttribute('aria-label', `${t.theme}: ${t.themes[theme]}`)
     themeBtn.title = `${t.theme}: ${t.themes[theme]}`

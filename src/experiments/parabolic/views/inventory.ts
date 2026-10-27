@@ -93,7 +93,7 @@ export const mountInventory: MountView = (root, ctx): View => {
       ctx.changed()
     })
     b.dataset.k = `item-${id}`
-    b.setAttribute('aria-label', fill(on ? T.removeAria : T.addAria, { x: T.items[id] }))
+    b.setAttribute('aria-label', `${on ? T.remove : T.add}: ${T.items[id]}`)
     setBlocked(b, lock)
     row.append(itemIcon(id), text, b)
     li.append(row)
