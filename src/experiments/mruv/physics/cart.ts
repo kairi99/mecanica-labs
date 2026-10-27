@@ -10,39 +10,19 @@
 import { G_QUITO_mps2, RHO_AIR_QUITO_kgpm3 } from '../../../core/physics/constants.ts'
 import { THETA_GUIDE_rad } from './incline.ts'
 import { brent } from '../../../core/physics/roots.ts'
+import {
+  DEFAULT_DIGICART_BODY, wheelInertiaMass_kg, type DigiCartBody,
+} from '../../../core/physics/digicart.ts'
+import { closedFormCrossing_s, type KinematicState } from '../../../core/physics/kinematics.ts'
 
-export interface CartParams {
+/** DigiCart body (core/physics/digicart.ts: mass, wheels, c_rr, bearing drag, breakaway, drag) on the incline. */
+export interface CartParams extends DigiCartBody {
   /** Local gravity, m/s^2. */
   g_mps2: number
   /** Incline angle of the rail, rad. */
   theta_rad: number
-  /** Total mass of the cart including wheels, kg. */
-  m_kg: number
-  wheelCount: number
-  /** Mass of one wheel, kg. */
-  wheelMass_kg: number
-  /** Wheel radius, m. */
-  wheelRadius_m: number
-  /** Moment of inertia of a wheel as a fraction of m_w r^2 (0.5 = solid disc). */
-  wheelInertiaFactor: number
-  /** Rolling-resistance coefficient c_rr (dimensionless), multiplies the normal force. ASSUMED, optimistic. */
-  c_rr: number
-  /**
-   * Velocity-independent bearing drag, N. An ABSOLUTE force (not a fraction of the weight), so the resulting
-   * acceleration depends on the cart mass through it: a = (m g sin(theta) - c_rr m g cos(theta) - F_bearing)/m_eff.
-   */
-  F_bearing_N: number
-  /**
-   * Extra static (breakaway) force, N, that must be exceeded by m g sin(theta) - (kinetic resistances) for a cart AT REST
-   * to start. Used only when v = 0; once moving the kinetic resistances apply alone. ASSUMED (PARAMETERS.md).
-   */
-  F_breakaway_N: number
   /** Air density, kg/m^3. */
   rho_air_kgpm3: number
-  /** Drag coefficient of the cart front (dimensionless). */
-  Cd: number
-  /** Frontal area, m^2. */
-  A_m2: number
 }
 
 /**
@@ -50,31 +30,18 @@ export interface CartParams {
  * Not PHYWE specifications.
  */
 export const DEFAULT_CART: CartParams = {
+  ...DEFAULT_DIGICART_BODY,
   g_mps2: G_QUITO_mps2,
   theta_rad: THETA_GUIDE_rad,
-  m_kg: 0.25,
-  wheelCount: 4,
-  wheelMass_kg: 0.006,
-  wheelRadius_m: 0.011,
-  wheelInertiaFactor: 0.5,
-  c_rr: 0.0005,
-  F_bearing_N: 0.0003,
-  F_breakaway_N: 0.005,
   rho_air_kgpm3: RHO_AIR_QUITO_kgpm3,
-  Cd: 1.0,
-  A_m2: 0.0012,
 }
 
-export interface CartState {
-  /** Position of the cart front along the rail from the 0 cm mark, m (down-slope positive). */
-  s_m: number
-  /** Velocity along the rail, m/s. */
-  v_mps: number
-}
+/** s_m: position of the cart front along the rail from the 0 cm mark, m (down-slope positive); v_mps: velocity along the rail. */
+export type CartState = KinematicState
 
 /** Rotational-inertia ratio k = sum(I_w) / (m r^2) (dimensionless); m_eff = m (1 + k). */
 export function inertiaRatio(p: CartParams): number {
-  return (p.wheelCount * p.wheelInertiaFactor * p.wheelMass_kg) / p.m_kg
+  return wheelInertiaMass_kg(p) / p.m_kg
 }
 
 /** Effective mass m + sum(I_w)/r^2, kg. */
@@ -111,22 +78,6 @@ export function breakawayAngle_rad(p: CartParams): number {
     th = Math.asin((p.c_rr * p.m_kg * p.g_mps2 * Math.cos(th) + p.F_bearing_N + p.F_breakaway_N) / (p.m_kg * p.g_mps2))
   }
   return th
-}
-
-/** Closed form x(t) = s0 + v0 t + a t^2/2 and v(t) = v0 + a t for constant a (v0 >= 0 down-slope). */
-export function closedFormState(t_s: number, a_mps2: number, init: CartState = { s_m: 0, v_mps: 0 }): CartState {
-  return { s_m: init.s_m + init.v_mps * t_s + 0.5 * a_mps2 * t_s * t_s, v_mps: init.v_mps + a_mps2 * t_s }
-}
-
-/** Closed-form crossing time, s, of position s_m for constant a (smallest t >= 0), or null if never reached. */
-export function closedFormCrossing_s(s_m: number, a_mps2: number, init: CartState = { s_m: 0, v_mps: 0 }): number | null {
-  const d = s_m - init.s_m
-  if (d <= 0) return 0
-  if (a_mps2 === 0) return init.v_mps > 0 ? d / init.v_mps : null
-  const disc = init.v_mps * init.v_mps + 2 * a_mps2 * d
-  if (disc < 0) return null
-  const t = (-init.v_mps + Math.sqrt(disc)) / a_mps2
-  return t >= 0 ? t : null
 }
 
 /** Acceleration, m/s^2, of the full model at velocity v. */

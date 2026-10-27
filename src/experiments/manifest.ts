@@ -18,7 +18,7 @@ export interface ExperimentManifest {
   page: string
   help: { es: string; en: string }
   /** Drawing on the landing card (see landing/thumbs.ts). */
-  thumb: 'incline' | 'arc'
+  thumb: 'incline' | 'arc' | 'pulley'
   /** 'soon': listed on the landing page but not clickable and not built. */
   status: ExperimentStatus
 }

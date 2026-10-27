@@ -147,3 +147,44 @@ Device and bench values of the Practica 2 apparatus layer. Date of all rows: 202
 | Coach thresholds (timing) | start press < 0.3 s before or > 0.45 s after the edge; reading > 0.3 s from 0.39 s | s | ASSUMED teaching thresholds, not physics. Typed range within 2 cm of (true range + gap) counts as measured from the rail tip. |
 
 Simplifications: no longitudinal table tilt; the table is long enough for any rail position; the rail is a rigid beam on its contacts (rack clamp, tabletop at the low end, two-leg stand when higher than the free line), exact in the angle; after the first bounce the ball follows the hop and roll-out model above; marks are the first contact only. With the physics rolling resistance (`c_rr` 1.5e-3 and 5e-3) a ball does not stop on a 0.6 m gap: only a nearly flat rail stops it.
+
+## Práctica 3 (`src/experiments/newton2`)
+
+Force and acceleration: a DigiCart on a (nearly) level rail pulled by a hanging film canister over the receiver's pulley. Date of all rows: 2026-10-27. **ASSUMED** = chosen by us from typical values and physical reasoning, not measured, not PHYWE specifications; none was tuned to a target. The cart body (mass, wheels, `c_rr`, bearing drag, breakaway, drag) is the one in the Cart table above (`DEFAULT_DIGICART_BODY`, now in `src/core/physics/digicart.ts`, shared with Práctica 1; no value changed). Local g and air density: Site table.
+
+Model: m_hang g + M_cart g sin(tilt) - F_resist(v) = M_eff a, with M_eff = M_cart + m_hang + sum(I_w)/r_w^2 + I_p/r_p^2 + m_string and F_resist = c_rr M_cart g cos(tilt) + F_bearing + F_pulley + 1/2 rho Cd A v^2 (rigid-body result for rolling wheels and a pulley; string inextensible and massless in weight, its inertia counted). After the canister meets the floor the string is slack and the cart coasts: M_cart g sin(tilt) - F_resist = (M_cart + sum(I_w)/r_w^2) a; the canister stops at once and the cart keeps its speed (ASSUMED perfectly inelastic canister). The cart stops at the receiver stop (ASSUMED inelastic) or when static friction holds it.
+
+| Parameter | Value | Unit | Source |
+|---|---|---|---|
+| Mass of each of the four masses `MASS_NOMINAL_kg` | 0.010 | kg | Guide (10 g masses). |
+| Mass tolerance `MASS_TOLERANCE_kg` (hidden, per bench, uniform +-) | 0.0001 | kg | ASSUMED (typical class M1 turned weights of 10 g: +-0.5 mg are better; these are plain silver masses, so 0.1 g). |
+| Canister with lid `CANISTER_kg`, tolerance | 0.0095, +-0.0003 | kg | ASSUMED (a plastic 35 mm film canister is about 8 to 10 g). |
+| Brass screw `BRASS_SCREW_kg` | 0.005 | kg | ASSUMED (a long brass screw with its nut). Counted in Mt and on the cart. |
+| Plastic screw `PLASTIC_SCREW_kg`, kit count | 0.0008, 5 | kg, - | Count from the guide (5 plastic screws), mass ASSUMED. One screw goes with every mass moved to the cart, so Mt grows by 0.8 g per move (real effect, kept). |
+| String linear density `STRING_LINEAR_DENSITY_kgpm` | 0.0006 | kg/m | ASSUMED (thin cotton or nylon thread). Inertia counted; weight of the hanging part neglected (about 0.3 mN at 5 cm). |
+| Pulley mass / radius / inertia factor | 0.004, 0.0125, 0.5 | kg, m, - | ASSUMED (small plastic disc, I = m r^2/2): equivalent mass I/r^2 = 2 g. |
+| Pulley axle friction `PULLEY_FRICTION_N` | 0.001 | N | ASSUMED, small, velocity independent; run-to-run relative sigma 0.2 (below). |
+| Bench height above the floor `BENCH_HEIGHT_m` | 0.92 | m | ASSUMED, a laboratory bench (0.90 to 0.95 m). Práctica 2 uses a 0.76 m table (`H_m`); that is too low here: the canister falls 0.90 m and would reach the floor before the end mark, so the guide's warning would leave no valid string length. |
+| Rail top above the bench `SUPPORT_BASE_HEIGHT_m` | 0.06 | m | ASSUMED, as `RACK_BASE_HEIGHT_m` of Práctica 1. |
+| String above the rail top `STRING_ABOVE_RAIL_m` | 0.03 | m | ASSUMED (height of the brass screw on the cart). |
+| Canister bottom to its knot `CANISTER_HANG_m` | 0.06 | m | ASSUMED (51 mm canister plus a loop). |
+| Pulley contact beyond the stop face `PULLEY_AHEAD_OF_STOP_m` | 0.015 | m | ASSUMED. |
+| Allowed hang below the pulley at the release | 0 to (string height - canister hang - 0.90) = 0 to 0.05 | m | Consequence of the rows above: between a string that does not reach the pulley and a canister that meets the floor before the end mark. |
+| Support separation / supports from the ends | 1.10 / 0.05 | m | As Práctica 1 (ASSUMED). The stand end is raised by the rack (1 mm steps, 0 to 250 mm), the receiver end has a screw foot (+-5 mm, 0.05 mm). |
+| Hidden bench tilt `TABLE_TILT_MAX_deg` | uniform +-0.15 | deg | ASSUMED (as Práctica 1). Positive: receiver end lower. |
+| Level sensitivity / bubble end / centred tolerance | 20 / 6 / 0.5 | mm/deg, mm, mm | ASSUMED (same vial as Práctica 1). A centred bubble allows up to +-0.025 deg. |
+| Receiver stop from the rail end / cart length | 0.04 / 0.0984 | m | ASSUMED (as Práctica 1). |
+| Marks: snap / distance tolerance / cart-at-start tolerance | 0.5 / 2 / 1.5 | mm | ASSUMED. Guide distance 90 cm. |
+| String length range / step / initial length | 0.30 to 2.00 / 1 / 1.50 | m, mm, m | ASSUMED. |
+| Run variability: release offset sigma | 1 | mm | ASSUMED (as Práctica 1). |
+| Run variability: push at release (half-normal) | 1 | mm/s | ASSUMED (as Práctica 1); zeroed when static friction holds the cart. |
+| Run variability: relative sigma of `c_rr` / of pulley friction | 0.05 / 0.2 | - | ASSUMED (`c_rr` as Práctica 1). |
+| Balance resolution / capacity | 0.1 g / 600 g | g | ASSUMED (typical teaching-lab digital balance). Type B u = 0.1 g / sqrt(12) = 0.029 g. No zero error or scatter modelled. |
+| Dynamometer reading of the canister weight (placeholder, phase 1) | resolution 0.01 N, max 2 N | N | ASSUMED. Reads the true weight quantised; to be replaced by the shared spring-scale model. Type B u = 0.0029 N. |
+| Distractor masses: 50 g mass, marble | 0.050, 0.0052 | kg | ASSUMED (only weighable; they do nothing in the dynamics). |
+| DigiCart log | 50 Hz, 1 mm | Hz, mm | ASSUMED (as Práctica 1), until 0.5 s after the end mark. |
+| Tabla 3.1 | 5 rows (4, 3, 2, 1 masses in the canister, plus an optional empty canister) x 10 times; times <= 30 s, 2 decimals; forces <= 2 N, 2 decimals; Mt in g, 1 decimal | - | Guide layout (four trials); the optional fifth row, the limits and the decimals are ASSUMED. |
+| Analysis: distance uncertainty | sqrt(2) x 1 mm / sqrt(12) = 0.41 | mm | Two scale readings on the millimetre rail scale. |
+| Analysis: stopwatch resolution, reaction bias | 0.01 s (u = 0.0029 s), half-width 0.1 s (u = 0.058 s) | s | As Práctica 1 (`reactionBiasTypeB_s`): the bias is common to all readings and enters only as a separate effect on the fit. |
+
+Simplifications: the string is inextensible and stays taut while the canister is driven; the canister does not swing or spin; the wheels roll without slipping; the canister hits the floor inelastically; the rail is rigid; no friction between the string and the pulley rim other than the axle term. The string weight is neglected. A string too short to reach the pulley from the start mark (hang < 0) holds the cart in place in this model (the guide's cart "cannot be released from the 0 cm mark").
