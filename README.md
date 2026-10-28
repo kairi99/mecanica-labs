@@ -68,6 +68,13 @@ invent new tasks.
   hidden values (bench tilt) and run variability; `?preset=assembled|empty` starts from a careful
   student's bench or a bare one. `npm run teacher-key` regenerates [docs/teacher-key.md](docs/teacher-key.md) (geometry, model
   acceleration and its breakdown, expected times and velocities, effect of a +0.1 s stop lag, URL flags).
+- **Theory unlock (all four experiments).** Each analysis panel lists the guide's tasks with a "Hecha / Done" checkbox. When every
+  task is ticked, and the tasks whose numbers the app computes from the table have their data, the help pages' theory sections
+  (theory, error sources and, where present, the honest-model section) open, the "?" button shows a check mark, and the panel links to them.
+  The practical help (use, instruments, uncertainty, shortcuts, accessibility, credits) is always open. "Start over" clears the ticks
+  and locks the theory again. Teachers: add `?theory=1` to the lab URL (it is passed on to the help link) or to a help page to open the
+  theory without storing anything; with `?analysis=0` the checklist is hidden, so use `?theory=1`. The lock is a classroom aid, not a
+  safeguard: it lives in the browser (`mecanica:<id>:tasks`, `mecanica:<id>:theoryUnlocked`), with no server.
 - The **help pages** (header "?", Spanish `mruv/help/index.html`, English `mruv/help/en.html`) cover the theory, instruments,
   uncertainty conventions and the sources of error of an incline.
 - Development only: `?demo=table` fills Table 1.1 with simulated human readings (never in the published build).

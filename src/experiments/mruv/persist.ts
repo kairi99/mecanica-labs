@@ -1,8 +1,11 @@
 // Persistence of the MRUV apparatus snapshot and its shell options (keys `mecanica:mruv:*`). Every access is guarded.
 import { createExperimentStore, LEGACY_SHARED_KEYS, migrateKeys, experimentKey } from '../../core/persist.ts'
+import { createTaskTracker } from '../../core/theory.ts'
 import type { ApparatusSnapshot } from './apparatus/index.ts'
 
 export const store = createExperimentStore('mruv')
+/** Ticks of the analysis tasks and the theory-unlocked flag (`mecanica:mruv:tasks`, `mecanica:mruv:theoryUnlocked`). */
+export const tasks = createTaskTracker(store)
 
 /** New key -> key of the single-experiment app (copied once on the first load, old keys stay). */
 export const LEGACY_KEYS: Readonly<Record<string, string>> = {

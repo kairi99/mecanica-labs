@@ -8,17 +8,18 @@
 <link rel="stylesheet" href="./help.css">
 <script type="module" src="./help.ts"></script>
 </head>
-<body>
+<body data-experiment="parabolic">
 <a class="skip-link" href="#main">Skip to main content</a>
 <header class="bar"><a class="pill accent" href="../index.html">Back to the lab</a><nav class="pills" aria-label="Language"><a class="pill" href="index.html" hreflang="es" lang="es">Español</a></nav></header>
 <main id="main" tabindex="-1">
 <h1>Help guide: projectile motion</h1>
 <p class="lede">A companion of the virtual lab for Practice 2: the theory of the horizontal launch, how the guide's procedure maps to the simulator, how to read the tape and the carbon mark, how the uncertainties are computed and why timing a 0.4 s flight by hand is so imprecise.</p>
 <nav class="toc" aria-label="Contents">
-<a href="#theory">Theory</a><a href="#use">Using the lab</a><a href="#reading">Tape and mark</a><a href="#stopwatch">Stopwatch</a><a href="#uncertainty">Uncertainty</a><a href="#slowmo">Slow motion</a><a href="#model">Honest model</a><a href="#keys">Keys</a><a href="#accessibility">Accessibility</a><a href="#credits">Credits</a>
+<a href="#theory" data-locked="theory" hidden>Theory</a><a href="#use">Using the lab</a><a href="#reading">Tape and mark</a><a href="#stopwatch">Stopwatch</a><a href="#uncertainty">Uncertainty</a><a href="#slowmo">Slow motion</a><a href="#model" data-locked="theory" hidden>Honest model</a><a href="#keys">Keys</a><a href="#accessibility">Accessibility</a><a href="#credits">Credits</a>
 </nav>
+<aside class="note" id="theory-locked" data-theory-notice><p><b>The theory is locked.</b> It opens when you complete every analysis task in the lab (tick each one as &ldquo;Done&rdquo;). This practical help (use, instruments, uncertainty, shortcuts, accessibility) is always available. The lock is a classroom aid, not a safeguard: it works in your browser, with no server. Teachers: add <code>?theory=1</code> to the address.</p></aside>
 
-<section id="theory"><h2>1. Theory of the horizontal launch</h2>
+<section id="theory" data-locked="theory" hidden><h2>Theory of the horizontal launch</h2>
 <p>A body that leaves a table with horizontal velocity <em>v</em><sub>0</sub> and is then under gravity alone makes two independent motions. Horizontally there is no force: the velocity stays constant (uniform motion). Vertically <em>g</em> acts and the body starts with no vertical velocity: a free fall from height <em>H</em>. With the origin at the table edge and <em>y</em> pointing up:</p>
 <div class="eq">x(t) = v₀·t<br>y(t) = H − ½·g·t²</div>
 <p>Eliminating <em>t</em> gives <em>y</em> = <em>H</em> − <em>g</em>·<em>x</em>²/(2·<em>v</em><sub>0</sub>²): a parabola. That is why the path is not a straight line even though the horizontal velocity is constant.</p>
@@ -44,12 +45,12 @@
 <p>With <em>v</em><sub>0</sub> a little above 1 m/s and a fall of three quarters of a metre, the final speed is about 4 m/s and almost all of it is vertical. This is task 7.</p>
 </section>
 
-<section id="use"><h2>2. How to use the lab</h2>
+<section id="use"><h2>How to use the lab</h2>
 <p>The lab runs in five steps, shown in the bar above: 1 Assembly, 2 Settings and marks, 3 Launches and Table 2.1, 4 Slow motion, 5 Analysis. With <code>?reference=0</code> or <code>?analysis=0</code> in the address, steps 4 and 5 are hidden (the others renumber). The "Procedure" follows the guide and its "Show me" button takes you to the panel you need.</p>
 <ol>
 <li><b>Assembly (2.3.2).</b> Put the rail, the stands, the base, the screws, the level, the tape, the stopwatch, both balls and the papers on the table. The rack-and-pinion stand sits on its base and holds the high end of the rail; the two-leg stand goes near the low end.</li>
 <li><b>20 cm rise.</b> Raise the high end until it is 20 cm above the table and the other end rests on it. Measure it with the tape ("Height of the clamp above the table" option).</li>
-<li><b>About 5 cm gap.</b> Slide the rail until its tip is about 5 cm from the edge. A bigger gap does not stop the ball (rolling resistance is small); it only slows it a little and makes it less repeatable. A very short gap lets it leave still in the air or slipping. The gap is measured to the lip of the shoe; you can also overhang the edge (negative values, see section 7).</li>
+<li><b>About 5 cm gap.</b> Slide the rail until its tip is about 5 cm from the edge. A bigger gap does not stop the ball (rolling resistance is small); it only slows it a little and makes it less repeatable. A very short gap lets it leave still in the air or slipping. The gap is measured to the lip of the shoe; you can also overhang the edge (negative values, see &ldquo;An honest model&rdquo;, which opens when the theory unlocks).</li>
 <li><b>Levelling.</b> With the level on the rail, turn the foot of the two-leg stand until the bubble is centred. A rail twisted sideways sends the ball slightly to one side and changes the range.</li>
 <li><b>Five marks (2.3.3).</b> Mark 5 positions in the upper half of the rail (60 to 120 cm from the low tip). Each one is a different launch: another launch speed.</li>
 <li><b>Paper on the floor.</b> Lay the bond sheet where the ball lands and the carbon paper on top. Mark on the floor, with a plumb line or a set square, the point right below the table edge: the edge projection.</li>
@@ -60,7 +61,7 @@
 <p class="note">The carbon mark appears when the ball lands. A ball that falls off the paper, or a ping-pong ball that lands very softly, may leave no readable dot: repeat the launch.</p>
 </section>
 
-<section id="reading"><h2>3. Reading the tape and the carbon mark</h2>
+<section id="reading"><h2>Reading the tape and the carbon mark</h2>
 <h3>What you measure</h3>
 <p>The range <em>x</em> is the horizontal distance from the table edge to where the ball touches the floor. On the floor that is the distance from the edge projection to the mark. It is <b>not</b> measured from the tip of the rail: that would add the gap of about 5 cm and spoil <em>v</em><sub>0</sub> = <em>x</em>/<em>t</em>.</p>
 <h3>The centre of the mark</h3>
@@ -76,7 +77,7 @@
 <p>The marks are only useful while the sheet is where it was when the ball fell. If you move or turn it, the lab notices: the marks no longer match the edge projection. Measure first, then change or remove the paper.</p>
 </section>
 
-<section id="stopwatch"><h2>4. The stopwatch and why 0.4 s comes out so badly</h2>
+<section id="stopwatch"><h2>The stopwatch and why 0.4 s comes out so badly</h2>
 <h3>What you time</h3>
 <p>The flight time starts when the ball passes the edge and ends when it touches the floor. If you start the watch at the release you also time the roll along the rail and the table (more than one second): the reading comes out well above 0.4 s. A hint warns you if that happens.</p>
 <h3>Random and systematic error</h3>
@@ -85,7 +86,7 @@
 <p>In MRUV the times were several seconds and the same bias weighed little. In this experiment the time is short: the relative error of the hand, tenths of a second over 0.4 s, is of the order of 15 to 25 %, much larger than that of the tape (millimetres over half a metre, 0.5 %). The speed <em>v</em><sub>0</sub> = <em>x</em>/<em>t</em> inherits that error.</p>
 </section>
 
-<section id="uncertainty"><h2>5. Uncertainty</h2>
+<section id="uncertainty"><h2>Uncertainty</h2>
 <h3>Type A and Type B</h3>
 <p>Type A uncertainty comes from the scatter of the repetitions: <em>u</em><sub>A</sub> = <em>s</em>/√<em>n</em>. Type B comes from what you know about the instrument. For a reading known only down to a division <em>d</em> (0.01 s stopwatch, 1 mm tape), the value lies within ±<em>d</em>/2 with equal probability and <em>u</em> = <em>d</em>/√12.</p>
 <h3>Conventions of the lab</h3>
@@ -105,11 +106,11 @@
 <p>The same delay affects the five marks and both balls: the <em>v</em><sub>0</sub> values of different rows are not independent, and the panel says so. When one mark is compared with another (bars and spread of task 3) or one ball with the other (task 8) the bias cancels, because it is the same in both: those comparisons use only the scatter of the readings and the stopwatch resolution. Task 6, which compares with an expected time, keeps the full uncertainty, because there the bias does not cancel.</p>
 </section>
 
-<section id="slowmo"><h2>6. Slow motion as a reference</h2>
+<section id="slowmo"><h2>Slow motion as a reference</h2>
 <p>Step 4 replays a 240 frames-per-second video of any launch. Count the frames from the first one where the ball has passed the edge to the first one where it has touched the floor. Each frame lasts 1/240 s = 4.2 ms, so the counted time has an uncertainty of about 2 ms: about thirty times smaller than your stopwatch. The analysis (task 6) shows that time for each ball and its percent error against the expected one, and compares your stopwatch with it. The difference is almost entirely your reaction delay.</p>
 </section>
 
-<section id="model"><h2>7. An honest model</h2>
+<section id="model" data-locked="theory" hidden><h2>An honest model</h2>
 <p>The simulator does not pretend everything is ideal. The values are in <code>PARAMETERS.md</code> (most are assumptions, not data of the real bench).</p>
 <ul>
 <li><b>The launch speed is below √(2<em>g</em>Δ<em>h</em>).</b> A rolling ball keeps part of the energy as spin: the marble (solid) turns 5/7 into translation; the ping-pong ball (hollow) only about 0.6. There is also rolling resistance and a loss at the joint between the rail and the table.</li>
@@ -123,7 +124,7 @@
 <p>Conditions of the ideal projectile (task 9): think about which hold here and which do not. The analysis panel asks you each one without giving the answer.</p>
 </section>
 
-<section id="keys"><h2>8. Keyboard shortcuts</h2>
+<section id="keys"><h2>Keyboard shortcuts</h2>
 <table>
 <thead><tr><th>Key</th><th>Action</th></tr></thead>
 <tbody>
@@ -137,7 +138,7 @@
 </tbody></table>
 </section>
 
-<section id="accessibility"><h2>9. Accessibility</h2>
+<section id="accessibility"><h2>Accessibility</h2>
 <p>This lab was checked against the Web Content Accessibility Guidelines (WCAG) 2.0 level AA, the basis of the NTE INEN-ISO/IEC 40500 standard. The check combined an automatic tool (axe-core) on every page, in Spanish and English, in light and dark themes, at phone and desktop sizes, with manual tests: keyboard-only use, colour contrast, text zoom to 200 %, a 320 px width and respect for "reduce motion".</p>
 <ul>
 <li>Everything can be done with the keyboard. The first link of each page skips to the main content. <kbd>Esc</kbd> closes menus, dialogs and the tour and returns focus to where it was.</li>
@@ -154,7 +155,7 @@
 <p>If you find an accessibility barrier, open an issue on <a href="https://github.com/kairi99/mecanica-labs/issues">the project's issues page</a> and tell us the page, the device and the assistive technology you use.</p>
 </section>
 
-<section id="credits"><h2>10. Credits</h2>
+<section id="credits"><h2>Credits</h2>
 <p>This virtual lab is based on the guide "Práctica 2: Movimiento parabólico" of the Laboratorio de Física, Escuela Politécnica Nacional (Quito). It is a free, open-source educational project. PHYWE and DigiCart are trademarks of their respective owners, mentioned only to identify the real lab equipment; <b>this project is not affiliated with, sponsored or endorsed by PHYWE</b>. The ball and table parameters are assumptions documented in <code>PARAMETERS.md</code>.</p>
 <p>Methods: GUM (JCGM 100) and J. R. Taylor, <em>An Introduction to Error Analysis</em>. Code under the MIT licence and educational content under CC BY 4.0.</p>
 <p>Privacy: your progress is stored only in your browser (<code>localStorage</code>); nothing is sent to any server. "Start over" deletes it.</p>\n<p>Parts of the code were written with the help of AI tools and reviewed by the authors. Licences of the libraries used (three.js, uPlot, MIT): <a href="../../THIRD-PARTY-NOTICES.txt">third-party notices</a>.</p>

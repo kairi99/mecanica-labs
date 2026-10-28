@@ -33,7 +33,7 @@ import { mountTour } from './pedagogy/tour.ts'
 import { mountSide2d } from './views/side2d.ts'
 import { PRESETS, type PresetName, type Scene3DView } from './views/stage.ts'
 import type { ViewContext } from './views/view.ts'
-import { clearAnalysisState, clearSnapshot, loadSnapshot, saveSnapshot, store } from './persist.ts'
+import { clearAnalysisState, clearSnapshot, loadSnapshot, saveSnapshot, store, tasks } from './persist.ts'
 import { rebaseSnapshotTime } from './restore.ts'
 
 const params = new URLSearchParams(location.search)
@@ -46,6 +46,9 @@ const showAnalysis = params.get('analysis') !== '0'
 
 // ---- lab steps: 1 assembly, 2 settings, 3 launches, then slow motion (?reference=0 hides it) and analysis (?analysis=0 hides it) ------------------
 type StepKey = 'assembly' | 'adjust' | 'launch' | 'slowmo' | 'analysis'
+/** Help pages; the theory sections unlock with the task checklist (or ?theory=1). `?analysis=0` hides the checklist: use ?theory=1 then. */
+const HELP = { es: 'help/index.html', en: 'help/en.html' } as const
+const HELP_THEORY = { es: 'help/index.html#teoria', en: 'help/en.html#theory' } as const
 const STEP_KEYS: StepKey[] = ['assembly', 'adjust', 'launch', ...(showReference ? ['slowmo' as const] : []), ...(showAnalysis ? ['analysis' as const] : [])]
 const STEP_COUNT = STEP_KEYS.length
 /** 1-based lab step of a step key; 0 when that step is switched off. */
@@ -101,7 +104,7 @@ const slots: ShellSlot<ParabolicApparatus>[] = [
   { id: 'tapeRange', step: LAUNCH_STEP, mount: mountTape('tapeRange') },
 ]
 if (showReference) slots.push({ id: 'slowmo', step: stepOf('slowmo'), mount: mountSlowmo({ goToLaunch: () => shell.setStep(LAUNCH_STEP) }) })
-if (showAnalysis) slots.push({ id: 'analysis', step: stepOf('analysis'), mount: mountAnalysis({ reference: showReference }) })
+if (showAnalysis) slots.push({ id: 'analysis', step: stepOf('analysis'), mount: mountAnalysis({ reference: showReference, helpTheory: HELP_THEORY }) })
 /** Which lab step holds each panel (data-panel); 0: always visible. Switched-off steps have no entry. */
 const PANEL_STEP: Record<string, number> = { inventory: 1, adjust: 2, tape: 2, launch: LAUNCH_STEP, tapeRange: LAUNCH_STEP, table: LAUNCH_STEP, stage: 0, procedure: 0 }
 if (showReference) PANEL_STEP.slowmo = stepOf('slowmo')
@@ -174,7 +177,7 @@ shell = mountShell<ParabolicApparatus, ApparatusEvent>({
   apparatus: app,
   store,
   strings: shellStrings,
-  help: { es: 'help/index.html', en: 'help/en.html' },
+  help: HELP,
   landingUrl: '../index.html',
   stepCount: STEP_COUNT,
   panelStep: PANEL_STEP,
@@ -188,7 +191,7 @@ shell = mountShell<ParabolicApparatus, ApparatusEvent>({
   timingBar: mountTimingBar,
   stage: { mount2d: mountSide2d, load3d },
   refusalText: (e, lang) => (e.type === 'refused' ? reasonText(lang, e.reason) : null),
-  reset() { clearSnapshot(); clearAnalysisState(); app.preset('empty'); setCell(0, 0); setNote('') },
+  reset() { clearSnapshot(); clearAnalysisState(); tasks.clear(); app.preset('empty'); setCell(0, 0); setNote('') },
   save: () => saveSnapshot(app.snapshot()),
   // On a phone the launches step uses the side-on view; other steps go back to the overview (unless ?cam fixes the camera).
   onStepChanged(step) {

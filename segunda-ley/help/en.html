@@ -8,17 +8,18 @@
 <link rel="stylesheet" href="./help.css">
 <script type="module" src="./help.ts"></script>
 </head>
-<body>
+<body data-experiment="newton2">
 <a class="skip-link" href="#main">Skip to main content</a>
 <header class="bar"><a class="pill accent" href="../index.html">Back to the lab</a><nav class="pills" aria-label="Language"><a class="pill" href="index.html" hreflang="es" lang="es">Español</a></nav></header>
 <main id="main" tabindex="-1">
 <h1>Help guide: force and acceleration</h1>
 <p class="lede">A companion of the virtual lab for Practice 3: Newton's second law applied to the DigiCart–canister system, what comes out of the force against acceleration graph, where the differences from the ideal case come from, how the uncertainties are computed and what the simulator does at each step.</p>
 <nav class="toc" aria-label="Contents">
-<a href="#theory">Theory</a><a href="#use">Using the lab</a><a href="#instruments">Instruments</a><a href="#uncertainty">Uncertainty</a><a href="#errors">Error sources</a><a href="#model">Honest model</a><a href="#keys">Keys</a><a href="#accessibility">Accessibility</a><a href="#credits">Credits</a>
+<a href="#theory" data-locked="theory" hidden>Theory</a><a href="#use">Using the lab</a><a href="#instruments">Instruments</a><a href="#uncertainty">Uncertainty</a><a href="#errors" data-locked="theory" hidden>Error sources</a><a href="#model" data-locked="theory" hidden>Honest model</a><a href="#keys">Keys</a><a href="#accessibility">Accessibility</a><a href="#credits">Credits</a>
 </nav>
+<aside class="note" id="theory-locked" data-theory-notice><p><b>The theory is locked.</b> It opens when you complete every analysis task in the lab (tick each one as &ldquo;Done&rdquo;). This practical help (use, instruments, uncertainty, shortcuts, accessibility) is always available. The lock is a classroom aid, not a safeguard: it works in your browser, with no server. Teachers: add <code>?theory=1</code> to the address.</p></aside>
 
-<section id="theory"><h2>1. Theory: Newton's second law for the DigiCart–canister system</h2>
+<section id="theory" data-locked="theory" hidden><h2>Theory: Newton's second law for the DigiCart–canister system</h2>
 <p>The DigiCart (mass <em>M</em><sub>c</sub> with everything it carries) is tied by a string over a pulley to a hanging canister of mass <em>m</em>. If the string is ideal and there is no friction, both bodies have the same acceleration <em>a</em> and the second law, applied to each, gives</p>
 <p><em>m g</em> − <em>T</em> = <em>m a</em> &nbsp;&nbsp; and &nbsp;&nbsp; <em>T</em> = <em>M</em><sub>c</sub> <em>a</em> &nbsp;⇒&nbsp; <em>m g</em> = (<em>M</em><sub>c</sub> + <em>m</em>) <em>a</em> = <em>M</em><sub>t</sub> <em>a</em>.</p>
 <p>Here <em>F</em> = <em>m g</em> is the weight of the canister with its masses (what the dynamometer reads) and <em>M</em><sub>t</sub> is the total mass being accelerated. That is why, in each trial, a 10 g mass moves from the canister to the DigiCart: the force goes down but the total mass hardly changes, and the graph of <em>F</em> against <em>a</em> is a straight line whose slope is <em>M</em><sub>t</sub> in the ideal case.</p>
@@ -33,7 +34,7 @@
 </ul>
 </section>
 
-<section id="use"><h2>2. How to use the lab</h2>
+<section id="use"><h2>How to use the lab</h2>
 <ol>
 <li><b>Assembly.</b> Put the materials on the table and make the connections: stand on its base, rail in the stand, receiver with pulley on the other end, string tied to the DigiCart with the brass screw, over the pulley and tied to the canister. The box holds things this practice does not use (a 50 g mass, a marble, a two-leg stand).</li>
 <li><b>Settings.</b> Level the rail (the height of the stand end in mm and the fine screw of the receiver), stick the start mark and the 90 cm mark, put the DigiCart with its front on the start mark and choose the string length: long enough to reach the pulley, short enough that the canister does not touch the floor before 90 cm. The four masses start in the canister.</li>
@@ -45,7 +46,7 @@
 <p>If something goes wrong, the simulator shows it as it would happen on the bench: a string that is too long leaves the canister on the floor before 90 cm (the string goes slack and the DigiCart coasts on, slowing down); too short, it does not reach the pulley; without the brass screw nothing pulls the DigiCart; taking a mass out of the system changes the total mass.</p>
 </section>
 
-<section id="instruments"><h2>3. The instruments</h2>
+<section id="instruments"><h2>The instruments</h2>
 <ul>
 <li><b>Digital balance</b>, 0.1 g resolution (assumed). Type B uncertainty of a reading: 0.1 g/√12 = 0.029 g.</li>
 <li><b>Spring dynamometer</b>, read to the nearest division: 0.02 N on the 1 N one and 0.05 N on the 2 N one (assumed). It is used hanging, with its zero set hanging, so it has no zero error. Type B uncertainty: division/√12.</li>
@@ -54,7 +55,7 @@
 </ul>
 </section>
 
-<section id="uncertainty"><h2>4. Uncertainty</h2>
+<section id="uncertainty"><h2>Uncertainty</h2>
 <p>The GUM (JCGM 100) and J. R. Taylor's book are followed. For each force:</p>
 <ul>
 <li>The mean time of the <em>n</em> readings, with type A uncertainty <em>s</em>/√<em>n</em>, type B of the resolution (0.01 s/√12) and type B of the reaction bias (assumed half-width of 0.1 s, rectangular), combined in quadrature: that is the Δ<em>t</em> shown.</li>
@@ -65,7 +66,7 @@
 <p>With 4 points and 2 parameters there are only 2 degrees of freedom: the reduced χ² is very variable and a single pair of points can pull the line. Do not read it as a test but as a warning.</p>
 </section>
 
-<section id="errors"><h2>5. Error sources the simulation contains</h2>
+<section id="errors" data-locked="theory" hidden><h2>Error sources the simulation contains</h2>
 <ul>
 <li>Reaction time and rounding of the stopwatch (the dominant error: with times of 1 to 2.5 s, a 0.1 s bias changes the fitted mass by tens of percent).</li>
 <li>Rotational inertia of the wheels, the pulley and the string; rolling, bearing and axle friction; air drag.</li>
@@ -78,12 +79,12 @@
 <p>How to reduce these errors and which ones dominate is part of what the guide asks you to answer (tasks 7 and 8).</p>
 </section>
 
-<section id="model"><h2>6. An honest model</h2>
+<section id="model" data-locked="theory" hidden><h2>An honest model</h2>
 <p>The masses, the resistances and the bench heights are <b>assumptions</b> documented with value, unit and date in <code>PARAMETERS.md</code> (Practice 3 section); none is a PHYWE specification and none was tuned to make the result "come out right". The equations: <em>m</em><sub>hang</sub> <em>g</em> + <em>M</em><sub>c</sub> <em>g</em> sin θ − <em>F</em><sub>res</sub>(<em>v</em>) = <em>M</em><sub>eff</sub> <em>a</em>, with rolling inertia and the weight of the string included; after the canister hits the floor the string goes slack and the DigiCart slows down by friction alone.</p>
 <p>The acceleration of the model is lower than <em>F</em>/<em>M</em><sub>t</sub>, and the fitted line is not exactly the ideal one. If your data do not match the ideal, that is information, not a failure.</p>
 </section>
 
-<section id="keys"><h2>7. Keyboard shortcuts</h2>
+<section id="keys"><h2>Keyboard shortcuts</h2>
 <table>
 <thead><tr><th>Key</th><th>Action</th></tr></thead>
 <tbody>
@@ -97,7 +98,7 @@
 </tbody></table>
 </section>
 
-<section id="accessibility"><h2>8. Accessibility</h2>
+<section id="accessibility"><h2>Accessibility</h2>
 <p>This lab was checked with the automated tool axe-core (rules of the Web Content Accessibility Guidelines (WCAG) 2.0, levels A and AA) on the lab page, in Spanish and English, in light and dark theme, at phone and desktop widths. An automated tool does not find every problem. No manual tests of this practice have been done yet (keyboard-only use, hand-measured contrast, 200 % zoom, a 320 px width, "reduce motion") and none with a screen reader.</p>
 <ul>
 <li>Keyboard use is designed with the same shared components as the other practices: the first link of each page skips to the main content and <kbd>Esc</kbd> closes menus, dialogs and the tour and returns focus. This has not yet been tested by hand with a keyboard.</li>
@@ -114,7 +115,7 @@
 <p>If you find an accessibility barrier, open an issue on <a href="https://github.com/kairi99/mecanica-labs/issues">the project's issues page</a> and tell us the page, the device and the assistive technology you use.</p>
 </section>
 
-<section id="credits"><h2>9. Credits</h2>
+<section id="credits"><h2>Credits</h2>
 <p>This virtual lab is based on the guide "Práctica 3: Relación Fuerza – Aceleración" of the Laboratorio de Física, Escuela Politécnica Nacional (Quito). It is a free, open-source educational project. PHYWE and DigiCart are trademarks of their respective owners, mentioned only to identify the real lab equipment; <b>this project is not affiliated with, sponsored or endorsed by PHYWE</b>. The masses, resistances and heights are assumptions documented in <code>PARAMETERS.md</code>.</p>
 <p>Methods: GUM (JCGM 100) and J. R. Taylor, <em>An Introduction to Error Analysis</em>. Code under the MIT licence and educational content under CC BY 4.0.</p>
 <p>Privacy: your progress is stored only in your browser (<code>localStorage</code>); nothing is sent to any server. "Start over" deletes it.</p>

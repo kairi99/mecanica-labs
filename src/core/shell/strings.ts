@@ -8,9 +8,11 @@ export interface CoreShellStrings {
   skipToMain: string
   /** Close button of the refusal message. */
   dismiss: string
+  /** Help button name suffix and badge title once the theory is unlocked. */
+  theoryUnlocked: string
 }
 
 export const strings: Strings<CoreShellStrings> = {
-  es: { experiments: 'Experimentos', skipToMain: 'Saltar al contenido principal', dismiss: 'Cerrar el mensaje' },
-  en: { experiments: 'Experiments', skipToMain: 'Skip to main content', dismiss: 'Close the message' },
+  es: { experiments: 'Experimentos', skipToMain: 'Saltar al contenido principal', dismiss: 'Cerrar el mensaje', theoryUnlocked: 'Teoría desbloqueada' },
+  en: { experiments: 'Experiments', skipToMain: 'Skip to main content', dismiss: 'Close the message', theoryUnlocked: 'Theory unlocked' },
 }

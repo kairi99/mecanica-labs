@@ -17,6 +17,14 @@ Práctica 2; `segunda-ley/index.html` and `src/experiments/newton2`, Práctica 3
 guide has its own skill, `parabolic-reference` (paraphrased facts from "Práctica 2: Movimiento parabólico"); use it instead of the PDF.
 A new experiment is a folder, a manifest, a registry entry and an html entry (README, "Add an experiment").
 
+## Theory unlock
+
+The help pages' theory sections (`<section data-locked="theory" hidden>`) open only when the student ticks every analysis task
+("Hecha / Done" list in each analysis panel) and the computed tasks have data. Generic code: `src/core/theory.ts` (completion, tick
+tracker, `mecanica:<id>:theoryUnlocked`, `?theory=1` override), `src/core/views/taskPanel.ts`, `src/core/helpTheory.ts` (help pages).
+Per experiment: `analysis/tasks.ts` (pure task list and completion, tested in `tests/<id>/tasks.test.ts`) and `views/strings/tasks.ts`.
+A help page's `<body data-experiment>` must equal the experiment's store id.
+
 ## Commands
 
 ```bash

@@ -33,7 +33,7 @@ import { fillTableSimulated } from './pedagogy/simulatedReadings.ts'
 import { mountSide2d } from './views/side2d.ts'
 import type { PresetName as ScenePreset, Scene3DView } from './views/scene3d/index.ts'
 import {
-  clearSnapshot, loadAutoMark, loadSnapshot, migrateLegacyStorage, saveAutoMark, saveSnapshot, store,
+  clearSnapshot, loadAutoMark, loadSnapshot, migrateLegacyStorage, saveAutoMark, saveSnapshot, store, tasks,
 } from './persist.ts'
 
 migrateLegacyStorage()
@@ -50,6 +50,9 @@ const showAnalysis = params.get('analysis') !== '0'
 const teacher = shellParams.teacher
 /** Dev builds only: ?demo=table fills Table 1.1 with simulated human readings (screenshots, manual checks). Never persisted. */
 const demoTable = import.meta.env.DEV && params.get('demo') === 'table'
+/** Help pages; the theory sections unlock with the task checklist (or ?theory=1). `?analysis=0` hides the checklist: use ?theory=1 then. */
+const HELP = { es: 'help/index.html', en: 'help/en.html' } as const
+const HELP_THEORY = { es: 'help/index.html#teoria', en: 'help/en.html#theory' } as const
 const STEP_COUNT = showAnalysis ? 5 : 4
 
 // ---- apparatus -----------------------------------------------------------------------------------------------------
@@ -102,7 +105,7 @@ const slots: Array<{ id: string; step: number; mount: MountView }> = [
   { id: 'stopwatch', step: 3, mount: mountStopwatch({ autoMark: { get: () => autoMark, set: (on) => { autoMark = on; saveAutoMark(on) } } }) },
   { id: 'tablet', step: 4, mount: mountTablet },
 ]
-if (showAnalysis) slots.push({ id: 'analysis', step: 5, mount: mountAnalysis({ teacher }) })
+if (showAnalysis) slots.push({ id: 'analysis', step: 5, mount: mountAnalysis({ teacher, helpTheory: HELP_THEORY }) })
 
 /** Done checks of the tracker and the "next step" line, from the live checklist. */
 function progressOf(steps: ChecklistStep[], next: ChecklistStep | null): ProcedureProgress {
@@ -164,7 +167,7 @@ shell = mountShell<Apparatus, ApparatusEvent>({
   apparatus: app,
   store,
   strings: shellStrings,
-  help: { es: 'help/index.html', en: 'help/en.html' },
+  help: HELP,
   landingUrl: '../index.html',
   stepCount: STEP_COUNT,
   panelStep: PANEL_STEP,
@@ -178,7 +181,7 @@ shell = mountShell<Apparatus, ApparatusEvent>({
   timingBar: mountTimingBar,
   stage: { mount2d: mountSide2d, load3d },
   refusalText: (e, lang) => (e.type === 'refused' ? reasonText(lang, e.reason) : null),
-  reset() { clearSnapshot(); app.preset('empty') },
+  reset() { clearSnapshot(); tasks.clear(); app.preset('empty') },
   save: () => saveSnapshot(app.snapshot()),
   persist: !demoTable,
   // Entering step 3 on a phone switches the camera to the Mark view.

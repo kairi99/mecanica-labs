@@ -31,7 +31,7 @@ import type { ChecklistStep, StepId } from './pedagogy/checklist.ts'
 import { strings as checklistStrings } from './pedagogy/strings/checklist.ts'
 import { mountCoach } from './pedagogy/coach.ts'
 import { mountTour } from './pedagogy/tour.ts'
-import { clearAnalysisState, clearSnapshot, loadSnapshot, saveSnapshot, store } from './persist.ts'
+import { clearAnalysisState, clearSnapshot, loadSnapshot, saveSnapshot, store, tasks } from './persist.ts'
 import { rebaseSnapshotTime } from './restore.ts'
 
 const params = new URLSearchParams(location.search)
@@ -44,6 +44,9 @@ const showAnalysis = params.get('analysis') !== '0'
 
 // ---- lab steps: 1 assembly, 2 experiment 1, 3 experiment 2, 4 experiment 3, then the reference record (?reference=0 hides it) and analysis (?analysis=0) ----
 type StepKey = 'assembly' | 'exp1' | 'exp2' | 'exp3' | 'record' | 'analysis'
+/** Help pages; the theory sections unlock with the task checklist (or ?theory=1). `?analysis=0` hides the checklist: use ?theory=1 then. */
+const HELP = { es: 'help/index.html', en: 'help/en.html' } as const
+const HELP_THEORY = { es: 'help/index.html#teoria', en: 'help/en.html#teoria' } as const
 const STEP_KEYS: StepKey[] = ['assembly', 'exp1', 'exp2', 'exp3', ...(showReference ? ['record' as const] : []), ...(showAnalysis ? ['analysis' as const] : [])]
 const STEP_COUNT = STEP_KEYS.length
 const stepOf = (k: StepKey): number => STEP_KEYS.indexOf(k) + 1
@@ -92,7 +95,7 @@ const slots: ShellSlot<FrictionApparatus>[] = [
   { id: 'table4.3', step: 4, mount: mountTable43 },
 ]
 if (showReference) slots.push({ id: 'record', step: stepOf('record'), mount: mountRecord })
-if (showAnalysis) slots.push({ id: 'analysis', step: stepOf('analysis'), mount: mountAnalysis({ teacher: shellParams.teacher }) })
+if (showAnalysis) slots.push({ id: 'analysis', step: stepOf('analysis'), mount: mountAnalysis({ teacher: shellParams.teacher, helpTheory: HELP_THEORY }) })
 const PANEL_STEP: Record<string, number> = {
   inventory: 1, bench: 2, 'pull4.1': 2, 'table4.1': 2, bench2: 3, 'pull4.2': 3, 'table4.2': 3, incline: 4, 'table4.3': 4, stage: 0, procedure: 0,
 }
@@ -149,7 +152,7 @@ shell = mountShell<FrictionApparatus, ApparatusEvent>({
   apparatus: app,
   store,
   strings: shellStrings,
-  help: { es: 'help/index.html', en: 'help/en.html' },
+  help: HELP,
   landingUrl: '../index.html',
   stepCount: STEP_COUNT,
   panelStep: PANEL_STEP,
@@ -162,7 +165,7 @@ shell = mountShell<FrictionApparatus, ApparatusEvent>({
   }),
   stage: { mount2d: mountSide2d, load3d },
   refusalText: (e, lang) => (e.type === 'refused' ? reasonText(lang, e.reason) : null),
-  reset() { clearSnapshot(); clearAnalysisState(); app.preset('empty'); resetUi() },
+  reset() { clearSnapshot(); clearAnalysisState(); tasks.clear(); app.preset('empty'); resetUi() },
   save: () => saveSnapshot(app.snapshot()),
   onStepChanged(step) {
     scene3d?.setArea(areaForStep(step))

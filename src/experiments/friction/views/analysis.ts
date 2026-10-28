@@ -7,7 +7,10 @@ import { inputFromApparatus } from '../analysis/fromApparatus.ts'
 import { fullAnalysis } from '../analysis/compute.ts'
 import { BAR_PAIRS, FACE_PAIRS } from '../physics/constants.ts'
 import { roundWithUncertainty } from '../../../core/physics/index.ts'
-import { loadLiterature, loadNotes, saveLiterature, saveNotes, type LitEntry } from '../persist.ts'
+import { loadLiterature, loadNotes, saveLiterature, saveNotes, tasks, type LitEntry } from '../persist.ts'
+import { mountTaskPanel } from '../../../core/views/taskPanel.ts'
+import { FRICTION_TASK_IDS, frictionCompletion } from '../analysis/tasks.ts'
+import { strings as taskStrings } from './strings/tasks.ts'
 import type { MountView, View } from './view.ts'
 import { button, card, el, nextId, watch } from '../../../core/views/dom.ts'
 import { fmt } from '../../../core/pedagogy/dom.ts'
@@ -23,7 +26,7 @@ function download(name: string, text: string): void {
   setTimeout(() => URL.revokeObjectURL(url), 1000)
 }
 
-export function mountAnalysis(opts: { teacher: boolean }): MountView {
+export function mountAnalysis(opts: { teacher: boolean; helpTheory: Record<'es' | 'en', string> }): MountView {
   return (root, ctx): View => {
     const app = ctx.apparatus
     const S = () => strings[ctx.lang()]
@@ -31,11 +34,16 @@ export function mountAnalysis(opts: { teacher: boolean }): MountView {
     const c = card('analysis', S().title, 'card-analysis')
     c.root.dataset.region = 'analysis'
     const body = el('div', 'an-body')
-    c.body.append(body)
+    const taskPanel = mountTaskPanel({ tracker: tasks, ids: FRICTION_TASK_IDS, labels: (l) => taskStrings[l].labels, lang: () => ctx.lang(), helpTheory: opts.helpTheory })
+    c.body.append(taskPanel.root, body)
     root.append(c.root)
     let lit = loadLiterature()
     let notes = loadNotes()
     let current: FrictionAnalysis | null = null
+    let avail = { fit1: false, exp2: false, exp3: false, exp3Mean: false, lit: false }
+    const refreshTasks = (): void => { taskPanel.update(frictionCompletion(tasks.ticks(), avail)) }
+    const offTasks = tasks.onChange(refreshTasks)
+    const litTyped = (): boolean => Object.values(lit).some((e) => e.value.trim() !== '')
 
     const pm = (v: number | null, u: number | null): string => {
       if (v === null || u === null) return '–'
@@ -74,7 +82,7 @@ export function mountAnalysis(opts: { teacher: boolean }): MountView {
         const cmp = mu !== null && sigma !== null && vi.value.trim() !== '' && Number.isFinite(L) ? compareWithLiterature(mu, sigma, L) : null
         out.textContent = cmp ? `${fmt(T.litError, { e: num(cmp.relativeError_pct, 1) })} ${T.litVerdict[cmp.comparison.verdict]}` : ''
       }
-      const save = (): void => { lit = { ...lit, [key]: { value: vi.value, source: si.value } as LitEntry }; saveLiterature(lit); calc() }
+      const save = (): void => { lit = { ...lit, [key]: { value: vi.value, source: si.value } as LitEntry }; saveLiterature(lit); calc(); avail = { ...avail, lit: litTyped() }; refreshTasks() }
       vi.addEventListener('input', save); si.addEventListener('input', save)
       calc()
       row.append(v, vi, s, si, out)
@@ -154,6 +162,14 @@ export function mountAnalysis(opts: { teacher: boolean }): MountView {
         ta.addEventListener('input', () => { notes = { ...notes, [k]: ta.value }; saveNotes(notes) })
         body.append(el('label', 'readout-label', label, { for: id }), ta)
       }
+      avail = {
+        fit1: !!a.t41 && a.t41.fits.some((f) => f.fit),
+        exp2: a.t42.some((q) => q !== null),
+        exp3: a.t43.some((m) => m.trials.some((t) => t !== null)),
+        exp3Mean: a.t43.some((m) => m.mu !== null),
+        lit: litTyped(),
+      }
+      refreshTasks()
       // ---- csv
       const acts = el('div', 'table-actions')
       acts.append(
@@ -167,11 +183,11 @@ export function mountAnalysis(opts: { teacher: boolean }): MountView {
       // rebuilt only when the apparatus changed and no field inside the panel has focus (typing a literature value must not lose the cursor)
       update() {
         if (!w.dirty()) return
-        if (c.root.contains(document.activeElement) && document.activeElement instanceof HTMLElement && ['INPUT', 'TEXTAREA'].includes(document.activeElement.tagName)) return
+        if (!taskPanel.root.contains(document.activeElement) && c.root.contains(document.activeElement) && document.activeElement instanceof HTMLElement && ['INPUT', 'TEXTAREA'].includes(document.activeElement.tagName)) return
         w.clear(); render()
       },
-      relabel() { w.touch() },
-      destroy() { window.clearTimeout(timer); w.off(); c.root.remove() },
+      relabel() { w.touch(); taskPanel.relabel() },
+      destroy() { window.clearTimeout(timer); offTasks(); taskPanel.destroy(); w.off(); c.root.remove() },
     }
   }
 }

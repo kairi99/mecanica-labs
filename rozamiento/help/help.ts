@@ -3,3 +3,5 @@ try {
   const th = localStorage.getItem('mecanica:theme') ?? localStorage.getItem('digicart-mruv-theme')
   if (th === 'light' || th === 'dark') document.documentElement.dataset.theme = th
 } catch { /* storage blocked: system theme */ }
+import { initHelpTheory } from '../../src/core/helpTheory.ts'
+initHelpTheory()

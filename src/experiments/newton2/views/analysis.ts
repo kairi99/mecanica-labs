@@ -12,8 +12,14 @@ import type { AnalysisResult } from '../analysis/compute.ts'
 import { numText, pmText } from '../../../core/views/format.ts'
 import { readPalette, type Palette } from '../../../core/views/analysisPlots.ts'
 import { fmt } from '../../../core/pedagogy/dom.ts'
+import { mountTaskPanel } from '../../../core/views/taskPanel.ts'
+import { NEWTON2_TASK_IDS, newton2Completion } from '../analysis/tasks.ts'
+import { strings as taskStrings } from './strings/tasks.ts'
+import { tasks } from '../persist.ts'
 
 export interface AnalysisOptions {
+  /** Help link to the theory section by language (shown once the theory is unlocked). */
+  helpTheory: Record<'es' | 'en', string>
   /** Teacher mode (?teacher): point to the teacher key. */
   teacher: boolean
 }
@@ -81,14 +87,18 @@ export function mountAnalysis(opts: AnalysisOptions): MountView {
     teacherBox.append(teacherTitle, document.createTextNode(' '), teacherBody)
     teacherBox.hidden = !opts.teacher
     const exportBtn = button('', 'btn btn-quiet', () => download())
+    const taskPanel = mountTaskPanel({ tracker: tasks, ids: NEWTON2_TASK_IDS, labels: (l) => taskStrings[l].labels, lang: () => ctx.lang(), helpTheory: opts.helpTheory })
     const actions = el('div', 'table-actions')
     actions.append(exportBtn)
-    c.body.append(intro, status, s1.root, s23.root, s4.root, s5.root, s6.root, s78.root, teacherBox, actions)
+    c.body.append(intro, status, taskPanel.root, s1.root, s23.root, s4.root, s5.root, s6.root, s78.root, teacherBox, actions)
 
     let plot: uPlot | null = null
     let sig = ''
     let last: AnalysisResult | null = null
     let errSmall = false
+    let avail = { trials: false, fit: false, mass: false }
+    const refreshTasks = (): void => { taskPanel.update(newton2Completion(tasks.ticks(), avail)) }
+    const offTasks = tasks.onChange(refreshTasks)
 
     function download(): void {
       if (!last) return
@@ -218,6 +228,8 @@ export function mountAnalysis(opts: AnalysisOptions): MountView {
       const key = `${L()}|${plotHost.clientWidth}|${JSON.stringify(r.points)}`
       if (key !== sig) { sig = key; drawPlot(r) }
       errNote.hidden = f === null || !errSmall
+      avail = { trials: ready.length > 0, fit: f !== null, mass: mc !== null }
+      refreshTasks()
     }
 
     const ro = new ResizeObserver(() => { if (plotHost.clientWidth > 0 && plot && Math.abs(plot.width - plotHost.clientWidth) > 2) { sig = ''; w.touch() } })
@@ -225,8 +237,8 @@ export function mountAnalysis(opts: AnalysisOptions): MountView {
     labels()
     return {
       update() { if (w.dirty()) { w.clear(); sync() } },
-      relabel() { labels(); sig = ''; w.touch() },
-      destroy() { ro.disconnect(); plot?.destroy(); w.off(); c.root.remove() },
+      relabel() { labels(); taskPanel.relabel(); sig = ''; w.touch() },
+      destroy() { offTasks(); taskPanel.destroy(); ro.disconnect(); plot?.destroy(); w.off(); c.root.remove() },
     }
   }
 }

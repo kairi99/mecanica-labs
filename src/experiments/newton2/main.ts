@@ -34,7 +34,7 @@ import { mountTour, type TourStepId } from './pedagogy/tour.ts'
 import { fillTableSimulated } from './pedagogy/simulatedReadings.ts'
 import type { Scene3DView } from './views/scene3d/index.ts'
 import { parsePreset, type PresetName as ScenePreset } from './views/scene3d/units.ts'
-import { clearSnapshot, loadAutoCam, loadSnapshot, saveAutoCam, saveSnapshot, store } from './persist.ts'
+import { clearSnapshot, loadAutoCam, loadSnapshot, saveAutoCam, saveSnapshot, store, tasks } from './persist.ts'
 
 const params = new URLSearchParams(location.search)
 const shellParams = readShellParams()
@@ -47,6 +47,9 @@ const teacher = shellParams.teacher
 const demoTable = import.meta.env.DEV && params.get('demo') === 'table'
 
 // ---- lab steps: 1 assembly, 2 settings, 3 measurements, then the DigiCart log (?reference=0 hides it) and the analysis (?analysis=0) ----
+/** Help pages; the theory sections unlock with the task checklist (or ?theory=1). `?analysis=0` hides the checklist: use ?theory=1 then. */
+const HELP = { es: 'help/index.html', en: 'help/en.html' } as const
+const HELP_THEORY = { es: 'help/index.html#teoria', en: 'help/en.html#theory' } as const
 const STEP_KEYS = ['assembly', 'adjust', 'measure', ...(showReference ? ['log' as const] : []), ...(showAnalysis ? ['analysis' as const] : [])] as const
 type StepKey = (typeof STEP_KEYS)[number]
 const stepOf = (k: StepKey): number => STEP_KEYS.indexOf(k) + 1
@@ -105,7 +108,7 @@ const slots: Array<{ id: string; step: number; mount: MountView }> = [
 ]
 const TOUR_STEP: Partial<Record<TourStepId, number>> = { inventory: 1, adjust: 2, instruments: MEASURE_STEP, timing: MEASURE_STEP, table: MEASURE_STEP }
 if (showReference) { slots.push({ id: 'log', step: stepOf('log'), mount: mountLog }); PANEL_STEP.log = stepOf('log'); TOUR_STEP.log = stepOf('log') }
-if (showAnalysis) { slots.push({ id: 'analysis', step: stepOf('analysis'), mount: mountAnalysis({ teacher }) }); PANEL_STEP.analysis = stepOf('analysis'); TOUR_STEP.analysis = stepOf('analysis') }
+if (showAnalysis) { slots.push({ id: 'analysis', step: stepOf('analysis'), mount: mountAnalysis({ teacher, helpTheory: HELP_THEORY }) }); PANEL_STEP.analysis = stepOf('analysis'); TOUR_STEP.analysis = stepOf('analysis') }
 
 /** Done checks of the tracker and the "next step" line, from the live checklist. */
 function progressOf(steps: ChecklistStep[], next: ChecklistStep | null): ProcedureProgress {
@@ -151,7 +154,7 @@ shell = mountShell<Apparatus, ApparatusEvent>({
   apparatus: app,
   store,
   strings: shellStrings,
-  help: { es: 'help/index.html', en: 'help/en.html' },
+  help: HELP,
   landingUrl: '../index.html',
   stepCount: STEP_COUNT,
   panelStep: PANEL_STEP,
@@ -165,7 +168,7 @@ shell = mountShell<Apparatus, ApparatusEvent>({
   timingBar: mountTimingBar,
   stage: { mount2d: mountSide2d, load3d },
   refusalText: (e, lang) => (e.type === 'refused' ? reasonText(lang, e.reason) : null),
-  reset() { clearSnapshot(); app.preset('empty') },
+  reset() { clearSnapshot(); tasks.clear(); app.preset('empty') },
   save: () => saveSnapshot(app.snapshot()),
   persist: !demoTable,
   tour: { mount: (ctx, hooks) => mountTour(ctx, hooks), stepOf: TOUR_STEP },

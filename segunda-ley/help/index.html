@@ -8,17 +8,18 @@
 <link rel="stylesheet" href="./help.css">
 <script type="module" src="./help.ts"></script>
 </head>
-<body>
+<body data-experiment="newton2">
 <a class="skip-link" href="#main">Saltar al contenido principal</a>
 <header class="bar"><a class="pill accent" href="../index.html">Volver al laboratorio</a><nav class="pills" aria-label="Idioma"><a class="pill" href="en.html" hreflang="en" lang="en">English</a></nav></header>
 <main id="main" tabindex="-1">
 <h1>Guía de ayuda: relación fuerza–aceleración</h1>
 <p class="lede">Un complemento del laboratorio virtual de la Práctica 3: la segunda ley de Newton aplicada al sistema DigiCart–contenedor, qué sale de la gráfica de fuerza contra aceleración, de dónde vienen las diferencias con el caso ideal, cómo se calculan las incertidumbres y qué hace el simulador en cada paso.</p>
 <nav class="toc" aria-label="Contenido">
-<a href="#teoria">Teoría</a><a href="#uso">Uso del laboratorio</a><a href="#instrumentos">Instrumentos</a><a href="#incertidumbre">Incertidumbre</a><a href="#errores">Fuentes de error</a><a href="#modelo">Modelo honesto</a><a href="#teclas">Teclas</a><a href="#accesibilidad">Accesibilidad</a><a href="#creditos">Créditos</a>
+<a href="#teoria" data-locked="theory" hidden>Teoría</a><a href="#uso">Uso del laboratorio</a><a href="#instrumentos">Instrumentos</a><a href="#incertidumbre">Incertidumbre</a><a href="#errores" data-locked="theory" hidden>Fuentes de error</a><a href="#modelo" data-locked="theory" hidden>Modelo honesto</a><a href="#teclas">Teclas</a><a href="#accesibilidad">Accesibilidad</a><a href="#creditos">Créditos</a>
 </nav>
+<aside class="note" id="teoria-bloqueada" data-theory-notice><p><b>La teoría está bloqueada.</b> Se abre al completar todas las tareas del análisis en el laboratorio (marca cada una como «Hecha»). Esta ayuda práctica (uso, instrumentos, incertidumbre, atajos, accesibilidad) siempre está disponible. El bloqueo es una ayuda para el aula, no una protección: funciona en tu navegador, sin servidor. Si eres docente, añade <code>?theory=1</code> a la dirección.</p></aside>
 
-<section id="teoria"><h2>1. Teoría: segunda ley de Newton en el sistema DigiCart–contenedor</h2>
+<section id="teoria" data-locked="theory" hidden><h2>Teoría: segunda ley de Newton en el sistema DigiCart–contenedor</h2>
 <p>El DigiCart (masa <em>M</em><sub>c</sub> con todo lo que lleva encima) está atado por un hilo que pasa por una polea a un contenedor colgante de masa <em>m</em>. Si el hilo es ideal y no hay fricción, los dos cuerpos tienen la misma aceleración <em>a</em> y la segunda ley, aplicada a cada uno, da</p>
 <p><em>m g</em> − <em>T</em> = <em>m a</em> &nbsp;&nbsp; y &nbsp;&nbsp; <em>T</em> = <em>M</em><sub>c</sub> <em>a</em> &nbsp;⇒&nbsp; <em>m g</em> = (<em>M</em><sub>c</sub> + <em>m</em>) <em>a</em> = <em>M</em><sub>t</sub> <em>a</em>.</p>
 <p>Aquí <em>F</em> = <em>m g</em> es el peso del contenedor con sus masas (lo que lee el dinamómetro) y <em>M</em><sub>t</sub> es la masa total que se acelera. Por eso, en cada prueba se pasa una masa de 10 g del contenedor al DigiCart: la fuerza baja, pero la masa total casi no cambia, y la gráfica de <em>F</em> contra <em>a</em> es una recta cuya pendiente es <em>M</em><sub>t</sub> en el caso ideal.</p>
@@ -33,7 +34,7 @@
 </ul>
 </section>
 
-<section id="uso"><h2>2. Cómo usar el laboratorio</h2>
+<section id="uso"><h2>Cómo usar el laboratorio</h2>
 <ol>
 <li><b>Montaje.</b> Pon los materiales sobre la mesa y haz las conexiones: soporte en su base, riel en el soporte, receptor con polea en el otro extremo, hilo atado al DigiCart con el tornillo de latón, sobre la polea y atado al contenedor. En la caja hay cosas que esta práctica no usa (una masa de 50 g, una canica, un soporte de dos patas).</li>
 <li><b>Ajustes.</b> Nivela la riel (la altura del extremo del soporte en mm y el tornillo fino del receptor), pega la marca de inicio y la de 90 cm, pon el DigiCart con su frente en la marca de inicio y elige el largo del hilo: lo bastante largo para llegar a la polea, lo bastante corto para que el contenedor no toque el piso antes de los 90 cm. Las cuatro masas empiezan en el contenedor.</li>
@@ -45,7 +46,7 @@
 <p>Si algo sale mal, el simulador lo muestra como pasaría en la mesa: el hilo demasiado largo deja el contenedor en el piso antes de los 90 cm (el hilo se afloja y el DigiCart sigue por inercia, frenándose); demasiado corto, no llega a la polea; sin el tornillo de latón no hay fuerza sobre el DigiCart; sacar una masa del sistema cambia la masa total.</p>
 </section>
 
-<section id="instrumentos"><h2>3. Los instrumentos</h2>
+<section id="instrumentos"><h2>Los instrumentos</h2>
 <ul>
 <li><b>Balanza digital</b>, resolución de 0,1 g (supuesto). Incertidumbre tipo B de una lectura: 0,1 g/√12 = 0,029 g.</li>
 <li><b>Dinamómetro de resorte</b>, que se lee a la división más cercana: 0,02 N en el de 1 N y 0,05 N en el de 2 N (supuestos). Se usa colgado, con el cero ajustado colgado, así que no tiene error de cero. Incertidumbre tipo B: división/√12.</li>
@@ -54,7 +55,7 @@
 </ul>
 </section>
 
-<section id="incertidumbre"><h2>4. Incertidumbre</h2>
+<section id="incertidumbre"><h2>Incertidumbre</h2>
 <p>Se sigue la GUM (JCGM 100) y el libro de J. R. Taylor. Para cada fuerza:</p>
 <ul>
 <li>El tiempo medio de las <em>n</em> lecturas, con incertidumbre tipo A <em>s</em>/√<em>n</em>, tipo B de la resolución (0,01 s/√12) y tipo B del sesgo de reacción (semiancho supuesto de 0,1 s, rectangular), combinadas en cuadratura: es el Δ<em>t</em> que se muestra.</li>
@@ -65,7 +66,7 @@
 <p>Con 4 puntos y 2 parámetros solo hay 2 grados de libertad: el χ² reducido es muy variable y una sola pareja de puntos puede desviar la recta. No lo leas como una prueba, sino como una advertencia.</p>
 </section>
 
-<section id="errores"><h2>5. Fuentes de error que contiene la simulación</h2>
+<section id="errores" data-locked="theory" hidden><h2>Fuentes de error que contiene la simulación</h2>
 <ul>
 <li>Tiempo de reacción y redondeo del cronómetro (el error dominante: con tiempos de 1 a 2,5 s, 0,1 s de sesgo cambia la masa del ajuste en decenas de por ciento).</li>
 <li>Inercia de rotación de las ruedas, de la polea y del hilo; fricción de rodadura, de rodamientos y del eje; resistencia del aire.</li>
@@ -78,12 +79,12 @@
 <p>Cómo reducir estos errores y cuáles dominan es parte de lo que la guía te pide que respondas (tareas 7 y 8).</p>
 </section>
 
-<section id="modelo"><h2>6. Un modelo honesto</h2>
+<section id="modelo" data-locked="theory" hidden><h2>Un modelo honesto</h2>
 <p>Las masas, las resistencias y las alturas de la mesa son <b>supuestos</b> documentados con su valor, unidad y fecha en <code>PARAMETERS.md</code> (sección Práctica 3); ninguno es una especificación de PHYWE y ninguno se ajustó para que el resultado «salga bien». Las ecuaciones: <em>m</em><sub>colg</sub> <em>g</em> + <em>M</em><sub>c</sub> <em>g</em> sen θ − <em>F</em><sub>res</sub>(<em>v</em>) = <em>M</em><sub>ef</sub> <em>a</em>, con la inercia de rodadura y el peso del hilo incluidos; tras el impacto del contenedor con el piso el hilo se afloja y el DigiCart se frena solo por la fricción.</p>
 <p>La aceleración del modelo es menor que <em>F</em>/<em>M</em><sub>t</sub>, y la recta de ajuste no es exactamente la del caso ideal. Si tus datos no coinciden con el ideal, eso es información, no un fallo.</p>
 </section>
 
-<section id="teclas"><h2>7. Atajos de teclado</h2>
+<section id="teclas"><h2>Atajos de teclado</h2>
 <table>
 <thead><tr><th>Tecla</th><th>Acción</th></tr></thead>
 <tbody>
@@ -97,7 +98,7 @@
 </tbody></table>
 </section>
 
-<section id="accesibilidad"><h2>8. Accesibilidad</h2>
+<section id="accesibilidad"><h2>Accesibilidad</h2>
 <p>Este laboratorio se revisó con la herramienta automática axe-core (reglas de las Pautas de Accesibilidad para el Contenido Web (WCAG) 2.0, niveles A y AA) en la página del laboratorio, en español e inglés, en tema claro y oscuro, en anchos de móvil y de escritorio. Una herramienta automática no encuentra todos los problemas. Todavía no se hicieron pruebas manuales de esta práctica (uso solo con teclado, contraste medido a mano, ampliación al 200 %, ancho de 320 px, «reducir movimiento») ni con un lector de pantalla.</p>
 <ul>
 <li>El teclado está pensado con los mismos componentes compartidos que las otras prácticas: el primer enlace de cada página salta al contenido principal y <kbd>Esc</kbd> cierra los menús, los diálogos y el recorrido y devuelve el foco. Esto aún no se probó a mano con el teclado.</li>
@@ -114,7 +115,7 @@
 <p>Si encuentras una barrera de accesibilidad, abre una incidencia en <a href="https://github.com/kairi99/mecanica-labs/issues" hreflang="en">la página de incidencias del proyecto</a> e indica la página, el dispositivo y la tecnología de apoyo que usas.</p>
 </section>
 
-<section id="creditos"><h2>9. Créditos</h2>
+<section id="creditos"><h2>Créditos</h2>
 <p>Este laboratorio virtual está basado en la guía «Práctica 3: Relación Fuerza – Aceleración» del Laboratorio de Física de la Escuela Politécnica Nacional (Quito). Es un proyecto educativo gratuito y de código abierto. PHYWE y DigiCart son marcas de sus respectivos titulares y se mencionan solo para identificar el equipo real del laboratorio; <b>este proyecto no está afiliado, patrocinado ni respaldado por PHYWE</b>. Las masas, las resistencias y las alturas son supuestos documentados en <code>PARAMETERS.md</code>.</p>
 <p>Métodos: GUM (JCGM 100) y J. R. Taylor, <em>An Introduction to Error Analysis</em>. Código bajo licencia MIT y contenido educativo bajo CC BY 4.0.</p>
 <p>Privacidad: tu progreso se guarda solo en tu navegador (<code>localStorage</code>); no se envía a ningún servidor. «Empezar de nuevo» lo borra.</p>

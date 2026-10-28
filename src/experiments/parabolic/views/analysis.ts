@@ -13,11 +13,16 @@ import { fullAnalysis, type FullAnalysis } from '../analysis/compute.ts'
 import { slowmoReference } from '../analysis/fromApparatus.ts'
 import { analysisCSV } from '../analysis/csv.ts'
 import { parseCm } from './format.ts'
-import { loadHeightText, loadNotes, saveHeightText, saveNotes } from '../persist.ts'
+import { loadHeightText, loadNotes, saveHeightText, saveNotes, tasks } from '../persist.ts'
+import { mountTaskPanel } from '../../../core/views/taskPanel.ts'
+import { PARABOLIC_TASK_IDS, parabolicCompletion } from '../analysis/tasks.ts'
+import { strings as taskStrings } from './strings/tasks.ts'
 
 export interface AnalysisOptions {
   /** The slow-motion step is shown (?reference=0 hides it and its reference time here too). */
   reference: boolean
+  /** Help link to the theory section by language (shown once the theory is unlocked). */
+  helpTheory: Record<'es' | 'en', string>
 }
 
 type Lang = 'es' | 'en'
@@ -41,7 +46,7 @@ function table(headers: string[], rows: string[][], cls = 'data-table an-table a
   return wrap
 }
 
-export function mountAnalysis(opts: AnalysisOptions = { reference: true }): MountView {
+export function mountAnalysis(opts: AnalysisOptions): MountView {
   return (root, ctx): View => {
     const app = ctx.apparatus
     const S = (): AnalysisStrings => strings[ctx.lang()]
@@ -85,9 +90,13 @@ export function mountAnalysis(opts: AnalysisOptions = { reference: true }): Moun
     secs.t5.dyn.before(t5Static)
 
     const exportBtn = button('', 'btn btn-quiet', () => download())
+    const taskPanel = mountTaskPanel({ tracker: tasks, ids: PARABOLIC_TASK_IDS, labels: (l) => taskStrings[l].labels, lang: () => L(), helpTheory: opts.helpTheory })
+    let avail = { data: false, both: false, expected: false }
+    const refreshTasks = (): void => { taskPanel.update(parabolicCompletion(tasks.ticks(), avail)) }
+    const offTasks = tasks.onChange(refreshTasks)
     const actions = el('div', 'table-actions')
     actions.append(exportBtn)
-    c.body.append(intro, status, ...NOTE_TASKS.map((k) => secs[k].root), actions)
+    c.body.append(intro, status, taskPanel.root, ...NOTE_TASKS.map((k) => secs[k].root), actions)
 
     // ---- state ---------------------------------------------------------------------------------------------------------
     let handles: PlotHandle[] = []
@@ -307,6 +316,8 @@ export function mountAnalysis(opts: AnalysisOptions = { reference: true }): Moun
       // task 9
       secs.t9.h.textContent = T.t9Title
       secs.t9.dyn.replaceChildren(el('p', 'muted', T.t9Intro), list(T.t9Items), el('p', 'note', T.t9Prompt))
+      avail = { data: a.balls.marble.pooled !== null || a.balls.pingpong.pooled !== null, both: any, expected: exp !== null }
+      refreshTasks()
     }
 
     function download(): void {
@@ -328,11 +339,11 @@ export function mountAnalysis(opts: AnalysisOptions = { reference: true }): Moun
         sig = next
         render()
       },
-      relabel() { sig = ''; dirty = true },
+      relabel() { sig = ''; dirty = true; taskPanel.relabel() },
       destroy() {
         for (const h of handles) h.destroy()
         window.clearTimeout(saveTimer); saveNotes(notes)
-        offApp(); themeObserver.disconnect(); dark.removeEventListener('change', onScheme); ro.disconnect(); w.off(); c.root.remove()
+        offApp(); offTasks(); taskPanel.destroy(); themeObserver.disconnect(); dark.removeEventListener('change', onScheme); ro.disconnect(); w.off(); c.root.remove()
       },
     }
   }

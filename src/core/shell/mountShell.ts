@@ -11,6 +11,7 @@ import { mountMenu } from '../views/menu.ts'
 import { mountSkipLink } from '../views/skip.ts'
 import { applyTheme, nextTheme, themeIcon } from '../views/theme.ts'
 import { readShellParams } from './params.ts'
+import { helpHref, isTheoryUnlocked, theoryOverride, THEORY_EVENT } from '../theory.ts'
 import { strings as coreStrings } from './strings.ts'
 import type { ProcedureProgress, Shell, ShellApi, ShellConfig, Stage3DView, TourController } from './types.ts'
 
@@ -72,6 +73,10 @@ export function mountShell<A extends EventSource<E>, E>(config: ShellConfig<A, E
   const langBtn = button('', 'tool tool-lang')
   const themeBtn = button('', 'tool tool-theme')
   const helpBtn = el('a', 'tool tool-help', '?', { target: '_blank', rel: 'noopener' })
+  // Small check mark on the "?" once the theory is unlocked (task checklist in the analysis panel, or the teacher's ?theory=1).
+  const helpBadge = el('span', 'help-badge', '✓', { 'aria-hidden': 'true' })
+  helpBtn.append(helpBadge)
+  const theoryOpen = (): boolean => isTheoryUnlocked(config.store.id)
   const moreBtn = button('', 'tool tool-more')
   moreBtn.append(svg('svg', { viewBox: '0 0 24 24', 'aria-hidden': 'true', class: 'icon' }, svg('circle', { cx: 5, cy: 12, r: 1.6 }), svg('circle', { cx: 12, cy: 12, r: 1.6 }), svg('circle', { cx: 19, cy: 12, r: 1.6 })))
   const moreLang = button('', 'menu-item only-narrow', () => langBtn.click())
@@ -371,7 +376,10 @@ export function mountShell<A extends EventSource<E>, E>(config: ShellConfig<A, E
     moreExperiments.textContent = C().experiments
     moreNew.textContent = t.new
     moreBtn.setAttribute('aria-label', t.more)
-    helpBtn.setAttribute('aria-label', t.help)
+    const open = theoryOpen()
+    helpBadge.hidden = !open
+    helpBtn.setAttribute('aria-label', open ? `${t.help}: ${C().theoryUnlocked}` : t.help)
+    helpBtn.title = open ? C().theoryUnlocked : t.help
     modeSeg.setAttribute('aria-label', t.viewMode)
     btn3d.textContent = t.view3d
     btn2d.textContent = t.view2d
@@ -380,7 +388,7 @@ export function mountShell<A extends EventSource<E>, E>(config: ShellConfig<A, E
     newNo.textContent = t.newNo
     footer.textContent = t.credits
     sheetHandle.setAttribute('aria-label', t.sheetToggle)
-    helpBtn.setAttribute('href', config.help[lang])
+    helpBtn.setAttribute('href', helpHref(config.help[lang], theoryOverride()))
     helpBtn.setAttribute('hreflang', lang)
     if (failed3d) notice = S().notice3d
     stageNotice.textContent = failed3d ? notice : ''
@@ -395,6 +403,8 @@ export function mountShell<A extends EventSource<E>, E>(config: ShellConfig<A, E
     coach.relabel()
     tour.relabel()
   }
+  window.addEventListener(THEORY_EVENT, labelShell)
+  window.addEventListener('storage', (e) => { if (e.key === null || e.key.endsWith(':theoryUnlocked')) labelShell() })
   langBtn.addEventListener('click', () => { lang = lang === 'es' ? 'en' : 'es'; saveLang(lang); relabelAll() })
   themeBtn.addEventListener('click', () => {
     theme = nextTheme(theme)

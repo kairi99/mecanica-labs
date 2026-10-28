@@ -179,3 +179,7 @@ body[data-step='1'] .timing-host, body[data-step='2'] .timing-host, body[data-st
 @media (max-width: 359px) {
   .tb-row { flex-wrap: wrap; }
 }
+
+/* "theory unlocked" mark on the help button */
+.tool-help { position: relative; }
+.help-badge { position: absolute; top: 2px; right: 2px; width: 1.1rem; height: 1.1rem; border-radius: var(--radius-full); background: var(--success-fill); color: var(--on-accent); display: grid; place-items: center; font: var(--text-caption); font-weight: 700; line-height: 1; }
