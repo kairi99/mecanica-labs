@@ -4,6 +4,10 @@ import { CART_LENGTH_m, RACK_BASE_HEIGHT_m, TWO_LEG_BASE_HEIGHT_m, downSlope_m, 
 import type { MountView, View } from './view.ts'
 import { el, svg, watch } from '../../../core/views/dom.ts'
 import { strings } from './strings/side2d.ts'
+import { strings as ddStrings } from './strings/dragdrop.ts'
+import { createDragDrop, type StageAdapter } from './dragdrop/controller.ts'
+import { SNAP_CM, type Zone, type ZoneId } from './dragdrop/snap.ts'
+import type { ItemId } from '../apparatus/index.ts'
 
 const S_PX = 600 // px per metre
 const VEX = 1.4 // vertical exaggeration
@@ -26,10 +30,15 @@ export const mountSide2d: MountView = (root, ctx): View => {
   const staticLayer = svg('g')
   const cartLayer = svg('g', { class: 's2d-cart' })
   g.append(staticLayer, cartLayer)
+  const zoneLayer = svg('g', { class: 's2d-zones' })
+  g.append(zoneLayer)
   const legend = el('ul', 's2d-legend')
   const note = el('p', 'stage-note')
   wrap.append(g, legend, note)
+  wrap.classList.add('has-tray')
   root.append(wrap)
+  /** Mark an element as a movable part (drag it to another spot or onto the tray). */
+  const tagPart = (e: SVGElement, id: ItemId): SVGElement => { e.dataset.part = id; e.classList.add('s2d-part'); return e }
 
   // Text and strokes are sized in screen pixels: --k is the number of viewbox units per CSS pixel (fit to width on any screen).
   let kPx = 1
@@ -62,14 +71,14 @@ export const mountSide2d: MountView = (root, ctx): View => {
     const clampH = geo ? geo.clampHeight_m : RACK_BASE_HEIGHT_m + s.rack_mm / 1000
     if (s.items.standBase) {
       const bx = s.joints.standBase ? 0 : -0.3
-      add(svg('rect', { x: X(bx) - 52, y: GY - 12, width: 104, height: 12, rx: 3, class: 's2d-metal' }))
+      add(tagPart(svg('rect', { x: X(bx) - 52, y: GY - 12, width: 104, height: 12, rx: 3, class: 's2d-metal' }), 'standBase'))
       legendItems.push({ cls: 's2d-metal', text: T.base })
     }
     if (s.items.rackStand) {
       const rx = s.joints.standBase ? 0 : -0.3
       const top = Y(clampH)
       const bottom = s.joints.standBase ? GY - 12 : GY
-      add(svg('rect', { x: X(rx) - 5, y: Math.min(top, bottom - 8), width: 10, height: Math.max(8, bottom - top), class: 's2d-metal-hi' }))
+      add(tagPart(svg('rect', { x: X(rx) - 5, y: Math.min(top, bottom - 8), width: 10, height: Math.max(8, bottom - top), class: 's2d-metal-hi' }), 'rackStand'))
       for (let mm = 0; mm <= 250; mm += 50) {
         const yy = Y(RACK_BASE_HEIGHT_m + mm / 1000)
         if (yy < bottom && yy >= top) add(svg('line', { x1: X(rx) - 12, y1: yy, x2: X(rx) - 5, y2: yy, class: 's2d-tick' }))
@@ -86,10 +95,10 @@ export const mountSide2d: MountView = (root, ctx): View => {
       const xs = att ? pose.twoLeg.x_m : 1.38
       const topH = att && geo ? geo.twoLegHeight_m : TWO_LEG_BASE_HEIGHT_m
       const tx = X(xs), ty = Y(topH)
-      add(svg('line', { x1: tx, y1: ty, x2: tx - 30, y2: GY, class: 's2d-leg' }))
-      add(svg('line', { x1: tx, y1: ty, x2: tx + 30, y2: GY, class: 's2d-leg' }))
+      add(tagPart(svg('line', { x1: tx, y1: ty, x2: tx - 30, y2: GY, class: 's2d-leg' }), 'twoLegStand'))
+      add(tagPart(svg('line', { x1: tx, y1: ty, x2: tx + 30, y2: GY, class: 's2d-leg' }), 'twoLegStand'))
       add(svg('line', { x1: tx - 20, y1: GY - (GY - ty) * 0.5 + 2, x2: tx + 20, y2: GY - (GY - ty) * 0.5 + 2, class: 's2d-leg thin' }))
-      add(svg('rect', { x: tx - 6, y: ty - 4, width: 12, height: 8, class: 's2d-metal' }))
+      add(tagPart(svg('rect', { x: tx - 6, y: ty - 4, width: 12, height: 8, class: 's2d-metal' }), 'twoLegStand'))
       legendItems.push({ cls: 's2d-leg-sw', text: T.twoLeg })
       minY = Math.min(minY, ty - 8)
     }
@@ -102,7 +111,7 @@ export const mountSide2d: MountView = (root, ctx): View => {
     slope = { cos: Math.cos(a), sin: Math.sin(a), deg: (a * 180) / Math.PI }
     if (s.items.rail) {
       minY = Math.min(minY, H[1] - 8, Lw[1] - 8)
-      add(svg('line', { x1: H[0], y1: H[1] + 6, x2: Lw[0], y2: Lw[1] + 6, class: 's2d-rail' }))
+      add(tagPart(svg('line', { x1: H[0], y1: H[1] + 6, x2: Lw[0], y2: Lw[1] + 6, class: 's2d-rail' }), 'rail'))
       for (let mm = 0; mm <= 1200; mm += 100) {
         const D = mm / 1000
         const p = pt(railPointAt(pose, D))
@@ -115,11 +124,11 @@ export const mountSide2d: MountView = (root, ctx): View => {
     // receiver
     if (s.items.receiver) {
       if (s.joints.receiver) {
-        add(svg('rect', { x: Lw[0] - 14, y: Lw[1] - 18, width: 28, height: 36, rx: 4, class: 's2d-blue' }))
+        add(tagPart(svg('rect', { x: Lw[0] - 14, y: Lw[1] - 18, width: 28, height: 36, rx: 4, class: 's2d-blue' }), 'receiver'))
         add(svg('circle', { cx: Lw[0] + 6, cy: Lw[1] - 2, r: 9, class: 's2d-pulley' }))
         legendItems.push({ cls: 's2d-blue', text: T.receiver })
       } else {
-        add(svg('rect', { x: X(1.2) - 14, y: GY - 28, width: 28, height: 28, rx: 4, class: 's2d-blue' }))
+        add(tagPart(svg('rect', { x: X(1.2) - 14, y: GY - 28, width: 28, height: 28, rx: 4, class: 's2d-blue' }), 'receiver'))
         add(svg('circle', { cx: X(1.2) + 6, cy: GY - 14, r: 8, class: 's2d-pulley' }))
       }
     }
@@ -149,6 +158,7 @@ export const mountSide2d: MountView = (root, ctx): View => {
       const rot = onRail ? slope.deg : 0
       const lv = svg('g', { transform: `translate(${p[0]} ${p[1]}) rotate(${rot})` })
       lv.append(svg('rect', { x: -34, y: -14, width: 68, height: 14, rx: 3, class: 's2d-level' }), svg('ellipse', { cx: 0, cy: -7, rx: 8, ry: 4, class: 's2d-bubble' }))
+      tagPart(lv, 'level')
       add(lv)
       legendItems.push({ cls: 's2d-level', text: T.level })
       minY = Math.min(minY, p[1] - 16)
@@ -211,13 +221,67 @@ export const mountSide2d: MountView = (root, ctx): View => {
     cartKey = ''
   }
 
+  // ---- drag-and-drop assembly (same controller as the 3D scene; this is the stage side) -------------------------------------
+  const toCm = (clientX: number, clientY: number): { x: number; y: number } | null => {
+    const r = g.getBoundingClientRect()
+    if (r.width === 0 || clientX < r.left || clientX > r.right || clientY < r.top || clientY > r.bottom) return null
+    const k = VB_W / r.width
+    const vx = VB_X0 + (clientX - r.left) * k, vy = top + (clientY - r.top) * k
+    return { x: ((vx - XO) / S_PX) * 100, y: ((GY - vy) / (S_PX * VEX)) * 100 }
+  }
+  const dragStrings = () => ddStrings[ctx.lang()].zones
+  let hidden: Element[] = []
+  const dd = createDragDrop({ ctx, stage: wrap, mount: wrap })
+  const adapter: StageAdapter = {
+    probe(cx, cy) {
+      const p = toCm(cx, cy)
+      if (!p) return null
+      // the side view has no depth: z is ignored, and a spot counts when the pointer is near it in height too
+      return (zone) => (zone.id === 'table' ? p.y <= 45 : Math.abs(p.y - zone.cy) <= SNAP_CM + 6) ? { x_cm: p.x, z_cm: null } : null
+    },
+    showZones(zones: readonly Zone[], active: ZoneId | null) {
+      zoneLayer.replaceChildren()
+      for (const z of zones) {
+        if (z.id === 'table') {
+          zoneLayer.append(svg('rect', { x: VB_X0 + 4, y: GY + 4, width: VB_W - 8, height: GROUND_PAD - 8, rx: 6, class: `s2d-zone s2d-zone-table${active === z.id ? ' on' : ''}` }))
+          continue
+        }
+        const on = active === z.id
+        const cls = `s2d-zone${z.ready ? ' ready' : ' early'}${on ? ' on' : ''}`
+        let shape: SVGElement
+        if (z.hx > 0) {
+          shape = svg('rect', { x: -z.hx * 6, y: -22, width: z.hx * 12, height: 44, rx: 8, class: cls, transform: `translate(${X(z.cx / 100)} ${Y(z.cy / 100)}) rotate(${slope.deg})` })
+        } else shape = svg('circle', { cx: X(z.cx / 100), cy: Y(z.cy / 100), r: SNAP_CM * 6 * 0.7, class: cls })
+        zoneLayer.append(shape)
+        const label = svg('text', { x: X(z.cx / 100), y: Y(z.cy / 100) - SNAP_CM * 6 * 0.7 - 6 * kPx, class: 's2d-label s2d-zone-text', 'text-anchor': 'middle' }, dragStrings()[z.id])
+        zoneLayer.append(label)
+      }
+    },
+    showPreview() { /* the floating chip of the controller follows the pointer */ },
+    hidePreview() { /* nothing to hide */ },
+    pickBenchPart(cx, cy) {
+      const hit = document.elementFromPoint(cx, cy)?.closest<SVGElement>('[data-part]')
+      return hit && g.contains(hit) ? (hit.dataset.part as ItemId) : null
+    },
+    lift(part) {
+      for (const n of hidden) n.setAttribute('visibility', 'visible')
+      hidden = []
+      if (part) { hidden = [...g.querySelectorAll(`[data-part="${part}"]`)]; for (const n of hidden) n.setAttribute('visibility', 'hidden') }
+    },
+    lockCamera() { /* the side view has no camera */ },
+    refuse() { /* the shell toast shows the reason */ },
+    placed() { /* nothing to remember */ },
+  }
+  dd.setAdapter(adapter)
+
   labels()
   return {
     update() {
+      dd.update()
       if (w.dirty()) { w.clear(); sync() }
       drawCart()
     },
-    relabel() { labels(); w.touch() },
-    destroy() { ro.disconnect(); w.off(); wrap.remove() },
+    relabel() { labels(); dd.relabel(); w.touch() },
+    destroy() { dd.destroy(); ro.disconnect(); w.off(); wrap.remove() },
   }
 }
