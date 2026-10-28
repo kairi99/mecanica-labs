@@ -22,6 +22,8 @@ import {
 import { boxCorners, fitView, type Vec } from '../../../../core/scene3d/framing.ts'
 import { PRESET_NAMES, type PresetName } from './presets.ts'
 import { createInteraction, type Interaction } from './interaction.ts'
+import { createDragDrop3D } from './dragdrop3d.ts'
+import type { StageAdapter } from '../dragdrop/controller.ts'
 import type { CardInfo } from '../../../../core/scene3d/types.ts'
 
 export { PRESET_NAMES }
@@ -51,9 +53,12 @@ export interface SceneOptions {
   onStatus(text: string): void
   onTapeTarget?(t: TapeTarget): void
   openPanel?(panel: string): void
+  dd?: { busy(): boolean; overTray(clientX: number, clientY: number): boolean; removeFromTray(part: 'cart'): void }
 }
 
 export interface Scene3D {
+  /** Stage side of the drag-and-drop assembly (zones, preview, picking). */
+  dragdrop: StageAdapter
   update(): void
   setVisible(v: boolean): void
   setPreset(name: PresetName): void
@@ -606,6 +611,12 @@ export function createScene(container: HTMLElement, ctx: ViewContext, opts: Scen
     table, rail.root, cart.root, base, rack.root, twoLeg.root, receiver, level.root, stopwatch.root, tapeMeasure.root, tapeRoll, pile,
     gStand, gClamp, gTwoLeg.root, gReceiver, gCartM.root,
   ]
+  const dd3d = createDragDrop3D({
+    a, ctx, scene, container, canvas, camera, controls, M, pickables,
+    rootOf: (p) => partRoot(p === 'tape' ? 'tapeMeasure' : p),
+    requestRender, refreshSoon: () => { dirty = true }, onCard: opts.onCard,
+    setLevelX: (x) => { levelX = Math.min(RAIL.length - 8, Math.max(8, x)) },
+  })
   const interaction: Interaction = createInteraction({
     a, ctx, container, canvas, camera, controls, pickables, requestRender, S,
     rail: { root: rail.root, localX: (v) => rail.root.worldToLocal(v.clone()) },
@@ -621,6 +632,7 @@ export function createScene(container: HTMLElement, ctx: ViewContext, opts: Scen
     refreshSoon: () => { dirty = true },
     onUserCamera: userTookOver,
     openPanel: opts.openPanel,
+    dd: opts.dd,
   })
 
   // ---------- tools and tape target ----------
@@ -684,6 +696,7 @@ export function createScene(container: HTMLElement, ctx: ViewContext, opts: Scen
 
   let lastRolling = false
   return {
+    dragdrop: dd3d,
     update() {
       if (document.hidden || !visible) return
       const now = performance.now()
@@ -714,6 +727,7 @@ export function createScene(container: HTMLElement, ctx: ViewContext, opts: Scen
       }
       if (tickPlaced(now)) needsRender = true
       if (interaction.tick()) needsRender = true
+      if (dd3d.tick(now)) needsRender = true
       if (controls.update()) needsRender = true
       if (needsRender) {
         needsRender = false
@@ -740,11 +754,13 @@ export function createScene(container: HTMLElement, ctx: ViewContext, opts: Scen
     relabel() {
       canvas.setAttribute('aria-label', S().canvasLabel)
       interaction.relabel()
+      dd3d.relabel()
       requestRender()
     },
     destroy() {
       unsub()
       interaction.destroy()
+      dd3d.destroy()
       controls.dispose()
       ro.disconnect(); mo.disconnect()
       scheme.removeEventListener('change', onTheme)

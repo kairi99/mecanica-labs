@@ -7,7 +7,7 @@ export type ReasonTexts = Record<Reason, string>
 export const strings: Strings<ReasonTexts> = {
   es: {
     unknownItem: 'Ese elemento no existe en el inventario.',
-    itemNotOnTable: 'Primero pon {item} sobre la mesa desde el inventario.',
+    itemNotOnTable: 'Primero pon {item} sobre la mesa: arrástralo desde la bandeja.',
     itemAlreadyOnTable: '{item} ya está sobre la mesa.',
     screwsInUse: 'Los tornillos están sujetando la riel. Suelta primero las conexiones para recuperarlos.',
     needStandBase: 'Primero monta el soporte con cremallera sobre su base metálica.',
@@ -47,7 +47,7 @@ export const strings: Strings<ReasonTexts> = {
   },
   en: {
     unknownItem: 'That item is not in the inventory.',
-    itemNotOnTable: 'First put {item} on the table from the inventory.',
+    itemNotOnTable: 'First put {item} on the table: drag it from the tray.',
     itemAlreadyOnTable: '{item} is already on the table.',
     screwsInUse: 'The screws are holding the rail. Undo the connections first to get them back.',
     needStandBase: 'First mount the rack stand on its metal base.',
