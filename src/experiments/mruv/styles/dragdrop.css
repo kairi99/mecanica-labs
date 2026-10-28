@@ -5,6 +5,8 @@
 .dd-tray {
   display: flex; flex-direction: column; gap: var(--space-1); padding: var(--space-2) var(--space-3);
   background: var(--surface); color: var(--label); border-top: var(--stroke-hair) solid var(--separator); min-width: 0;
+  /* keep a column free for the 3D/2D toggle (.stage-mode), which sits over the stage's bottom-right corner */
+  padding-inline-end: calc(var(--space-2) + 7.5rem);
 }
 .dd-head { display: flex; align-items: baseline; gap: var(--space-3); flex-wrap: wrap; }
 .dd-title { margin: 0; font: var(--text-footnote); font-weight: 600; }
@@ -38,7 +40,7 @@
 .dd-live { margin: 0; min-height: 1em; font: var(--text-caption); color: var(--label-2); }
 @media (max-width: 819px) {
   .dd-hint { display: none; }
-  .dd-tray { padding: var(--space-1) var(--space-2); }
+  .dd-tray { padding: var(--space-1) calc(var(--space-2) + 6.5rem) var(--space-1) var(--space-2); }
 }
 
 /* the part that follows the pointer */
