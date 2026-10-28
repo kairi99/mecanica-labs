@@ -1,13 +1,17 @@
 name: deploy
 
-# Publishes dist/ to GitHub Pages after a green `test` run on a push to main,
-# so tests run once per push and a red run never publishes.
+# Publishes dist/ to GitHub Pages after a green `test` run on a push to main or to the preview branch,
+# so tests run once per push and a red run never publishes. The site is always main; the preview branch
+# (if it exists) is built into dist/preview/ for testers. Empty PREVIEW_BRANCH turns the preview off.
 on:
   workflow_run:
     workflows: [test]
     types: [completed]
-    branches: [main]
+    branches: [main, feature/dragdrop-theory-unlock]
   workflow_dispatch:
+
+env:
+  PREVIEW_BRANCH: feature/dragdrop-theory-unlock
 
 permissions:
   contents: read
@@ -27,13 +31,22 @@ jobs:
     steps:
       - uses: actions/checkout@v7
         with:
-          ref: ${{ github.event.workflow_run.head_sha || github.sha }}
+          ref: ${{ github.event.workflow_run.head_branch == 'main' && github.event.workflow_run.head_sha || 'main' }}
       - uses: actions/setup-node@v7
         with:
           node-version: 24
           cache: npm
       - run: npm ci
       - run: npm run build
+      - name: Build the preview branch into dist/preview
+        if: env.PREVIEW_BRANCH != ''
+        run: |
+          if git ls-remote --exit-code --heads origin "$PREVIEW_BRANCH" > /dev/null; then
+            git fetch --depth=1 origin "$PREVIEW_BRANCH"
+            git worktree add ../preview FETCH_HEAD
+            (cd ../preview && npm ci && npm run build)
+            cp -r ../preview/dist dist/preview
+          fi
       - uses: actions/upload-pages-artifact@v5
         with:
           path: dist
