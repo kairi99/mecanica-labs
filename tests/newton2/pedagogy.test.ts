@@ -65,6 +65,21 @@ describe('coach', () => {
     untied.releaseCart(0)
     expect(keys(untied, last(untied, 'released'))).toContain('stringNotAttached')
   })
+  it('a release with no receiver names the fall only (calm, one message), with text in both languages', () => {
+    const a = createApparatus('assembled', { seed: 1, variability: NO_VARIABILITY })
+    a.detach('receiver')
+    a.releaseCart(0)
+    expect(keys(a, last(a, 'released'))).toEqual(['cartFell'])
+    expect(COACH_KEYS).toContain('cartFell')
+  })
+  it('a fresh (loose) bench starts at the assembly step and nothing is done yet', () => {
+    const a = createApparatus('loose')
+    const s = status(a)
+    expect(s.assembly).toBe('pending')
+    expect(s.levelled).toBe('na')
+    expect(nextStep(buildChecklist(a))?.id).toBe('assembly')
+    expect(s.massKept).toBe('na')
+  })
   it('a rail that is not level, a mass taken out and a stale force are named', () => {
     const a = createApparatus('assembled', { seed: 1 })
     a.setRackHeight_mm(3)

@@ -35,3 +35,15 @@ export const CANISTER_HANG_m = 0.06
 export const PULLEY_AHEAD_OF_STOP_m = 0.015
 /** Shortest hanging string below the pulley at the release, m: the knot cannot sit in the pulley groove. ASSUMED. */
 export const MIN_HANG_m = 0.015
+
+// ---- Falling cart (receiver not fitted) -------------------------------------------------------------------------------------
+/** Sag of the rail's free end below the clamp level when the receiver is not holding it, m. ASSUMED: a 1.2 m rail clamped at one end droops under its own weight and the cart's. */
+export const RAIL_FREE_END_SAG_m = 0.03
+/** Height of the cart's centre of mass above the rail top, m. ASSUMED. */
+export const CART_COM_ABOVE_RAIL_m = 0.025
+/** Coefficient of restitution of the cart on the floor (vertical speed kept after an impact). ASSUMED. */
+export const FLOOR_RESTITUTION = 0.25
+/** Kinetic friction coefficient of the cart sliding on the floor after it lands. ASSUMED. */
+export const FLOOR_FRICTION_COEFF = 0.35
+/** Bounces whose take-off speed is below this stop (the cart lies on the floor), m/s. Numerical. */
+export const BOUNCE_MIN_mps = 0.05

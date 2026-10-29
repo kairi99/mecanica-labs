@@ -26,7 +26,7 @@ export const strings: Strings<ChecklistStrings> = {
       massKept: { label: 'Las masas se pasaron al DigiCart, no se sacaron', why: 'Pasar una masa del contenedor al DigiCart con un tornillo de plástico reduce la fuerza pero mantiene (casi) constante la masa total, que es lo que exige comparar F con a.' },
     },
     detail: {
-      missing: 'Faltan {n} cosas (revisa el inventario).',
+      missing: 'Faltan {n} cosas por montar (las piezas se arrastran al escenario).',
       needRail: 'Primero fija la riel al soporte y al receptor.',
       distance: 'Distancia entre marcas: {d} cm.',
       hang: 'El contenedor cuelga {x} cm bajo la polea al inicio.',
@@ -58,7 +58,7 @@ export const strings: Strings<ChecklistStrings> = {
       massKept: { label: 'Masses were moved to the DigiCart, not taken out', why: 'Moving a mass from the canister to the DigiCart with a plastic screw lowers the force but keeps the total mass (almost) constant, which is what comparing F with a requires.' },
     },
     detail: {
-      missing: '{n} things are missing (check the inventory).',
+      missing: '{n} things are still to be set up (drag the parts on the stage).',
       needRail: 'First fix the rail to the stand and the receiver.',
       distance: 'Distance between marks: {d} cm.',
       hang: 'The canister hangs {x} cm below the pulley at the start.',

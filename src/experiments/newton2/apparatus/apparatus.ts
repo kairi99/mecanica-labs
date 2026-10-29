@@ -6,6 +6,7 @@ import {
   STRING_LINEAR_DENSITY_kgpm, BENCH_HEIGHT_m, SUPPORT_BASE_HEIGHT_m, MIN_HANG_m, MASS_COUNT,
   balanceReading_kg, BALANCE_MAX_kg, buildTrajectory, crossingTime_s, deg2rad, drawPartMasses, floorTravel_m, hangAtRelease_m,
   loading, mulberry32, rad2deg, railTilt_rad, sampleRun, stringHeight_m, trajectoryAt, totalMass_kg,
+  CART_COM_ABOVE_RAIL_m, RAIL_FREE_END_SAG_m, fallAt, planFall,
   type DigiCartBody, type Loading, type MassLocation, type Newton2Params, type PartMasses, type RunGeometry, type RunTrajectory,
   type VariabilityConfig,
 } from '../physics/index.ts'
@@ -15,7 +16,7 @@ import {
   CART_AT_START_TOL_mm, CART_LENGTH_m, DIGICART_MAX_s, DIGICART_RESOLUTION_m, DIGICART_SAMPLE_RATE_Hz, DIGICART_TAIL_s,
   DISTANCE_TARGET_m, DISTANCE_TOL_mm, FOOT_RANGE_mm, FOOT_STEP_mm, LEVEL_BUBBLE_MAX_mm, LEVEL_CENTERED_TOL_mm, LEVEL_SENSITIVITY_mm_per_deg,
   MARBLE_kg, MARK_SNAP_mm, MASS50_kg, RACK_MAX_mm, RACK_MIN_mm, RACK_STEP_mm, RAIL_LENGTH_m, RAIL_SCALE_MAX_mm, RECEIVER_STOP_FROM_END_m,
-  SCREWS_PER_JOINT, SCREWS_TOTAL, STRING_DEFAULT_m, STRING_MAX_m, STRING_MIN_m, STRING_STEP_m, SUPPORT_SEPARATION_m, TABLE_COLS,
+  SUPPORT_FROM_END_m, SCREWS_PER_JOINT, SCREWS_TOTAL, STRING_DEFAULT_m, STRING_MAX_m, STRING_MIN_m, STRING_STEP_m, SUPPORT_SEPARATION_m, TABLE_COLS,
   TABLE_ROWS, TABLE_TILT_MAX_deg, TRIAL_MASSES_IN_CANISTER,
 } from './constants.ts'
 import { readHangingForce } from './force.ts'
@@ -240,14 +241,23 @@ export class Apparatus {
     if (has('string', 'receiver') && !j.stringPulley) out.push({ kind: 'joint', id: 'stringPulley', reason: j.receiver ? 'notAttached' : 'needsReceiver', blocksRun: false })
     return out
   }
-  /** Can the cart be released safely? noReceiver: the cart would fall off the rail end. */
+  /**
+   * Can the cart be released? A missing receiver does not block the release: with the end open the cart runs off the rail and falls
+   * (outcome 'fell'), see `endOpen()`.
+   */
   canRun(): CanRun {
     const reasons: RunBlock[] = []
     if (!this.items.has('rail')) reasons.push('noRail')
     else if (this.joints.rackClamp === null) reasons.push('railNotSupported')
-    if (!this.joints.receiver) reasons.push('noReceiver')
     if (!this.cart.placed) reasons.push('cartNotPlaced')
     return { ok: reasons.length === 0, reasons }
+  }
+  /** True when nothing holds the cart at the pulley end (no receiver): a release then ends in a fall. */
+  endOpen(): boolean { return !this.joints.receiver }
+  /** The cart has been released and ran off the rail end: it lies on the floor until it is put back. */
+  private cartFell(): boolean {
+    const r = this.cart.released && this.cart.runId !== null ? this.runs.find((x) => x.id === this.cart.runId) : undefined
+    return r?.outcome === 'fell' && r.fall !== undefined
   }
   private stringConnected(): boolean { const j = this.joints; return j.stringCart && j.stringCanister && j.stringPulley }
 
@@ -468,6 +478,14 @@ export class Apparatus {
     this.emit({ type: 'cartPlaced', front_railPos_mm: p })
     return { ok: true, front_railPos_mm: p }
   }
+  /** Take the cart off the rail (or up from the floor) and leave it loose on the table. */
+  liftCart(): Result {
+    if (!this.items.has('cart')) return this.refuse('liftCart', 'itemNotOnTable', 'cart')
+    if (!this.cart.placed) return { ok: true }
+    this.unplaceCart()
+    this.emit({ type: 'cartLifted' })
+    return { ok: true }
+  }
   /** Carry the cart back to where it was last placed (else to the start mark). */
   resetCart(): Result<{ front_railPos_mm: number }> {
     if (!this.items.has('cart')) return this.refuse('resetCart', 'itemNotOnTable', 'cart')
@@ -489,12 +507,12 @@ export class Apparatus {
     const sEnd_m = this.marks.end_mm === null ? DISTANCE_TARGET_m : this.distFromStand_m(this.marks.end_mm, end) - D0
     return { end, D0, sReceiver_m, hang0_m, sFloor_m, sEnd_m: sEnd_m > 1e-9 ? sEnd_m : null }
   }
-  private baseParams(tilt_rad: number): Newton2Params {
+  private baseParams(tilt_rad: number, hang0_m: number): Newton2Params {
     const l = this.loadingNow()
     return {
       g_mps2: G_QUITO_mps2, rho_air_kgpm3: RHO_AIR_QUITO_kgpm3, cart: this.cartBody, mCartLoad_kg: l.mCartLoad_kg, mHang_kg: l.mHang_kg,
       mString_kg: this.items.has('string') ? STRING_LINEAR_DENSITY_kgpm * this.stringLength_m : 0,
-      stringLinDensity_kgpm: this.items.has('string') ? STRING_LINEAR_DENSITY_kgpm : 0, hang0_m: Math.max(0, hangAtRelease_m(this.stringLength_m, this.plan().sReceiver_m)),
+      stringLinDensity_kgpm: this.items.has('string') ? STRING_LINEAR_DENSITY_kgpm : 0, hang0_m: Math.max(0, hang0_m),
       pulley: DEFAULT_PULLEY, tilt_rad,
     }
   }
@@ -502,13 +520,14 @@ export class Apparatus {
   releaseCart(t_ms: number): Result<{ runId: number; outcome: RunOutcome }> {
     if (this.cart.released) {
       const st = this.cartState(t_ms)
-      return this.refuse('releaseCart', st.phase === 'rolling' || st.phase === 'coasting' ? 'cartMoving' : 'cartNotAtStart')
+      return this.refuse('releaseCart', st.phase === 'rolling' || st.phase === 'coasting' || st.phase === 'falling' ? 'cartMoving' : 'cartNotAtStart')
     }
     const cr = this.canRun()
     if (!cr.ok) return this.refuse('releaseCart', cr.reasons[0]!)
+    if (this.endOpen()) return this.releaseOffEnd(t_ms)
     const geo = this.geometry()!
     const pl = this.plan()
-    const base = this.baseParams(geo.tilt_rad)
+    const base = this.baseParams(geo.tilt_rad, pl.hang0_m)
     const cond = sampleRun(base, this.runRng.next, this.variability)
     let rgeo: RunGeometry = { sFloor_m: pl.sFloor_m, sReceiver_m: pl.sReceiver_m }
     const connected = this.stringConnected()
@@ -527,6 +546,47 @@ export class Apparatus {
     rec.tFloor_s = connected && !tooShort ? tr.tFloor_s : null
     rec.tReceiver_s = tr.tReceiver_s
     rec.outcome = this.classify(rec, connected, tooShort, tr, pl.sFloor_m)
+    this.runs.push(rec)
+    this.trajectories.set(id, tr)
+    this.cart.released = true
+    this.cart.runId = id
+    this.emit({ type: 'released', runId: id, outcome: rec.outcome }, t_ms)
+    if (this.sw.linkStartToRelease && this.items.has('stopwatch')) {
+      this.sw.reset()
+      this.swStart(t_ms, true)
+    }
+    return { ok: true, runId: id, outcome: rec.outcome }
+  }
+  /**
+   * Release with the pulley end open (no receiver): the rail is held only by the stand clamp, its free end sags RAIL_FREE_END_SAG_m, the
+   * cart rolls down that slope, its centre passes the rail end and it falls to the floor (physics/fall.ts). No string pulls it (there is
+   * no pulley). Deterministic given the run's sampled conditions. If it would not roll at all the outcome is 'neverStarts'.
+   */
+  private releaseOffEnd(t_ms: number): Result<{ runId: number; outcome: RunOutcome }> {
+    const end = this.joints.rackClamp!
+    const D0 = this.distFromStand_m(this.cart.startRailPos_mm!, end)
+    const slope = Math.asin(RAIL_FREE_END_SAG_m / SUPPORT_SEPARATION_m)
+    const sExit = RAIL_LENGTH_m + CART_LENGTH_m / 2 - D0
+    const base = this.baseParams(slope, 0)
+    const cond = sampleRun(base, this.runRng.next, this.variability)
+    const rgeo: RunGeometry = { sFloor_m: -1e9, sReceiver_m: sExit + 0.005 }
+    const id = this.runs.length + 1
+    const rec: RunRecord = {
+      id, releaseTime_ms: t_ms, massesInCanister: this.massesInCanister(), locations: [...this.masses], startRailPos_mm: this.cart.startRailPos_mm!,
+      standEnd: end, tilt_rad: slope,
+      conditions: { releaseOffset_m: cond.init.s_m, v0_mps: cond.init.v_mps, c_rr: cond.params.cart.c_rr, F_pulley_N: cond.params.pulley.F_friction_N },
+      params: cond.params, geo: rgeo, sEnd_m: null, totalMass_kg: totalMass_kg(cond.params),
+      outcome: 'fell', tEnd_s: null, tFloor_s: null, tReceiver_s: null, endedBy: null,
+    }
+    const tr = buildTrajectory(rec.params, rec.geo, cond.init)
+    const tExit = tr.tRest_s === 0 ? null : crossingTime_s(sExit, rec.params, rec.geo, cond.init)
+    if (tExit === null) rec.outcome = 'neverStarts'
+    else {
+      const vExit = trajectoryAt(tr, tExit).v_mps
+      const hEnd = this.benchHeight_m + SUPPORT_BASE_HEIGHT_m + this.rack_mm / 1000 - Math.tan(slope) * (RAIL_LENGTH_m - SUPPORT_FROM_END_m)
+      const plan = planFall({ g_mps2: G_QUITO_mps2, vExit_mps: vExit, slope_rad: slope, h_m: hEnd + CART_COM_ABOVE_RAIL_m }, undefined, undefined)
+      rec.fall = { sExit_m: sExit, tExit_s: tExit, vExit_mps: vExit, slope_rad: slope, plan }
+    }
     this.runs.push(rec)
     this.trajectories.set(id, tr)
     this.cart.released = true
@@ -561,20 +621,26 @@ export class Apparatus {
   }
   /** Cart state at time t_ms. */
   cartState(t_ms: number): CartStatus {
-    const none: CartStatus = { phase: 'unplaced', runId: this.cart.runId, t_s: 0, frontRailPos_mm: null, s_m: 0, v_mps: 0, canisterDrop_m: 0, canisterOnFloor: false }
+    const none: CartStatus = { phase: 'unplaced', runId: this.cart.runId, t_s: 0, frontRailPos_mm: null, s_m: 0, v_mps: 0, canisterDrop_m: 0, canisterOnFloor: false, fall: null }
     const end = this.joints.rackClamp
     if (!this.cart.placed || end === null) return none
     const D0 = this.distFromStand_m(this.cart.startRailPos_mm!, end)
-    const mk = (phase: CartStatus['phase'], t_s: number, s: number, v: number, drop = 0, floor = false): CartStatus => ({
+    const mk = (phase: CartStatus['phase'], t_s: number, s: number, v: number, drop = 0, floor = false, fall: CartStatus['fall'] = null): CartStatus => ({
       phase, runId: this.cart.runId, t_s, s_m: s, v_mps: v, canisterDrop_m: drop, canisterOnFloor: floor,
-      frontRailPos_mm: this.posFromStand_mm(D0 + s, end),
+      frontRailPos_mm: this.posFromStand_mm(D0 + s, end), fall,
     })
     const rec = this.cart.released ? this.runs.find((r) => r.id === this.cart.runId) : undefined
     if (!rec) return mk('atStart', 0, 0, 0)
     const t_s = Math.max(0, (t_ms - rec.releaseTime_ms) / 1000)
     const tr = this.trajectoryFor(rec)
+    if (rec.outcome === 'fell' && rec.fall && t_s >= rec.fall.tExit_s) {
+      // off the rail end: the physics of the fall takes over (the cart's centre was at the rail end at tExit_s)
+      const f = fallAt(rec.fall.plan, t_s - rec.fall.tExit_s)
+      const done = t_s - rec.fall.tExit_s >= rec.fall.plan.tRest_s
+      return mk(done ? 'fallen' : 'falling', t_s, rec.fall.sExit_m, f.speed_mps, 0, false, f)
+    }
     const st = trajectoryAt(tr, t_s)
-    const pulling = rec.outcome !== 'stringNotAttached' && rec.outcome !== 'stringTooShort'
+    const pulling = rec.outcome !== 'stringNotAttached' && rec.outcome !== 'stringTooShort' && rec.outcome !== 'fell'
     const onFloor = rec.tFloor_s !== null && t_s >= rec.tFloor_s
     const drop = pulling ? Math.min(st.s_m, Math.max(0, rec.geo.sFloor_m)) : 0
     const atRest = tr.tRest_s !== null && t_s >= tr.tRest_s
@@ -586,7 +652,7 @@ export class Apparatus {
   /** The DigiCart's own record of a run: x(t) at 50 Hz (1 mm) from the release. */
   digicartRecord(runId: number): DigicartRecord | null {
     const rec = this.getRun(runId)
-    if (!rec) return null
+    if (!rec || rec.outcome === 'fell') return null // a cart that fell off the rail has no valid DigiCart record
     const tr = this.trajectoryFor(rec)
     const end = Math.max(1, Math.min(DIGICART_MAX_s, rec.tEnd_s !== null ? rec.tEnd_s + DIGICART_TAIL_s : tr.duration_s))
     const n = Math.ceil(end * DIGICART_SAMPLE_RATE_Hz)
@@ -724,13 +790,13 @@ export class Apparatus {
     return {
       itemsComplete: miss.every((m) => m.kind !== 'item'),
       setupComplete: miss.length === 0,
-      canRun: this.canRun().ok,
+      canRun: this.canRun().ok && !this.endOpen(),
       levelled: lvl,
       tilt_rad: geo?.tilt_rad ?? null,
       marksPlaced: start_mm !== null && end_mm !== null,
       distanceOk: dist !== null && Math.abs(dist - DISTANCE_TARGET_m) * 1000 <= DISTANCE_TOL_mm,
       distance_m: dist,
-      cartAtStart: this.cart.placed && start_mm !== null && Math.abs(this.cart.startRailPos_mm! - start_mm) <= CART_AT_START_TOL_mm &&
+      cartAtStart: this.cart.placed && !this.cartFell() && start_mm !== null && Math.abs(this.cart.startRailPos_mm! - start_mm) <= CART_AT_START_TOL_mm &&
         (end === null || (end === 'E1' ? end_mm === null || end_mm > start_mm : end_mm === null || end_mm < start_mm)),
       stringConnected: this.stringConnected(),
       massesIn: { canister: loc('canister'), cart: loc('cart'), bench: loc('bench') },
@@ -820,17 +886,23 @@ export class Apparatus {
     this.sw.clear(); this.table = emptyTable(); this.forceCells = emptyForces()
   }
   /**
-   * 'empty': nothing on the table. 'assembled': a careful student's bench built through the real actions: all required items
+   * 'empty': nothing on the table. 'loose': every material loose on the table (the start of a fresh lab). 'assembled': a careful student's bench built through the real actions: all required items
    * (no distractors), rail E1 in the stand clamp, receiver on E2, the receiver foot trimmed until the bubble is centred, marks at
    * 100 mm and 1000 mm, string cut to leave a 2 cm hang below the pulley, string tied and over the pulley, cart on the start
    * mark, four masses in the canister, Mt weighed and recorded.
    */
   preset(name: PresetId): Result {
-    if (name !== 'empty' && name !== 'assembled') return this.refuse('preset', 'unknownPreset')
+    if (name !== 'empty' && name !== 'assembled' && name !== 'loose') return this.refuse('preset', 'unknownPreset')
     this.reset()
     if (name === 'assembled') this.buildAssembled()
+    else if (name === 'loose') this.buildLoose()
     this.emit({ type: 'presetApplied', preset: name })
     return { ok: true }
+  }
+  /** Every material of the box loose on the table (distractors included): nothing joined, nothing placed, the four masses left on the bench. */
+  private buildLoose(): void {
+    for (const i of ITEM_IDS) this.addItem(i)
+    for (let k = 0; k < MASS_COUNT; k++) this.setMassLocation(k, 'bench')
   }
   private buildAssembled(): void {
     for (const i of REQUIRED_ITEM_IDS) this.addItem(i)
