@@ -81,23 +81,22 @@ describe('assembly rules', () => {
     const a = new Apparatus()
     const lv = a.missing().find((m) => m.id === 'level')!
     expect(lv.blocksRun).toBe(false)
-    expect(a.missing().find((m) => m.id === 'receiver')!.blocksRun).toBe(true)
+    expect(a.missing().find((m) => m.id === 'receiver')!.blocksRun).toBe(false) // missing receiver warns, it does not block
   })
-  it('canRun: no receiver blocks (the cart would fall off the end); cart must be placed', () => {
+  it('canRun: no receiver only warns (the cart will fall off the end); cart must be placed', () => {
     const a = mounted()
     a.detach('receiver')
     a.placeMarker(200)
     expect(a.placeCart(200).ok).toBe(true)
-    expect(a.canRun()).toEqual({ ok: false, reasons: ['noReceiver'] })
-    expect(reasonOf(a.releaseCart(0))).toBe('noReceiver')
+    expect(a.canRun()).toEqual({ ok: true, reasons: [], warnings: ['noReceiver'] })
     a.attach('receiver')
-    expect(a.canRun().ok).toBe(true)
+    expect(a.canRun()).toEqual({ ok: true, reasons: [], warnings: [] })
     a.removeItem('cart')
     expect(a.canRun().reasons).toContain('cartNotPlaced')
   })
   it('canRun reports a rail that is not held by both stands', () => {
     const a = loose()
-    expect(a.canRun().reasons).toEqual(['railNotSupported', 'noReceiver', 'cartNotPlaced'])
+    expect(a.canRun().reasons).toEqual(['railNotSupported', 'cartNotPlaced'])
     expect(new Apparatus().canRun().reasons[0]).toBe('noRail')
   })
 })

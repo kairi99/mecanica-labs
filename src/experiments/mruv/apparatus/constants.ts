@@ -26,6 +26,10 @@ export const FOOT_STEP_mm = 0.05
 export const TABLE_TILT_MAX_deg = 0.15
 /** Distance of the receiver end stop from the low rail end (cart front stops there), m. ASSUMED. */
 export const RECEIVER_STOP_FROM_END_m = 0.04
+/** Table top height above the floor, m. ASSUMED (a standard lab bench, as in the projectile bench 0.74 to 0.78 m). */
+export const TABLE_HEIGHT_m = 0.75
+/** Table edge on the down-slope side, world x (m): table spans x = -0.38 .. 1.62 m (the 3D table, units.ts TABLE). ASSUMED layout. */
+export const TABLE_EDGE_X_m = 1.62
 /** Screws consumed by each of the three rail joints. */
 export const SCREWS_PER_JOINT = 2
 export const SCREWS_TOTAL = 6

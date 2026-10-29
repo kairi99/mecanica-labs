@@ -1,0 +1,86 @@
+/* Drag-and-drop assembly: parts tray under the stage (3D and 2D), floating drag chip, snap-zone labels and 2D zones. Tokens only. */
+.scene3d.has-tray { grid-template-rows: minmax(0, 1fr) auto; }
+.side2d.has-tray { gap: var(--space-2); }
+
+.dd-tray {
+  display: flex; flex-direction: column; gap: var(--space-1); padding: var(--space-2) var(--space-3);
+  background: var(--surface); color: var(--label); border-top: var(--stroke-hair) solid var(--separator); min-width: 0;
+  /* keep a column free for the 3D/2D toggle (.stage-mode), which sits over the stage's bottom-right corner */
+  padding-inline-end: calc(var(--space-2) + 7.5rem);
+}
+.dd-head { display: flex; align-items: baseline; gap: var(--space-3); flex-wrap: wrap; }
+.dd-title { margin: 0; font: var(--text-footnote); font-weight: 600; }
+.dd-tray.dd-empty { padding-block: var(--space-1); gap: 0; }
+.dd-tray.dd-empty .dd-head { flex-wrap: nowrap; }
+.dd-strip[hidden], .dd-bench[hidden] { display: none; }
+.dd-bench { min-width: 0; }
+.dd-bench-sum { min-height: var(--touch); display: flex; align-items: center; cursor: pointer; font: var(--text-footnote); font-weight: 600; color: var(--accent); }
+.dd-bench-sum:focus-visible { outline: var(--focus-ring) solid var(--accent); outline-offset: 2px; }
+.dd-part-bench { cursor: pointer; touch-action: manipulation; }
+.dd-hint { margin: 0; font: var(--text-caption); color: var(--label-2); }
+.dd-strip {
+  list-style: none; margin: 0; padding: 0 0 var(--space-1); display: flex; gap: var(--space-2); overflow-x: auto; overscroll-behavior-x: contain;
+  scroll-snap-type: x proximity;
+}
+.dd-item { flex: 0 0 auto; scroll-snap-align: start; }
+.dd-none { font: var(--text-footnote); color: var(--label-2); padding: var(--space-2) 0; }
+.dd-part {
+  display: inline-flex; align-items: center; gap: var(--space-2); min-height: var(--touch); min-width: var(--touch); padding: 0 var(--space-3);
+  border: var(--stroke-hair) solid var(--separator); border-radius: var(--radius-m); background: var(--fill); color: var(--label);
+  font: var(--text-footnote); cursor: grab; touch-action: pan-x; user-select: none; -webkit-user-select: none; white-space: nowrap;
+}
+.dd-part:focus-visible, .dd-zone:focus-visible { outline: var(--focus-ring) solid var(--accent); outline-offset: 2px; }
+.dd-part[aria-pressed='true'] { background: var(--accent-fill); color: var(--on-accent); border-color: transparent; font-weight: 600; }
+.dd-part[aria-pressed='true'] .inv-icon { color: inherit; }
+.dd-tray.dd-hot { outline: var(--focus-ring) dashed var(--accent); outline-offset: -3px; }
+.dd-zones { display: flex; flex-direction: column; gap: var(--space-1); }
+.dd-zones[hidden] { display: none; }
+.dd-zones-title { margin: 0; font: var(--text-footnote); color: var(--label-2); }
+.dd-zone-row { display: flex; flex-wrap: wrap; gap: var(--space-2); }
+.dd-zone {
+  min-height: var(--touch); padding: 0 var(--space-3); border-radius: var(--radius-m); background: var(--surface); color: var(--label);
+  border: var(--focus-ring) solid var(--accent); font: var(--text-footnote); cursor: pointer; text-align: left;
+}
+.dd-zone-early { border-style: dashed; }
+.dd-zone-note { color: var(--label-2); }
+.dd-cancel { border-color: var(--separator); }
+.dd-live { margin: 0; min-height: 1em; font: var(--text-caption); color: var(--label-2); }
+@media (max-width: 819px) {
+  .dd-tray:not(.dd-empty) .dd-hint { display: none; }
+  .dd-tray { padding: var(--space-1) calc(var(--space-2) + 6.5rem) var(--space-1) var(--space-2); }
+}
+
+/* the part that follows the pointer */
+.dd-chip {
+  position: fixed; left: 0; top: 0; z-index: calc(var(--z-tour) + 2); pointer-events: none; display: inline-flex; align-items: center; gap: var(--space-2);
+  padding: var(--space-1) var(--space-3); border-radius: var(--radius-full); background: var(--accent-fill); color: var(--on-accent);
+  font: var(--text-footnote); font-weight: 600; box-shadow: var(--shadow-1); will-change: transform;
+}
+.dd-chip .inv-icon { color: inherit; width: 20px; height: 20px; }
+
+/* snap zone labels over the 3D stage */
+.dd-zone-labels { position: absolute; inset: 0; pointer-events: none; overflow: hidden; z-index: var(--z-stage-tip); }
+.dd-zone-label {
+  position: absolute; left: 0; top: 0; padding: var(--space-1) var(--space-2); border-radius: var(--radius-full); background: var(--surface); color: var(--label);
+  border: var(--focus-ring) solid var(--accent); font: var(--text-caption); white-space: nowrap; box-shadow: var(--shadow-1);
+}
+.dd-zone-label.dd-early { border-style: dashed; }
+.dd-zone-label.dd-active { background: var(--accent-fill); color: var(--on-accent); }
+.dd-zone-label[hidden] { display: none; }
+
+/* 2D zones: solid outline = ready, dashed = something is still missing, thick = the one under the pointer */
+.s2d-part { cursor: grab; }
+.s2d-zone { fill: none; stroke: var(--accent); stroke-width: 2.5px; vector-effect: non-scaling-stroke; pointer-events: none; }
+.s2d-zone.ready { fill: color-mix(in srgb, var(--accent) 30%, transparent); animation: dd-pulse 1.2s ease-in-out infinite; }
+.s2d-zone.early, .s2d-zone-table { stroke-dasharray: 6 5; }
+.s2d-zone.on { stroke-width: 5px; fill: color-mix(in srgb, var(--accent) 45%, transparent); animation: none; }
+.s2d-zone-table { opacity: 0.6; }
+.s2d-zone-table.on { opacity: 1; stroke-width: 4px; }
+.s2d-zone-text { fill: var(--stage-ink); }
+@keyframes dd-pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.55; } }
+@media (prefers-reduced-motion: reduce) { .s2d-zone.ready { animation: none; } }
+
+/* the button-driven assembly, folded away */
+.inv-manual { margin: var(--space-2) 0; }
+.inv-manual-sum { min-height: var(--touch); display: flex; align-items: center; cursor: pointer; font: var(--text-callout); font-weight: 600; color: var(--accent); }
+.inv-manual-sum:focus-visible { outline: var(--focus-ring) solid var(--accent); outline-offset: 2px; }

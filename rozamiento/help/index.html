@@ -8,17 +8,18 @@
 <link rel="stylesheet" href="./help.css">
 <script type="module" src="./help.ts"></script>
 </head>
-<body>
+<body data-experiment="friction">
 <a class="skip-link" href="#main">Saltar al contenido principal</a>
 <header class="bar"><a class="pill accent" href="../index.html">Volver al laboratorio</a><nav class="pills" aria-label="Idioma"><a class="pill" href="en.html" hreflang="en" lang="en">English</a></nav></header>
 <main id="main" tabindex="-1">
 <h1>Guía de ayuda: fuerza de rozamiento</h1>
 <p class="lede">Un complemento del laboratorio virtual de la Práctica 4: qué es el rozamiento estático y el cinético, cómo se mide con un dinamómetro, por qué la aguja a veces salta, cómo se obtiene μ con un riel inclinado y qué hace que tus datos se desvíen. No incluye valores de coeficientes: buscarlos y citarlos es la tarea 7 de la guía y es tuya.</p>
 <nav class="toc" aria-label="Contenido">
-<a href="#teoria">Teoría</a><a href="#uso">Uso del laboratorio</a><a href="#dinamometro">Dinamómetro</a><a href="#riel">Riel inclinado</a><a href="#incertidumbre">Incertidumbre</a><a href="#errores">Fuentes de error</a><a href="#modelo">Modelo honesto</a><a href="#teclas">Teclas</a><a href="#accesibilidad">Accesibilidad</a><a href="#creditos">Créditos</a>
+<a href="#teoria" data-locked="theory" hidden>Teoría</a><a href="#uso">Uso del laboratorio</a><a href="#dinamometro">Dinamómetro</a><a href="#riel">Riel inclinado</a><a href="#incertidumbre">Incertidumbre</a><a href="#errores" data-locked="theory" hidden>Fuentes de error</a><a href="#modelo" data-locked="theory" hidden>Modelo honesto</a><a href="#teclas">Teclas</a><a href="#accesibilidad">Accesibilidad</a><a href="#creditos">Créditos</a>
 </nav>
+<aside class="note" id="teoria-bloqueada" data-theory-notice><p><b>La teoría está bloqueada.</b> Se abre al completar todas las tareas del análisis en el laboratorio (marca cada una como «Hecha»). Esta ayuda práctica (uso, instrumentos, incertidumbre, atajos, accesibilidad) siempre está disponible. El bloqueo es una ayuda para el aula, no una protección: funciona en tu navegador, sin servidor. Si eres docente, añade <code>?theory=1</code> a la dirección.</p></aside>
 
-<section id="teoria"><h2>1. Teoría del rozamiento</h2>
+<section id="teoria" data-locked="theory" hidden><h2>Teoría del rozamiento</h2>
 <p>Cuando dos superficies en contacto se deslizan, o están a punto de hacerlo, aparece una fuerza paralela a la superficie que se opone al movimiento relativo. Mientras el cuerpo está quieto, esa fuerza <b>estática</b> se ajusta a lo que haga falta, hasta un máximo. Una vez que el cuerpo se desliza, la fuerza <b>cinética</b> tiene un valor casi fijo. En el modelo de Amontons y Coulomb, ambas son proporcionales a la fuerza normal <em>N</em> y no dependen del área de contacto:</p>
 <div class="eq">f<sub>s</sub> ≤ μ<sub>s</sub>·N<br>f<sub>k</sub> = μ<sub>k</sub>·N</div>
 <p>Los coeficientes μ<sub>s</sub> y μ<sub>k</sub> son números sin unidad que dependen de <b>las dos</b> superficies en contacto, no de una sola. Es habitual que μ<sub>s</sub> sea mayor que μ<sub>k</sub>, y esa es una de las preguntas que tus datos tienen que responder.</p>
@@ -32,22 +33,26 @@
 <p>La masa se cancela, y por eso la masa de la barra no entra en el resultado. Si la barra parte del reposo y la aceleración es constante, <em>a</em> = 2·<em>d</em>/<em>t</em>².</p>
 </section>
 
-<section id="uso"><h2>2. Cómo usar el laboratorio</h2>
+<section id="uso"><h2>Cómo usar el laboratorio</h2>
 <p>El laboratorio va en pasos, que ves en la barra de arriba: 1 Montaje, 2 Experimento 1, 3 Experimento 2, 4 Experimento 3, 5 Registro de referencia, 6 Análisis. Con <code>?reference=0</code> o <code>?analysis=0</code> en la dirección se ocultan los pasos 5 y 6. El «Procedimiento» sigue la guía y, con «Muéstramelo», te lleva al panel que necesitas.</p>
-<div class="note"><b>Materiales que la guía no lista.</b> La lista de materiales de la guía no menciona el soporte con cremallera y su base, el cronómetro ni la balanza. Pero el procedimiento los necesita: el soporte para levantar el riel y el cronómetro para medir el recorrido (experimento 3), y la balanza para medir la masa <em>M</em> del taco. En el simulador los encuentras en la caja del inventario, junto con algunos objetos que no sirven para esta práctica.</div>
+<div class="note"><b>Materiales que la guía no lista.</b> La lista de materiales de la guía no menciona el soporte con cremallera y su base, el cronómetro ni la balanza. Pero el procedimiento los necesita: el soporte para levantar el riel y el cronómetro para medir el recorrido (experimento 3), y la balanza para medir la masa <em>M</em> del taco. En el simulador también están sobre la mesa. Solo las masas de 10 g y la canica, que no sirven para esta práctica, siguen en la caja del inventario.</div>
 <ol>
-<li><b>Montaje.</b> Pon en la mesa lo que necesitas. Pesa el taco: tendrás <em>M</em> con la resolución de la balanza.</li>
+<li><b>Montaje.</b> Todos los materiales están ya sueltos sobre la mesa. Arrástralos a su sitio (ver «Montar arrastrando») y pesa el taco: tendrás <em>M</em> con la resolución de la balanza.</li>
 <li><b>Experimento 1 (fuerza con rapidez constante).</b> Fija el papel a la mesa, apoya una cara del taco, elige el dinamómetro y <b>ponlo a cero con él acostado</b>. Jala con rapidez constante y pulsa «Leer» cuando la aguja se mantenga. Cinco lecturas por cara y por masa añadida (0, 50, 100 y 150 g).</li>
 <li><b>Experimento 2 (fuerza máxima).</b> Sin masas, jala <em>despacio</em> y pulsa «Leer» en el instante de mayor fuerza, justo antes de que el taco arranque. Después la aguja baja.</li>
 <li><b>Experimento 3 (riel).</b> Mide y marca 100 cm sobre el riel (con la barra en la marca de salida caben en el riel de 1,2 m), pon una barra, gira la manivela del soporte hasta que deslice sin detenerse y <b>párala de inmediato</b>. Mide <em>h</em> con la cinta y cronometra el recorrido. Cinco intentos por barra.</li>
 <li><b>Análisis.</b> Calcula con tus tablas y se actualiza solo. Las respuestas con palabras las escribes tú; la comparación con la literatura usa el valor y la fuente que tú escribas.</li>
 </ol>
+<h3>Montar arrastrando</h3>
+<p>Al empezar, y con «Empezar de nuevo», todas las piezas están sueltas sobre la mesa: nada está fijado, enganchado ni apilado. Arrastra una pieza en el escenario hasta un destino: los destinos válidos se iluminan con un contorno y un rótulo, y al soltarla cerca de uno se fija ahí. Los destinos son: la hoja sobre la mesa (se fija con cinta); el taco sobre la hoja, con la tela o la lija hacia abajo; el dinamómetro de 1 N o de 2 N en el gancho del taco; las masas de 50 g sobre el taco, de una en una; y, en el experimento 3, la barra de madera, aluminio o hierro en la marca de salida del riel. Solo se ofrecen los destinos del paso en que estás. Si la acción no se puede hacer todavía (por ejemplo, la barra antes de marcar el recorrido en el riel), la pieza vuelve y aparece el motivo: intentar en desorden también enseña. El riel, el soporte, la cinta, el cronómetro y la balanza no se mueven: se usan desde sus paneles.</p>
+<p>Puedes arrastrar una pieza ya puesta a otro destino (por ejemplo, el taco a la otra cara), a un sitio libre de la mesa para deshacerla, o a la bandeja bajo el escenario para quitarla de la mesa; allí espera hasta que la arrastres de vuelta.</p>
+<p>Sin arrastrar: abre «Elegir una pieza de la mesa» bajo el escenario (o usa una pieza de la bandeja), toca la pieza (o enfócala con Tab y pulsa Intro) y luego toca un destino resaltado, o elige el destino en la lista que aparece bajo la bandeja (con las flechas y Intro). Esc cancela. Si prefieres botones, el inventario y el panel de montaje del taco los guardan en «Montar con botones»; hacen exactamente lo mismo.</p>
 <h3>Qué rapidez de jalón usar</h3>
 <p>Con un resorte blando y un rozamiento estático mayor que el cinético, el taco puede avanzar a saltos (<em>stick-slip</em>): se pega, el resorte se estira hasta el máximo, se suelta, se afloja y se vuelve a pegar. Con jalones lentos, la aguja sube y baja sin una lectura estable. En este simulador, con una mano estable, el movimiento se vuelve continuo desde unos 1 a 3 cm/s según la carga (mínimo: 1,0 cm/s con lija y 150 g en el dinamómetro de 1 N; 3,0 cm/s con tela y masas en el de 2 N). <b>Jala a 4 cm/s o más en el experimento 1</b>: la aguja se estabiliza y quedan unos 4 s de lectura estable sobre la hoja, para cualquier carga. En el experimento 2, en cambio, jala lento (por debajo de 1 cm/s) para tener tiempo de reaccionar. Una rapidez mayor sube un poco la fuerza cinética (el rozamiento aumenta levemente con la rapidez en este modelo) y baja un poco la fuerza máxima que marca la aguja, por la amortiguación del propio dinamómetro.</p>
 <p>La hoja A4 tiene unos 30 cm; el taco ocupa una parte y deja un recorrido útil de unos 20 cm. Si se sale de la hoja, el rozamiento cambia (roza con la mesa).</p>
 </section>
 
-<section id="dinamometro"><h2>3. El dinamómetro</h2>
+<section id="dinamometro"><h2>El dinamómetro</h2>
 <p>Es un resorte con una aguja sobre una escala impresa. Por la ley de Hooke la aguja se desplaza proporcionalmente a la fuerza: <em>F</em> = <em>k</em>·<em>x</em>. Hay dos, de 1 N (marcas de 0,02 N) y de 2 N (marcas de 0,05 N); el de 2 N es más rígido y tiene marcas más gruesas.</p>
 <ul>
 <li><b>Fondo de escala.</b> Si la fuerza real supera el máximo, la aguja queda en el tope y la lectura no vale. Con lija y las masas más pesadas el de 1 N se queda corto: usa el de 2 N. Con tela basta el de 1 N.</li>
@@ -57,7 +62,7 @@
 </ul>
 </section>
 
-<section id="riel"><h2>4. El riel inclinado y la geometría</h2>
+<section id="riel"><h2>El riel inclinado y la geometría</h2>
 <p>El riel de 1,2 m descansa en la mesa por el borde inferior de su extremo bajo, y el soporte con cremallera lo sujeta a <b>1,10 m</b> de ese punto, medido a lo largo del riel. La altura <em>h</em> es la del borde inferior del riel en la sujeción sobre la mesa. Con esa definición el seno del ángulo es exacto:</p>
 <div class="eq">sen θ = h / L, &nbsp; L = 1,10 m</div>
 <p>La barra sale de la marca de salida (su borde delantero sobre la marca) y recorre la distancia que marcaste, 100 cm en la guía. Si sigues girando la manivela mientras la barra se desliza, el ángulo sigue creciendo y la aceleración no es constante; el simulador lo representa tal cual. Si la paras, el ángulo se queda fijo.</p>
@@ -65,7 +70,7 @@
 <p>La altura <em>h</em> a la que la barra empieza a deslizar y el tiempo que tarda en recorrer el riel no tienen por qué depender del mismo coeficiente. Piensa qué condición física fija cada uno: decidir si tu μ es estático o cinético es la tarea 6. Justo en el arranque la aceleración es pequeña y los tiempos se dispersan mucho.</p>
 </section>
 
-<section id="incertidumbre"><h2>5. Incertidumbre</h2>
+<section id="incertidumbre"><h2>Incertidumbre</h2>
 <ul>
 <li><b>Fuerzas promedio.</b> Tipo A: <em>s</em>/√<em>n</em> de las cinco lecturas. Tipo B: la división del dinamómetro entre √12 (se combinan en cuadratura; la tipo B no baja al repetir). El resultado es F̄ ± ΔF.</li>
 <li><b>Recta F contra W.</b> Ajuste ponderado con pesos 1/(ΔF)². Si el ajuste es pobre, la incertidumbre de la pendiente se amplía por √(χ² reducida). Las incertidumbres de W, de unas centésimas de newton, son despreciables junto a ΔF.</li>
@@ -75,7 +80,7 @@
 </ul>
 </section>
 
-<section id="errores"><h2>6. Fuentes de error que verás en tus datos</h2>
+<section id="errores" data-locked="theory" hidden><h2>Fuentes de error que verás en tus datos</h2>
 <ul>
 <li>Papel suelto: el dinamómetro mide el rozamiento del papel con la mesa. Lecturas bajas y erráticas.</li>
 <li>Dinamómetro sin cero en horizontal: todas las fuerzas corridas por el mismo valor.</li>
@@ -89,12 +94,12 @@
 </ul>
 </section>
 
-<section id="modelo"><h2>7. Un modelo honesto</h2>
+<section id="modelo" data-locked="theory" hidden><h2>Un modelo honesto</h2>
 <p>El simulador no reproduce los coeficientes del material real: son supuestos, documentados en <code>PARAMETERS.md</code> con su rango de plausibilidad. En el taco, el dinamómetro y el papel se resuelve la ecuación del resorte con rozamiento estático hasta el arranque y cinético después, con una pequeña dependencia de la rapidez y una amortiguación del dinamómetro; por eso ves el pico, la caída y, a baja rapidez, el <em>stick-slip</em>. En la barra se aplica la condición tan θ ≥ μ<sub>s</sub> con valores distintos en cada intento (la superficie nunca es igual). El «Registro de referencia» te muestra la fuerza verdadera en el tiempo y la altura y tiempo verdaderos, para que compares con lo que tú leíste.</p>
 <p>Lo que el modelo no tiene: inclinación de la mesa, ángulo del jalón (siempre horizontal), vuelco del taco ni de las barras, y variación del rozamiento con el área.</p>
 </section>
 
-<section id="teclas"><h2>8. Atajos de teclado</h2>
+<section id="teclas"><h2>Atajos de teclado</h2>
 <table>
 <thead><tr><th scope="col">Acción</th><th scope="col">Tecla</th></tr></thead>
 <tbody>
@@ -105,7 +110,7 @@
 </table>
 </section>
 
-<section id="accesibilidad"><h2>9. Accesibilidad</h2>
+<section id="accesibilidad"><h2>Accesibilidad</h2>
 <p>Este laboratorio se revisó con la herramienta automática axe-core (reglas de las Pautas de Accesibilidad para el Contenido Web (WCAG) 2.0, niveles A y AA) en la página del laboratorio, en español e inglés, en tema claro y oscuro, en anchos de móvil y de escritorio. Una herramienta automática no encuentra todos los problemas. Todavía no se hicieron pruebas manuales de esta práctica (uso solo con teclado, contraste medido a mano, ampliación al 200 %, ancho de 320 px, «reducir movimiento») ni con un lector de pantalla.</p>
 <ul>
 <li>El teclado está pensado con los mismos componentes compartidos que las otras prácticas: el primer enlace de cada página salta al contenido principal y <kbd>Esc</kbd> cierra los menús, los diálogos y el recorrido y devuelve el foco. Esto aún no se probó a mano con el teclado.</li>
@@ -122,7 +127,7 @@
 <p>Si encuentras una barrera de accesibilidad, abre una incidencia en <a href="https://github.com/kairi99/mecanica-labs/issues" hreflang="en">la página de incidencias del proyecto</a> e indica la página, el dispositivo y la tecnología de apoyo que usas.</p>
 </section>
 
-<section id="creditos"><h2>10. Créditos</h2>
+<section id="creditos"><h2>Créditos</h2>
 <p>Este laboratorio virtual está basado en la guía «Práctica 4: Fuerza de rozamiento» del Laboratorio de Física de la Escuela Politécnica Nacional (Quito). Es un proyecto educativo gratuito y de código abierto. PHYWE es una marca de su titular y se menciona solo para identificar el equipo real del laboratorio; <b>este proyecto no está afiliado, patrocinado ni respaldado por PHYWE</b>. Los coeficientes de rozamiento, las masas y las constantes de los dinamómetros son supuestos documentados en <code>PARAMETERS.md</code>.</p>
 <p>Métodos: GUM (JCGM 100) y J. R. Taylor, <em>An Introduction to Error Analysis</em>. Código bajo licencia MIT y contenido educativo bajo CC BY 4.0.</p>
 <p>Privacidad: tu progreso se guarda solo en tu navegador (<code>localStorage</code>); no se envía a ningún servidor. «Empezar de nuevo» lo borra.</p>

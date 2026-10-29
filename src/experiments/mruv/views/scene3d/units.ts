@@ -176,11 +176,13 @@ export function railSpanPoints(x0_cm: number, x1_cm: number): [number, number, n
   for (const x of [x0_cm, x1_cm]) for (const y of [-RAIL.height, 4.2]) for (const z of [-RAIL.halfW - 0.4, RAIL.halfW + 0.4]) out.push([x, y, z])
   return out
 }
-/** Points of the assembled bench the overview must keep in frame (cm): stand base and rod top, the rail ends, the receiver, the parts tray. */
+/** Points of the assembled bench the overview must keep in frame (cm): stand base and rod top, the rail ends, the receiver, the parts tray and the loose layout of a fresh bench. */
 export function overviewPoints(): [number, number, number][] {
   const pts: [number, number, number][] = [[0, 42, -3.4]]
   for (const x of [-6.5, 9.5]) for (const z of [-6.5, 4.5]) pts.push([x, 0, z])
   for (const x of [0, RAIL.length + 8]) for (const y of [0, 12]) for (const z of [-3, 3]) pts.push([x, y, z])
+  // the loose parts of a fresh bench: the front row (rail, cart, two-leg stand, receiver) and the back row (rack stand, base) lie this far from the rail axis
+  for (const x of [-4, RAIL.length + 8]) for (const z of [-38, 42]) pts.push([x, 0, z])
   for (const x of [TRAY.x - TRAY.width / 2, TRAY.x + TRAY.width / 2]) for (const z of [TRAY.z - TRAY.depth / 2, TRAY.z + TRAY.depth / 2]) pts.push([x, TRAY.height, z])
   return pts
 }

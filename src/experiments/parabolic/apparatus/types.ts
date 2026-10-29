@@ -17,7 +17,7 @@ export const BALL_ITEM: Readonly<Record<BallId, ItemId>> = { marble: 'marble', p
 export const JOINT_IDS = ['standBase', 'rackClamp', 'twoLegStand'] as const
 export type JointId = (typeof JOINT_IDS)[number]
 export type LevelPlacement = 'rail' | 'table' | null
-export type PresetId = 'empty' | 'assembled'
+export type PresetId = 'empty' | 'assembled' | 'loose'
 
 /** Every refusal code. Each needs an es/en string in the views; a test lists them. */
 export const REASONS = [

@@ -14,7 +14,7 @@ export type JointId = (typeof JOINT_IDS)[number]
 /** Rail ends as printed: the scale 0 mm is at E1 and 1200 mm at E2. */
 export type RailEnd = 'E1' | 'E2'
 export type LevelPlacement = 'rail' | 'table' | null
-export type PresetId = 'empty' | 'assembled'
+export type PresetId = 'empty' | 'loose' | 'assembled'
 
 export type Reason =
   | 'unknownItem' | 'itemNotOnTable' | 'itemAlreadyOnTable' | 'screwsInUse'
@@ -32,9 +32,17 @@ export type Reason =
 export type Failure = { ok: false; reason: Reason; item?: ItemId }
 export type Result<T extends object = object> = ({ ok: true } & T) | Failure
 
-/** Reasons that block releasing the cart (subset of Reason). */
-export type RunBlock = 'noRail' | 'railNotSupported' | 'noReceiver' | 'cartNotPlaced'
-export interface CanRun { ok: boolean; reasons: RunBlock[] }
+/**
+ * Reasons that block releasing the cart (subset of Reason). A missing receiver is NOT one: the cart is released and
+ * falls off the low end (see CanRun.warnings).
+ */
+export type RunBlock = 'noRail' | 'railNotSupported' | 'cartNotPlaced'
+export interface CanRun {
+  ok: boolean
+  reasons: RunBlock[]
+  /** Releasing is allowed but the cart will fall: 'noReceiver' (no end stop at the low end). */
+  warnings: 'noReceiver'[]
+}
 
 export type MissingReason = 'notOnTable' | 'needsStandBase' | 'needsRackClamp' | 'notAttached'
 export interface MissingEntry {
@@ -121,6 +129,8 @@ export interface TapeReading {
 
 export interface CartStatus {
   phase: 'unplaced' | 'atStart' | 'rolling' | 'stopped' | 'stuck'
+    /** Left the low rail end and is in the air / rolling on the table or floor ('falling'), or at rest there ('fallen'). */
+    | 'falling' | 'fallen'
   runId: number | null
   /** Seconds since release, 0 before. */
   t_s: number
@@ -158,6 +168,35 @@ export interface RunRecord {
   /** True crossing time of every mark, s from release, ordered from the top of the slope. null: behind, beyond the stop, never reached. */
   marks: CrossingRecord[]
   endedBy: 'reset' | 'placed' | null
+  /**
+   * Set when the cart left the low rail end (no receiver). The run is INVALID: no DigiCart record, no true mark
+   * times (marks are all null), so nothing can feed Table 1.1 or the analysis.
+   */
+  fall: FallRecord | null
+}
+
+/** Inputs of the fall path (physics/falloff.ts fallOffPath), stored so the deterministic path can be rebuilt. */
+export interface FallRecord {
+  /** Time from release at which the cart centre passes the low rail end, s, and the speed then, m/s. */
+  tLeave_s: number
+  vLeave_mps: number
+  /** Rail end height above the table top, m, and distance to the table edge, m. */
+  h_m: number
+  edgeDistance_m: number
+  /** Sampled fraction of the horizontal speed kept at the landing (variability.ts). */
+  retention: number
+  final: 'onTable' | 'onFloor'
+}
+
+/** Where a cart that left the rail is at some time: world frame (x, y above the table top, z of the rail), pitch nose-down. */
+export interface CartFallPose {
+  /** Cart centre, world frame m (y = 0 is the table top). */
+  x_m: number
+  y_m: number
+  z_m: number
+  pitch_rad: number
+  surface: 'air' | 'table' | 'floor'
+  final: 'onTable' | 'onFloor'
 }
 
 export interface DigicartRecord {

@@ -17,6 +17,14 @@ Práctica 2; `segunda-ley/index.html` and `src/experiments/newton2`, Práctica 3
 guide has its own skill, `parabolic-reference` (paraphrased facts from "Práctica 2: Movimiento parabólico"); use it instead of the PDF.
 A new experiment is a folder, a manifest, a registry entry and an html entry (README, "Add an experiment").
 
+## Theory unlock
+
+The help pages' theory sections (`<section data-locked="theory" hidden>`) open only when the student ticks every analysis task
+("Hecha / Done" list in each analysis panel) and the computed tasks have data. Generic code: `src/core/theory.ts` (completion, tick
+tracker, `mecanica:<id>:theoryUnlocked`, `?theory=1` override), `src/core/views/taskPanel.ts`, `src/core/helpTheory.ts` (help pages).
+Per experiment: `analysis/tasks.ts` (pure task list and completion, tested in `tests/<id>/tasks.test.ts`) and `views/strings/tasks.ts`.
+A help page's `<body data-experiment>` must equal the experiment's store id.
+
 ## Commands
 
 ```bash
@@ -47,7 +55,7 @@ npm run teacher-key  # regenerates docs/teacher-key*.md (one per experiment) fro
 
 - No invented tasks: the guide's assembly, procedure (10 timings at each 10 cm mark, 0 to 90 cm) and analysis tasks
   1 to 10 are the spine. Extra help may explain, never replace them.
-- Inventory assembly: rail, DigiCart, stands (rack-and-pinion and two-leg), base, screws, level, receiver with pulley,
+- Inventory assembly (every material starts loose on the table: the student only arranges the setup by drag and drop; the tray under the stage only holds parts taken off the table; `?preset=empty|assembled|loose`): rail, DigiCart, stands (rack-and-pinion and two-leg), base, screws, level, receiver with pulley,
   stopwatch. Wrong choices are possible and physically meaningful (angle not 1.30°, AB too short, cart off the track).
 - Stopwatch: the student presses start/stop; the app only adds the true event times from the model plus human
   reaction and the display resolution.

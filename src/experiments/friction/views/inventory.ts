@@ -1,24 +1,12 @@
 // Inventory panel: what is in the box and what is on the table. Distractors are listed like any other item.
-import { ITEM_IDS, type ItemId } from '../apparatus/index.ts'
+import { ITEM_IDS } from '../apparatus/index.ts'
 import type { MountView, View } from './view.ts'
-import { button, card, el, rebuild, svg, watch } from '../../../core/views/dom.ts'
+import { button, card, el, rebuild, watch } from '../../../core/views/dom.ts'
 import { fmt } from '../../../core/pedagogy/dom.ts'
 import { strings } from './strings/inventory.ts'
-
-/** 24 px line icons, one per item (generic drawings, no brand marks). */
-const ICONS: Record<ItemId, string[]> = {
-  alBar: ['M3 10h18v5H3z', 'M3 12.5h18'], woodBar: ['M3 10h18v5H3z', 'M6 12h4M13 13h4'], ironBar: ['M3 10h18v5H3z', 'M3 10l3-2h15'],
-  block: ['M5 9h14v9H5z', 'M5 9l3-3h14l-3 3', 'M19 12h3'], scale1N: ['M10 3h4v14h-4z', 'M12 17v4', 'M12 3V1'], scale2N: ['M10 3h4v14h-4z', 'M12 17v4', 'M10 8h4'],
-  rail: ['M3 15L21 9', 'M3 18L21 12'], masses50: ['M6 12h12v6H6z', 'M9 12v-2h6v2'], tape: ['M4 8h16v10H4z', 'M4 12h6M7 12v3M20 11h2v4h-2'],
-  paper: ['M7 3h8l4 4v14H7z', 'M15 3v4h4'], rackStand: ['M9 3v18', 'M9 7h6M9 11h6', 'M5 21h8'], standBase: ['M3 17h18v4H3z', 'M12 17V9'],
-  stopwatch: ['M12 21a7 7 0 1 0 0-.1', 'M12 14v-4M10 3h4'], balance: ['M4 18h16', 'M12 18V6', 'M5 9h14', 'M5 9l-2 4h4zM19 9l-2 4h4z'],
-  masses10: ['M8 14h8v4H8z', 'M10 14v-2h4v2'], marble: ['M12 20a7 7 0 1 0 0-.1', 'M9 9a3.5 3.5 0 0 1 3-2'],
-}
-function itemIcon(id: ItemId): SVGElement {
-  const g = svg('svg', { viewBox: '0 0 24 24', 'aria-hidden': 'true', class: 'icon inv-icon' })
-  for (const d of ICONS[id]) g.append(svg('path', { d }))
-  return g
-}
+import { strings as ddStrings } from './strings/dragdrop.ts'
+import { strings as ddCore } from '../../../core/dragdrop/strings.ts'
+import { itemIcon } from './itemIcons.ts'
 
 export const mountInventory: MountView = (root, ctx): View => {
   const app = ctx.apparatus
@@ -34,13 +22,20 @@ export const mountInventory: MountView = (root, ctx): View => {
   headRow.append(summary, bulk)
   const list = el('ul', 'inv-list')
   const note = el('p', 'muted')
-  c.body.append(headRow, list, note)
+  const intro = el('p', 'muted dd-intro')
+  // the button path (WCAG 2.5.7): every drag has a non-dragging equivalent, folded away by default
+  const manual = el('details', 'inv-manual')
+  const manualSum = el('summary', 'inv-manual-sum')
+  manual.append(manualSum, headRow, list)
+  c.body.append(intro, manual, note)
   root.append(c.root)
 
   function render(): void {
     const T = S()
     const s = app.getState()
     c.title.textContent = T.title
+    intro.textContent = ddStrings[ctx.lang()].inventoryIntro
+    manualSum.textContent = ddCore[ctx.lang()].disclosure
     putAll.textContent = T.putAll
     removeAll.textContent = T.removeAll
     summary.textContent = fmt(T.summary, { n: ITEM_IDS.filter((i) => s.items[i]).length, total: ITEM_IDS.length })

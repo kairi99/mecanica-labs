@@ -55,6 +55,8 @@ export interface InteractionDeps {
   refreshSoon(): void
   onUserCamera(): void
   openPanel?(panel: string): void
+  /** Drag-and-drop assembly (parts tray): the scene's own pointer logic keeps out while a part is carried. */
+  dd?: { busy(): boolean; overTray(clientX: number, clientY: number): boolean; removeFromTray(part: 'cart'): void }
 }
 
 export interface Interaction {
@@ -299,7 +301,7 @@ export function createInteraction(d: InteractionDeps): Interaction {
     }
   }
 
-  const finishDrag = (e: { pointerId: number; timeStamp: number; clientY?: number } | null, cancelled: boolean): void => {
+  const finishDrag = (e: { pointerId: number; timeStamp: number; clientX?: number; clientY?: number } | null, cancelled: boolean): void => {
     const ac = active
     if (!ac || (e && e.pointerId !== ac.pointerId)) return
     active = null
@@ -317,11 +319,13 @@ export function createInteraction(d: InteractionDeps): Interaction {
       pv.active = false
       const st = a.getState()
       if (!cancelled && ac.moved) {
-        if (ac.pending !== null) act(a.placeCart(ac.pending))
+        // dropped back on the parts tray: the cart leaves the table (same Apparatus call as the inventory button)
+        if (e?.clientX !== undefined && e.clientY !== undefined && d.dd?.overTray(e.clientX, e.clientY)) d.dd.removeFromTray('cart')
+        else if (ac.pending !== null) act(a.placeCart(ac.pending))
       } else if (!cancelled) {
         const phase = a.cartState(e?.timeStamp ?? d.ctx.now()).phase
         if (!st.cart.placed) d.onCard(cardFor(ac.pick))
-        else if (phase === 'stopped' || phase === 'stuck') act(a.resetCart())
+        else if (phase === 'stopped' || phase === 'stuck' || phase === 'fallen') act(a.resetCart())
         else act(a.releaseCart(ac.time)) // the press instant (pointerdown), like onPress
       }
       d.refreshSoon()
@@ -383,7 +387,10 @@ export function createInteraction(d: InteractionDeps): Interaction {
     if (active) { e.stopPropagation(); return }
     const p = pickAt(e.clientX, e.clientY)
     plain = null
-    const draggable = p.handle !== null && !p.ghost && !(p.handle === 'marker' && !p.markId)
+    // the rack knob and the foot only adjust a stand that is mounted; a loose one is grabbed as a part (drag and drop)
+    const stt = a.getState()
+    const idleKnob = (p.handle === 'rack' && !stt.joints.standBase) || (p.handle === 'foot' && !stt.joints.twoLegStand)
+    const draggable = p.handle !== null && !idleKnob && !p.ghost && !(p.handle === 'marker' && !p.markId)
     // dragging the cart is only offered for a cart on the table or on the rail
     if (!draggable) { plain = { id: e.pointerId, x: e.clientX, y: e.clientY, t: e.timeStamp }; return }
     e.preventDefault()
@@ -405,7 +412,7 @@ export function createInteraction(d: InteractionDeps): Interaction {
     scheduleHover(e.clientX, e.clientY)
   }
   const onUp = (e: PointerEvent): void => {
-    if (active) { finishDrag({ pointerId: e.pointerId, timeStamp: e.timeStamp, clientY: e.clientY }, false); return }
+    if (active) { finishDrag({ pointerId: e.pointerId, timeStamp: e.timeStamp, clientX: e.clientX, clientY: e.clientY }, false); return }
     const p = plain
     plain = null
     if (!p || p.id !== e.pointerId) return
@@ -445,7 +452,7 @@ export function createInteraction(d: InteractionDeps): Interaction {
     if (hoverRaf) return
     hoverRaf = requestAnimationFrame(() => {
       hoverRaf = 0
-      if (active) return
+      if (active || d.dd?.busy()) return
       const p = pickAt(hoverXY.x, hoverXY.y)
       const name = nameOf(p)
       if (name && p.partId !== 'table') {

@@ -5,7 +5,7 @@
 import * as THREE from 'three'
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js'
 import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js'
-import { CART_LENGTH_m, RAIL_LENGTH_m, SUPPORT_SEPARATION_m, type Apparatus, type ItemId } from '../../apparatus/index.ts'
+import { CART_LENGTH_m, RAIL_LENGTH_m, type Apparatus, type ItemId } from '../../apparatus/index.ts'
 import { SPRING_SCALES, type SpringScaleId } from '../../../../core/instruments/springScale.ts'
 import { createCoreMaterials, createOutlineMaterial, type CoreMaterials } from '../../../../core/scene3d/materials.ts'
 import { boxCorners, fitView, type Vec } from '../../../../core/scene3d/framing.ts'
@@ -18,9 +18,12 @@ import {
   DEFAULT_CART_DIMS, KNOT_H_cm, type Kit,
 } from './models.ts'
 import {
-  BENCH, BENCH_MASS_SLOT, FLOOR_Y_cm, PORTRAIT_OVERVIEW, PRESET_NAMES, PRESET_VIEWS, RAIL, SCALE_POST, STAGING, STRING_ABOVE_RAIL_cm, SUPPORT_FROM_END_cm,
-  drawnRailTilt_rad, railLocalToWorld, railLocalX_cm, type PresetName, type Slot,
+  BENCH, BENCH_MASS_SLOT, FLOOR_Y_cm, LOOSE_RAIL, PORTRAIT_OVERVIEW, PRESET_NAMES, PRESET_VIEWS, RAIL, SCALE_POST, STAGING, STRING_ABOVE_RAIL_cm, SUPPORT_FROM_END_cm,
+  drawnTilt_rad, fallenCartOrigin, railLocalToWorld, railLocalX_cm, type PresetName, type Slot,
 } from './units.ts'
+import { createDragDrop3D } from './dragdrop3d.ts'
+import type { StageAdapter } from '../dragdrop/controller.ts'
+import { isMassPart, massIndex, type PartId } from '../dragdrop/snap.ts'
 
 export { PRESET_NAMES }
 export type { PresetName }
@@ -41,9 +44,13 @@ export interface SceneOptions {
   onFail(reason: string): void
   onStatus(text: string): void
   openPanel?(panel: string): void
+  /** The drag-and-drop controller's hooks: the scene's own pointer logic stays out while a part is carried or picked. */
+  dd?: { busy(): boolean; overTray(clientX: number, clientY: number): boolean; removeFromTray(part: PartId): void }
 }
 
 export interface Scene3D {
+  /** The stage side of the drag-and-drop assembly (hand it to the controller). */
+  dragdrop: StageAdapter
   update(): void
   setVisible(v: boolean): void
   setPreset(name: PresetName): void
@@ -152,10 +159,10 @@ export function createScene(container: HTMLElement, ctx: ViewContext, opts: Scen
   const marble = new THREE.Mesh(new THREE.SphereGeometry(0.8, 18, 14), M.steel); marble.castShadow = true; tag(marble, 'marble')
   const mass50 = new THREE.Group(); { const m = cyl(2.0, 2.0, 2.2, M.steel, mass50, 28); m.position.y = 1.1; tag(mass50, 'mass50') }
   const scales: Record<SpringScaleId, ReturnType<typeof buildSpringScale>> = { '1N': buildSpringScale(kit, SPRING_SCALES['1N']), '2N': buildSpringScale(kit, SPRING_SCALES['2N']) }
-  for (const id of ['1N', '2N'] as const) tag(scales[id].root, 'springScale')
+  for (const id of ['1N', '2N'] as const) tag(scales[id].root, 'springScale', { itemId: id === '1N' ? 'dynamometer' : 'dynamometer2N' })
   const looseMasses = Array.from({ length: 4 }, () => buildMass(kit))
-  looseMasses.forEach((m) => tag(m, 'masses'))
-  const cartMasses = Array.from({ length: 4 }, () => { const g = new THREE.Group(); const m = buildMass(kit); g.add(m); const s = screwHead(kit); s.rotation.x = -Math.PI / 2; s.position.set(0, MASS_H + 0.2, 0); g.add(s); return g })
+  looseMasses.forEach((m, i) => tag(m, 'masses', { massIndex: i }))
+  const cartMasses = Array.from({ length: 4 }, (_, i) => { const g = new THREE.Group(); tag(g, 'masses', { massIndex: i }); const m = buildMass(kit); g.add(m); const s = screwHead(kit); s.rotation.x = -Math.PI / 2; s.position.set(0, MASS_H + 0.2, 0); g.add(s); return g })
   const flags = (['start', 'end'] as const).map(() => { const f = new THREE.Mesh(new THREE.BoxGeometry(0.7, 0.06, RAIL.halfW * 2 + 0.2), M.tape); f.castShadow = false; return f })
   const flagPoles = (['start', 'end'] as const).map(() => { const f = new THREE.Mesh(new THREE.BoxGeometry(0.4, 0.4, 0.04), M.tape); return f })
   const supportBlock = box(6, 1, 4, M.aluDark, 0, 0, 0, scene)
@@ -178,6 +185,16 @@ export function createScene(container: HTMLElement, ctx: ViewContext, opts: Scen
   // ---------- placement ----------
   const place = (o: THREE.Object3D, s: Slot, y = 0): void => { o.position.set(s.x, y, s.z); o.rotation.set(0, s.rotY, 0) }
   const itemOn = (id: ItemId): boolean => a.hasItem(id)
+  // the part carried by the drag-and-drop controller is hidden on the bench until it is dropped
+  let liftedPart: PartId | null = null
+  const liftedRoots = (p: PartId): THREE.Object3D[] => {
+    if (isMassPart(p)) { const i = massIndex(p); return [looseMasses[i]!, cartMasses[i]!] }
+    if (p === 'dynamometer') return [scales['1N'].root]
+    if (p === 'dynamometer2N') return [scales['2N'].root]
+    const r = partRoot(p)
+    return r ? [r] : []
+  }
+  function hideLifted(): void { if (liftedPart) for (const r of liftedRoots(liftedPart)) r.visible = false }
   let weighingUntil = 0
   let lastScale: SpringScaleId = '1N'
   const offEv = a.on((e) => {
@@ -192,14 +209,14 @@ export function createScene(container: HTMLElement, ctx: ViewContext, opts: Scen
     const geo = s.geometry
     const zeroAtStand = (s.joints.rackClamp ?? 'E1') === 'E1'
     const clampH = geo ? geo.standHeight_m * 100 : (0.06 + s.rack_mm / 1000) * 100
-    const tilt = geo ? drawnRailTilt_rad(geo.standHeight_m, geo.receiverHeight_m, SUPPORT_SEPARATION_m) : 0
+    const tilt = drawnTilt_rad(s)
     // rail
     rail.root.visible = itemOn('rail')
     if (s.joints.rackClamp !== null) {
       rail.root.position.set(-SUPPORT_FROM_END_cm, clampH, 0)
       rail.root.rotation.set(0, 0, tilt)
     } else {
-      rail.root.position.set(10, 2, 28); rail.root.rotation.set(0, 0, 0)
+      rail.root.position.set(LOOSE_RAIL.x, LOOSE_RAIL.y, LOOSE_RAIL.z); rail.root.rotation.set(0, 0, 0)
     }
     rail.update(zeroAtStand)
     // stand and base
@@ -272,26 +289,39 @@ export function createScene(container: HTMLElement, ctx: ViewContext, opts: Scen
     brass.visible = itemOn('brassScrew')
     if (s.joints.stringCart && itemOn('cart')) { cart.root.add(brass); brass.position.set(0.1, DEFAULT_CART_DIMS.bodyBottom + DEFAULT_CART_DIMS.bodyHeight - 0.3, 0); brass.rotation.set(0, 0, -Math.PI / 2); brass.scale.setScalar(0.7) }
     else { scene.add(brass); brass.scale.setScalar(1); place(brass, STAGING.brassScrew) }
-    coil.visible = itemOn('string') && !(s.joints.stringCart && s.joints.stringCanister && s.joints.stringPulley); place(coil, STAGING.string)
+    coil.visible = itemOn('string') && !(s.joints.stringPulley && s.joints.receiver); place(coil, STAGING.string)
     for (const id of ['1N', '2N'] as const) { const it = id === '1N' ? 'dynamometer' : 'dynamometer2N'; scales[id].root.visible = itemOn(it) }
     syncCart()
+    hideLifted()
     applyHighlight()
   }
 
   /** Per-frame: the cart along the rail, the canister and the string, the scale. Returns true while something moves. */
   function syncCart(): boolean {
     const s = a.getState()
-    const st = a.cartState(ctx.now())
+    let st = a.cartState(ctx.now())
+    // prefers-reduced-motion: the cart that left the rail end jumps to where it comes to rest on the floor
+    if (st.phase === 'falling' && ctx.reducedMotion()) st = a.cartState(ctx.now() + 1e7)
     const zeroAtStand = (s.joints.rackClamp ?? 'E1') === 'E1'
     let moving = false
     let cartFrontX = 0
-    if (s.cart.placed && st.frontRailPos_mm !== null) {
+    if (s.cart.placed && st.fall) {
+      // off the rail end: the pose follows the physics of the fall (physics/fall.ts), in the world frame
+      if (cart.root.parent !== scene) scene.add(cart.root)
+      const o = fallenCartOrigin(s, st.fall)
+      cart.root.position.set(o[0], o[1], o[2]); cart.root.rotation.set(0, 0, 0)
+      moving = st.phase === 'falling'
+    } else if (s.cart.placed && st.frontRailPos_mm !== null) {
+      if (cart.root.parent !== rail.root) rail.root.add(cart.root)
       cartFrontX = railLocalX_cm(st.frontRailPos_mm, zeroAtStand)
       cart.root.position.set(cartFrontX, 0, 0); cart.root.rotation.set(0, 0, 0)
       cart.roll(cartFrontX)
       moving = st.phase === 'rolling' || st.phase === 'coasting'
     }
-    const connected = s.joints.stringCart && s.joints.stringCanister && s.joints.stringPulley && s.joints.receiver && itemOn('string') && s.cart.placed
+    // the string over the pulley; the canister hangs from it once it is tied; the cart end follows the cart
+    const overPulley = s.joints.stringPulley && s.joints.receiver && itemOn('string')
+    const tiedCan = overPulley && s.joints.stringCanister && itemOn('canister')
+    const tiedCart = overPulley && s.joints.stringCart && s.cart.placed && itemOn('cart') && !st.fall
     // the canister: hanging from the string, on the dynamometer, or on the bench
     const weighing = performance.now() < weighingUntil && (itemOn('dynamometer') || itemOn('dynamometer2N')) && itemOn('canister')
     canister.root.visible = itemOn('canister')
@@ -305,15 +335,15 @@ export function createScene(container: HTMLElement, ctx: ViewContext, opts: Scen
       const hookY = SCALE_POST.height - 2.2 - sc.hookPosition().x
       canister.root.position.set(SCALE_POST.x - SCALE_POST.armLength, hookY - KNOT_H_cm, SCALE_POST.z); canister.root.rotation.set(0, 0, 0)
       moving = true
-    } else if (connected) {
+    } else if (overPulley) {
       const pw = receiver.localToWorld(pulleyLocal.clone())
       const recvTop = railLocalToWorld([rail.root.position.x, rail.root.position.y, 0], rail.root.rotation.z, [RAIL.length, 0, 0])
       const hang = (a.hangBelowPulley_m() ?? 0.05) * 100 + st.canisterDrop_m * 100
       // the canister hangs past the bench edge; its height follows the apparatus drop, and it rests on the floor when the apparatus says so
       const knotY = st.canisterOnFloor ? FLOOR_Y_cm + KNOT_H_cm : Math.max(recvTop[1] + STRING_ABOVE_RAIL_cm - hang, FLOOR_Y_cm + KNOT_H_cm)
       const cx = pw.x + 2.4
-      canister.root.position.set(cx, knotY - KNOT_H_cm, pw.z); canister.root.rotation.set(0, 0, 0)
-      const front = cart.root.localToWorld(new THREE.Vector3(0.2, DEFAULT_CART_DIMS.bodyBottom + DEFAULT_CART_DIMS.bodyHeight - 0.3, 0))
+      if (tiedCan) { canister.root.position.set(cx, knotY - KNOT_H_cm, pw.z); canister.root.rotation.set(0, 0, 0) } else place(canister.root, STAGING.canister)
+      const front = tiedCart ? cart.root.localToWorld(new THREE.Vector3(0.2, DEFAULT_CART_DIMS.bodyBottom + DEFAULT_CART_DIMS.bodyHeight - 0.3, 0)) : pw.clone()
       const pts = [front, pw, new THREE.Vector3(cx, pw.y - 1.2, pw.z), new THREE.Vector3(cx, knotY, pw.z)]
       stringGeo.setFromPoints(pts)
       stringGeo.attributes.position!.needsUpdate = true
@@ -330,6 +360,7 @@ export function createScene(container: HTMLElement, ctx: ViewContext, opts: Scen
       if (!(weighing && id === (a.defaultScale() === '2N' && !itemOn('dynamometer') ? '2N' : lastScale))) sc.set(0)
       sc.root.visible = itemOn(it)
     }
+    hideLifted()
     if (moving || lastMoving) requestRender()
     lastMoving = moving
     return moving
@@ -356,6 +387,9 @@ export function createScene(container: HTMLElement, ctx: ViewContext, opts: Scen
       case 'balance': return balance
       case 'dynamometer': return scales['1N'].root
       case 'string': return coil
+      case 'twoLegStand': return twoLeg.root
+      case 'marble': return marble
+      case 'mass50': return mass50
       case 'brassScrew': return brass
       case 'plasticScrews': return plastics
       default: return null
@@ -405,11 +439,25 @@ export function createScene(container: HTMLElement, ctx: ViewContext, opts: Scen
   controls.addEventListener('start', () => { anim = null; preset = null })
   controls.addEventListener('change', requestRender)
 
+  // ---------- drag-and-drop assembly (stage side) ----------
+  const pickables = (): THREE.Object3D[] => [
+    bench, rail.root, base, rack.root, receiver, level.root, stopwatch.root, canister.root, balance, twoLeg.root, coil, brass, plastics, tapeGroup, marble,
+    mass50, pile, ...looseMasses, scales['1N'].root, scales['2N'].root, cart.root,
+  ]
+  const dd3d = createDragDrop3D({
+    a, ctx, scene, container, canvas, camera, controls, M, pickables, requestRender, refreshSoon: () => { dirty = true },
+    setLifted: (part, on) => {
+      liftedPart = on ? part : null
+      if (on) hideLifted()
+    },
+  })
+
   // ---------- click on a part: open its panel ----------
   const ray = new THREE.Raycaster()
   let down: { x: number; y: number } | null = null
   const onDown = (e: PointerEvent): void => { down = { x: e.clientX, y: e.clientY } }
   const onUp = (e: PointerEvent): void => {
+    if (opts.dd?.busy()) { down = null; return }
     if (!down || Math.hypot(e.clientX - down.x, e.clientY - down.y) > 5) { down = null; return }
     down = null
     const r = canvas.getBoundingClientRect()
@@ -479,6 +527,7 @@ export function createScene(container: HTMLElement, ctx: ViewContext, opts: Scen
         needsRender = true
       }
       if (weighingUntil > 0 && now > weighingUntil) { weighingUntil = 0; dirty = true }
+      if (dd3d.tick(now)) needsRender = true
       if (controls.update()) needsRender = true
       if (needsRender) {
         needsRender = false
@@ -494,9 +543,11 @@ export function createScene(container: HTMLElement, ctx: ViewContext, opts: Scen
       applyHighlight()
       if (focusIds) focusTimer = window.setTimeout(() => { focusIds = null; applyHighlight() }, 4000)
     },
-    relabel() { canvas.setAttribute('aria-label', S().canvasLabel); requestRender() },
+    dragdrop: dd3d,
+    relabel() { canvas.setAttribute('aria-label', S().canvasLabel); dd3d.relabel(); requestRender() },
     destroy() {
       window.clearTimeout(focusTimer)
+      dd3d.destroy()
       offEv()
       controls.dispose()
       ro.disconnect(); mo.disconnect()

@@ -9,7 +9,7 @@ import type { ViewContext } from '../views/view.ts'
 import { strings } from './strings/coach.ts'
 
 export const COACH_KEYS = [
-  'notLevel', 'stringTooLong', 'stringTooShort', 'stringNotAttached', 'receiverBlocks', 'neverStarts', 'massTaken', 'forceStale', 'forceMissing',
+  'notLevel', 'stringTooLong', 'stringTooShort', 'stringNotAttached', 'receiverBlocks', 'neverStarts', 'cartFell', 'massTaken', 'forceStale', 'forceMissing',
   'cartOffTrack', 'timeImplausible', 'distanceOff', 'noMt',
 ] as const
 export type CoachKey = (typeof COACH_KEYS)[number]
@@ -26,6 +26,7 @@ export function coachCandidates(app: Apparatus, e: ApparatusEvent): Nudge[] {
   switch (e.type) {
     case 'released': {
       const p = app.procedure()
+      if (e.outcome === 'fell') { push('cartFell'); break }
       if (e.outcome === 'stringNotAttached') push('stringNotAttached')
       else if (e.outcome === 'stringTooShort') push('stringTooShort')
       else if (e.outcome === 'canisterHitsFloor' || e.outcome === 'canisterHitsFloorCartStops') push('stringTooLong')

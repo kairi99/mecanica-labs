@@ -148,6 +148,19 @@ Device and bench values of the Practica 2 apparatus layer. Date of all rows: 202
 
 Simplifications: no longitudinal table tilt; the table is long enough for any rail position; the rail is a rigid beam on its contacts (rack clamp, tabletop at the low end, two-leg stand when higher than the free line), exact in the angle; after the first bounce the ball follows the hop and roll-out model above; marks are the first contact only. With the physics rolling resistance (`c_rr` 1.5e-3 and 5e-3) a ball does not stop on a 0.6 m gap: only a nearly flat rail stops it.
 
+## Práctica 1: cart that leaves the rail (`src/experiments/mruv/physics/falloff.ts`)
+
+Without the receiver (end stop) the cart rolls off the low rail end, falls to the table top and, if it rolls on to the table edge, to the floor. Date of all rows: 2026-10-29. **ASSUMED** = chosen by us from typical values, not measured, not PHYWE specifications; none was tuned to a target outcome. Model: projectile from the rail end (leaving speed along the incline, rail-end height above the table), impact with restitution 0 (vertical speed lost, a fraction of the horizontal speed kept), then the rail's rolling model on a flat surface (`(c_rr m g + F_bearing) / m_eff`, wheel inertia counted, no air drag). The cart leaves when its centre passes the rail end (front at `RAIL_LENGTH_m + CART_LENGTH_m/2` along the rail). The cart is treated as a point at the rail top surface; tipping is not simulated (the drawn nose-down pitch is cosmetic).
+
+| Parameter | Value | Unit | Source |
+|---|---|---|---|
+| Horizontal speed kept at a landing `LANDING_RETENTION` | 0.5 | - | ASSUMED (hard landing on the wheels, restitution 0). |
+| Landing scatter `sigma_landing_rel` (variability.ts) | 0.1 | - | ASSUMED, relative, 1-sigma, injected RNG. |
+| Rolling-resistance coefficient on table / floor `C_RR_SURFACE` | 0.01 | - | ASSUMED (plastic wheels on a hard flat surface; 20 times the rail's `c_rr`). |
+| Table height above the floor `TABLE_HEIGHT_m` | 0.75 | m | ASSUMED (within the 0.74 to 0.78 m of Práctica 2). |
+| Table edge on the down-slope side `TABLE_EDGE_X_m` | 1.62 | m | ASSUMED layout, world x from the rack-stand clamp (table x = -0.38 to 1.62 m, as the 3D table). The rail low end is at x about 1.15 m, so the edge is about 0.47 m from it: with the default setup the cart lands about 0.07 m beyond the rail end and its run-out (about 0.5 m) usually carries it off the edge. A slower run (short drop distance) stays on the table. |
+| Pitch `TIP_PITCH_END_rad`, `SETTLE_TIME_s` | 0.2 / 0.1 | rad, s | COSMETIC (view only; no position or time depends on them). |
+
 ## Práctica 3 (`src/experiments/newton2`)
 
 Force and acceleration: a DigiCart on a (nearly) level rail pulled by a hanging film canister over the receiver's pulley. Date of all rows: 2026-10-27. **ASSUMED** = chosen by us from typical values and physical reasoning, not measured, not PHYWE specifications; none was tuned to a target. The cart body (mass, wheels, `c_rr`, bearing drag, breakaway, drag) is the one in the Cart table above (`DEFAULT_DIGICART_BODY`, now in `src/core/physics/digicart.ts`, shared with Práctica 1; no value changed). Local g and air density: Site table.
@@ -188,6 +201,9 @@ Model: m_hang g + M_cart g sin(tilt) - F_resist(v) = M_eff a, with M_eff = M_car
 | Tabla 3.1 | 5 rows (4, 3, 2, 1 masses in the canister, plus an optional empty canister) x 10 times; times <= 30 s, 2 decimals; forces <= 2 N, 2 decimals; Mt in g, 1 decimal | - | Guide layout (four trials); the optional fifth row, the limits and the decimals are ASSUMED. |
 | Analysis: distance uncertainty | sqrt(2) x 1 mm / sqrt(12) = 0.41 | mm | Two scale readings on the millimetre rail scale. |
 | Analysis: stopwatch resolution, reaction bias | 0.01 s (u = 0.0029 s), half-width 0.1 s (u = 0.058 s) | s | As Práctica 1 (`reactionBiasTypeB_s`): the bias is common to all readings and enters only as a separate effect on the fit. |
+| Falling cart: sag of the rail's free end `RAIL_FREE_END_SAG_m` | 0.03 | m | ASSUMED (2026-10-29). With no receiver the rail is held only by the stand clamp; a 1.2 m aluminium rail droops at its free end. It gives a slope of asin(0.03 / 1.10) = 1.6 deg toward the open end, enough to start the cart for any load (drive M g sin about 0.07 N against about 0.006 N of resistance and breakaway). The release then runs the cart down that slope with the same cart model as the coasting phase and no string pull. The 3D and 2D views draw the sag. |
+| Falling cart: centre of mass above the rail top `CART_COM_ABOVE_RAIL_m` | 0.025 | m | ASSUMED. The cart leaves the rail when its centre reaches the rail end (it tips off). |
+| Falling cart: restitution `FLOOR_RESTITUTION`, floor friction `FLOOR_FRICTION_COEFF` | 0.25, 0.35 | -, - | ASSUMED (a plastic cart on a hard floor: low bounce; it slides and its wheels drag). Landing loses no horizontal speed at the impact (impulsive friction neglected); bounces whose take-off speed is below 0.05 m/s stop (`BOUNCE_MIN_mps`, numerical); the cart then slides to rest with Coulomb friction. Flight is ballistic with the Quito g (`G_QUITO_mps2`), no air drag, no rotation: a point mass. The fall is deterministic given the run's sampled conditions (`fall.ts`, tested). A run that ends in a fall is outcome `fell`: no end-mark time, no DigiCart record, it never counts for Table 3.1. |
 
 Simplifications: the string is inextensible and stays taut while the canister is driven; the canister does not swing or spin; the wheels roll without slipping; the canister hits the floor inelastically; the rail is rigid; no friction between the string and the pulley rim other than the axle term. The string weight is neglected. A string too short to reach the pulley from the start mark (hang < 0) holds the cart in place in this model (the guide's cart "cannot be released from the 0 cm mark").
 

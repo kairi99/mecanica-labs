@@ -141,6 +141,9 @@ export function markLabel(s_m: number): string {
 }
 
 // ---- Sheets on the floor -----------------------------------------------------------------------------------------------
+/** Long and short side of a sheet, cm. */
+export const SHEET_LONG_CM = SHEET_LONG_m * CM
+export const SHEET_SHORT_CM = SHEET_SHORT_m * CM
 /** Half extents of a sheet on the floor in x and z, cm. */
 export function sheetHalf_cm(p: Pick<SheetPose, 'orientation'>): { hx: number; hz: number } {
   const long = (SHEET_LONG_m * CM) / 2, short = (SHEET_SHORT_m * CM) / 2
@@ -223,7 +226,8 @@ export function landMaxFor(sheets: readonly RectCm[], floorPoints: readonly [num
 
 /** Overview: the whole set-up from the rack stand to the landing zone on the floor, table and floor together. */
 export function overviewPoints(f: FrameInput): Vec[] {
-  const left = (f.highEnd ? f.highEnd[0] : STAND_HOME_x) - 22
+  // with the rail still loose, its waiting spot at the far end of the table is part of the view
+  const left = f.highEnd ? f.highEnd[0] - 22 : Math.min(STAND_HOME_x - 22, STAGING.rail.x - 8)
   const top = Math.max(f.clamp ? f.clamp[1] + 24 : 0, 42)
   return boxCorners([left, -f.H_cm - 1, -TABLE.halfD], [f.landMax_cm, top, TABLE.halfD])
 }

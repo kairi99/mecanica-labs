@@ -1,9 +1,14 @@
 // 2D side view (SVG), like the guide's figure. Driven by the same Apparatus state as the 3D scene; used when WebGL2
 // is missing, when the 3D view fails, and when the student picks 2D. Controls here call the same Apparatus actions.
-import { CART_LENGTH_m, RACK_BASE_HEIGHT_m, TWO_LEG_BASE_HEIGHT_m, downSlope_m, railPointAt, railPos_mm, type RailPose, type Vec3 } from '../apparatus/index.ts'
+import { CART_LENGTH_m, TABLE_EDGE_X_m, TABLE_HEIGHT_m, RACK_BASE_HEIGHT_m, TWO_LEG_BASE_HEIGHT_m, downSlope_m, railPointAt, railPos_mm, type RailPose, type Vec3 } from '../apparatus/index.ts'
 import type { MountView, View } from './view.ts'
 import { el, svg, watch } from '../../../core/views/dom.ts'
 import { strings } from './strings/side2d.ts'
+import { strings as invStrings } from './strings/inventory.ts'
+import { strings as ddStrings } from './strings/dragdrop.ts'
+import { createDragDrop, type StageAdapter } from './dragdrop/controller.ts'
+import { SNAP_CM, type Zone, type ZoneId } from './dragdrop/snap.ts'
+import type { ItemId } from '../apparatus/index.ts'
 
 const S_PX = 600 // px per metre
 const VEX = 1.4 // vertical exaggeration
@@ -13,8 +18,16 @@ const GY = 290
 const VB_X0 = 100
 const VB_W = 960
 const GROUND_PAD = 62
+/** Fall mode (cart left the rail): the view widens to the table edge and shows a floor at this drawn depth below the table top, px (NOT to scale). */
+const FLOOR_DROP_PX = 230
+const FALL_RIGHT_PAD_m = 0.1
+const fallY = (y_m: number): number => (y_m >= 0 ? GY - y_m * S_PX * VEX : GY + (-y_m / TABLE_HEIGHT_m) * FLOOR_DROP_PX)
 const X = (x_m: number): number => XO + x_m * S_PX
 const Y = (y_m: number): number => GY - y_m * S_PX * VEX
+/** Loose layout of the parts on the bench (side view): standing parts at the ends of the rail, the rest in two front rows of the table band. */
+const LOOSE = { baseX_m: -0.065, twoLegX_m: 1.38, rackX_m: -0.1, rackLen_px: 190, cartX_m: 0.3, receiverX_m: 0.65, levelX_m: 0.9, propsX_m: 0.03 } as const
+const ROW_A_Y = 6
+const ROW_B_Y = 38
 const pt = (p: Vec3): [number, number] => [X(p.x_m), Y(p.y_m)]
 
 export const mountSide2d: MountView = (root, ctx): View => {
@@ -26,24 +39,50 @@ export const mountSide2d: MountView = (root, ctx): View => {
   const staticLayer = svg('g')
   const cartLayer = svg('g', { class: 's2d-cart' })
   g.append(staticLayer, cartLayer)
+  const zoneLayer = svg('g', { class: 's2d-zones' })
+  g.append(zoneLayer)
   const legend = el('ul', 's2d-legend')
   const note = el('p', 'stage-note')
   wrap.append(g, legend, note)
+  wrap.classList.add('has-tray')
   root.append(wrap)
+  /** Mark an element as a movable part (drag it to another spot or onto the tray). */
+  const tagPart = (e: SVGElement, id: ItemId): SVGElement => { e.dataset.part = id; e.classList.add('s2d-part'); return e }
 
   // Text and strokes are sized in screen pixels: --k is the number of viewbox units per CSS pixel (fit to width on any screen).
   let kPx = 1
   let top = 0
-  const setViewBox = (): void => g.setAttribute('viewBox', `${VB_X0} ${top} ${VB_W} ${GY + GROUND_PAD - top}`)
+  let fallMode = false
+  /** Right end of the fall view: the table edge, or the resting place of the cart if it lies beyond (from the physics result). */
+  let fallRight_m = TABLE_EDGE_X_m
+  const vbW = (): number => (fallMode ? X(fallRight_m + FALL_RIGHT_PAD_m) - VB_X0 : VB_W)
+  const vbBottom = (): number => (fallMode ? GY + FLOOR_DROP_PX + 36 : GY + GROUND_PAD)
+  const setViewBox = (): void => g.setAttribute('viewBox', `${VB_X0} ${top} ${vbW()} ${vbBottom() - top}`)
   const ro = new ResizeObserver(() => {
     const wpx = g.getBoundingClientRect().width
     if (wpx <= 0) return
-    const k = VB_W / wpx
+    const k = vbW() / wpx
     if (Math.abs(k - kPx) > 0.01) { kPx = k; g.style.setProperty('--k', String(k)); w.touch() }
   })
   ro.observe(g)
 
   let slope = { cos: 1, sin: 0, deg: 0 }
+
+  /** Small props lying in the second row of the bench (stopwatch, tape measure, tape roll, screws): drawn so they can be picked up too. */
+  function looseProps(add: (...e: SVGElement[]) => void, s: ReturnType<typeof app.getState>): void {
+    const names = invStrings[ctx.lang()].items
+    const y = GY + ROW_B_Y
+    const label = (x: number, id: ItemId): SVGElement => svg('text', { x: x + 22, y: y + 10 + 4 * kPx, class: 's2d-label', 'text-anchor': 'start' }, names[id].name.split(' (')[0]!)
+    let x = X(LOOSE.propsX_m)
+    if (s.items.stopwatch) { add(tagPart(svg('rect', { x: x - 16, y, width: 32, height: 20, rx: 5, class: 's2d-metal-hi' }), 'stopwatch'), label(x, 'stopwatch')); x += 150 }
+    if (s.items.tape) { add(tagPart(svg('rect', { x: x - 14, y, width: 28, height: 20, rx: 6, class: 's2d-metal' }), 'tape'), label(x, 'tape')); x += 150 }
+    if (s.items.markers) { add(tagPart(svg('rect', { x: x - 12, y, width: 24, height: 20, rx: 3, class: 's2d-tape' }), 'markers'), label(x, 'markers')); x += 150 }
+    if (s.items.screws) {
+      const g = svg('g')
+      for (const dx of [-8, 0, 8]) g.append(svg('circle', { cx: x + dx, cy: y + 12, r: 4, class: 's2d-metal' }))
+      add(tagPart(g, 'screws'), label(x, 'screws'))
+    }
+  }
 
   function drawStatic(): void {
     const T = S()
@@ -53,23 +92,36 @@ export const mountSide2d: MountView = (root, ctx): View => {
     const L: SVGElement[] = []
     const add = (...e: SVGElement[]): void => { L.push(...e) }
 
-    add(svg('rect', { x: VB_X0, y: GY, width: VB_W, height: GROUND_PAD, class: 's2d-table' }))
-    add(svg('line', { x1: VB_X0, y1: GY, x2: VB_X0 + VB_W, y2: GY, class: 's2d-ground' }))
+    const tableW = fallMode ? X(TABLE_EDGE_X_m) - VB_X0 : VB_W
+    add(svg('rect', { x: VB_X0, y: GY, width: tableW, height: GROUND_PAD, class: 's2d-table' }))
+    add(svg('line', { x1: VB_X0, y1: GY, x2: VB_X0 + tableW, y2: GY, class: 's2d-ground' }))
+    if (fallMode) {
+      const fy = GY + FLOOR_DROP_PX
+      add(svg('rect', { x: VB_X0, y: fy, width: vbW(), height: 36, class: 's2d-floor' }))
+      add(svg('line', { x1: VB_X0, y1: fy, x2: VB_X0 + vbW(), y2: fy, class: 's2d-ground' }))
+    }
     const legendItems: Array<{ cls: string; text: string }> = []
     let minY = GY - 90
 
     // rack stand
     const clampH = geo ? geo.clampHeight_m : RACK_BASE_HEIGHT_m + s.rack_mm / 1000
     if (s.items.standBase) {
-      const bx = s.joints.standBase ? 0 : -0.3
-      add(svg('rect', { x: X(bx) - 52, y: GY - 12, width: 104, height: 12, rx: 3, class: 's2d-metal' }))
+      const bx = s.joints.standBase ? 0 : LOOSE.baseX_m
+      add(tagPart(svg('rect', { x: X(bx) - 52, y: GY - 12, width: 104, height: 12, rx: 3, class: 's2d-metal' }), 'standBase'))
       legendItems.push({ cls: 's2d-metal', text: T.base })
     }
-    if (s.items.rackStand) {
-      const rx = s.joints.standBase ? 0 : -0.3
+    if (s.items.rackStand && !s.joints.standBase) {
+      // loose: the rack lies on its side in the front row of the bench, clearly not standing on a base
+      const x0 = X(LOOSE.rackX_m), cy = GY + ROW_A_Y + 13
+      add(tagPart(svg('rect', { x: x0, y: cy - 5, width: LOOSE.rackLen_px, height: 10, rx: 3, class: 's2d-metal-hi' }), 'rackStand'))
+      add(svg('rect', { x: x0 + LOOSE.rackLen_px - 22, y: cy - 9, width: 26, height: 18, rx: 3, class: 's2d-metal' }))
+      add(svg('circle', { cx: x0 + LOOSE.rackLen_px - 9, cy, r: 6, class: 's2d-blue' }))
+    }
+    if (s.items.rackStand && s.joints.standBase) {
+      const rx = 0
       const top = Y(clampH)
       const bottom = s.joints.standBase ? GY - 12 : GY
-      add(svg('rect', { x: X(rx) - 5, y: Math.min(top, bottom - 8), width: 10, height: Math.max(8, bottom - top), class: 's2d-metal-hi' }))
+      add(tagPart(svg('rect', { x: X(rx) - 5, y: Math.min(top, bottom - 8), width: 10, height: Math.max(8, bottom - top), class: 's2d-metal-hi' }), 'rackStand'))
       for (let mm = 0; mm <= 250; mm += 50) {
         const yy = Y(RACK_BASE_HEIGHT_m + mm / 1000)
         if (yy < bottom && yy >= top) add(svg('line', { x1: X(rx) - 12, y1: yy, x2: X(rx) - 5, y2: yy, class: 's2d-tick' }))
@@ -83,13 +135,13 @@ export const mountSide2d: MountView = (root, ctx): View => {
     // two-leg stand
     if (s.items.twoLegStand) {
       const att = s.joints.twoLegStand
-      const xs = att ? pose.twoLeg.x_m : 1.38
+      const xs = att ? pose.twoLeg.x_m : LOOSE.twoLegX_m
       const topH = att && geo ? geo.twoLegHeight_m : TWO_LEG_BASE_HEIGHT_m
       const tx = X(xs), ty = Y(topH)
-      add(svg('line', { x1: tx, y1: ty, x2: tx - 30, y2: GY, class: 's2d-leg' }))
-      add(svg('line', { x1: tx, y1: ty, x2: tx + 30, y2: GY, class: 's2d-leg' }))
+      add(tagPart(svg('line', { x1: tx, y1: ty, x2: tx - 30, y2: GY, class: 's2d-leg' }), 'twoLegStand'))
+      add(tagPart(svg('line', { x1: tx, y1: ty, x2: tx + 30, y2: GY, class: 's2d-leg' }), 'twoLegStand'))
       add(svg('line', { x1: tx - 20, y1: GY - (GY - ty) * 0.5 + 2, x2: tx + 20, y2: GY - (GY - ty) * 0.5 + 2, class: 's2d-leg thin' }))
-      add(svg('rect', { x: tx - 6, y: ty - 4, width: 12, height: 8, class: 's2d-metal' }))
+      add(tagPart(svg('rect', { x: tx - 6, y: ty - 4, width: 12, height: 8, class: 's2d-metal' }), 'twoLegStand'))
       legendItems.push({ cls: 's2d-leg-sw', text: T.twoLeg })
       minY = Math.min(minY, ty - 8)
     }
@@ -102,7 +154,7 @@ export const mountSide2d: MountView = (root, ctx): View => {
     slope = { cos: Math.cos(a), sin: Math.sin(a), deg: (a * 180) / Math.PI }
     if (s.items.rail) {
       minY = Math.min(minY, H[1] - 8, Lw[1] - 8)
-      add(svg('line', { x1: H[0], y1: H[1] + 6, x2: Lw[0], y2: Lw[1] + 6, class: 's2d-rail' }))
+      add(tagPart(svg('line', { x1: H[0], y1: H[1] + 6, x2: Lw[0], y2: Lw[1] + 6, class: 's2d-rail' }), 'rail'))
       for (let mm = 0; mm <= 1200; mm += 100) {
         const D = mm / 1000
         const p = pt(railPointAt(pose, D))
@@ -115,12 +167,13 @@ export const mountSide2d: MountView = (root, ctx): View => {
     // receiver
     if (s.items.receiver) {
       if (s.joints.receiver) {
-        add(svg('rect', { x: Lw[0] - 14, y: Lw[1] - 18, width: 28, height: 36, rx: 4, class: 's2d-blue' }))
+        add(tagPart(svg('rect', { x: Lw[0] - 14, y: Lw[1] - 18, width: 28, height: 36, rx: 4, class: 's2d-blue' }), 'receiver'))
         add(svg('circle', { cx: Lw[0] + 6, cy: Lw[1] - 2, r: 9, class: 's2d-pulley' }))
         legendItems.push({ cls: 's2d-blue', text: T.receiver })
       } else {
-        add(svg('rect', { x: X(1.2) - 14, y: GY - 28, width: 28, height: 28, rx: 4, class: 's2d-blue' }))
-        add(svg('circle', { cx: X(1.2) + 6, cy: GY - 14, r: 8, class: 's2d-pulley' }))
+        const rx = X(LOOSE.receiverX_m), ry = GY + ROW_A_Y
+        add(tagPart(svg('rect', { x: rx - 14, y: ry, width: 28, height: 26, rx: 4, class: 's2d-blue' }), 'receiver'))
+        add(svg('circle', { cx: rx + 6, cy: ry + 13, r: 7, class: 's2d-pulley' }))
       }
     }
 
@@ -143,12 +196,14 @@ export const mountSide2d: MountView = (root, ctx): View => {
     }
 
     // level
-    if (s.items.level && s.level.placement) {
+    if (s.items.level) {
       const onRail = s.level.placement === 'rail' && s.items.rail
-      const p = onRail ? pt(railPointAt(pose, 0.6)) : [X(0.55), GY] as [number, number]
+      const loose = s.level.placement === null
+      const p = onRail ? pt(railPointAt(pose, 0.6)) : loose ? [X(LOOSE.levelX_m), GY + ROW_A_Y + 22] as [number, number] : [X(0.55), GY] as [number, number]
       const rot = onRail ? slope.deg : 0
       const lv = svg('g', { transform: `translate(${p[0]} ${p[1]}) rotate(${rot})` })
       lv.append(svg('rect', { x: -34, y: -14, width: 68, height: 14, rx: 3, class: 's2d-level' }), svg('ellipse', { cx: 0, cy: -7, rx: 8, ry: 4, class: 's2d-bubble' }))
+      tagPart(lv, 'level')
       add(lv)
       legendItems.push({ cls: 's2d-level', text: T.level })
       minY = Math.min(minY, p[1] - 16)
@@ -162,12 +217,17 @@ export const mountSide2d: MountView = (root, ctx): View => {
       add(svg('text', { x: H[0] + r + 14, y: H[1] + 26, class: 's2d-theta' }, T.theta))
     }
 
-    // loose cart on the bench
+    // loose cart on the bench (front row), draggable onto the rail like the other parts
     if (s.items.cart && !s.cart.placed) {
-      const gx = X(0.3)
-      add(svg('rect', { x: gx, y: GY - 24, width: CART_LENGTH_m * S_PX, height: 22, rx: 4, class: 's2d-cart-body' }))
-      add(svg('circle', { cx: gx + 12, cy: GY - 4, r: 5, class: 's2d-wheel' }), svg('circle', { cx: gx + CART_LENGTH_m * S_PX - 12, cy: GY - 4, r: 5, class: 's2d-wheel' }))
+      const gx = X(LOOSE.cartX_m), gy = GY + ROW_A_Y + 3
+      const cartG = svg('g')
+      cartG.append(
+        svg('rect', { x: gx, y: gy, width: CART_LENGTH_m * S_PX, height: 22, rx: 4, class: 's2d-cart-body' }),
+        svg('circle', { cx: gx + 12, cy: gy + 20, r: 5, class: 's2d-wheel' }), svg('circle', { cx: gx + CART_LENGTH_m * S_PX - 12, cy: gy + 20, r: 5, class: 's2d-wheel' }),
+      )
+      add(tagPart(cartG, 'cart'))
     }
+    looseProps(add, s)
     if (s.items.cart) legendItems.push({ cls: 's2d-cart-body', text: T.cart })
     staticLayer.replaceChildren(...L)
     top = Math.max(0, Math.floor(minY - 10))
@@ -183,10 +243,23 @@ export const mountSide2d: MountView = (root, ctx): View => {
   let cartKey = ''
   function drawCart(): void {
     const s = app.getState()
+    const left = app.cartFall(ctx.now())
+    // reduced motion: jump to the resting pose (the path is the physics result, only played back here)
+    const fall = left !== null && ctx.reducedMotion() ? app.cartFall(ctx.now() + 1e7) : left
+    const fm = fall !== null
+    const right = fm ? Math.max(TABLE_EDGE_X_m, app.cartFall(ctx.now() + 1e7)!.x_m) : TABLE_EDGE_X_m
+    if (fm !== fallMode || right !== fallRight_m) { fallMode = fm; fallRight_m = right; sync(); ro.disconnect(); ro.observe(g) }
     const pose = app.cartPose(ctx.now())
     if (!pose || !s.cart.placed || !s.geometry) { if (cartKey !== '') { cartLayer.replaceChildren(); cartKey = '' } return }
-    const [fx, fy] = pt(pose.front)
-    const [rx, ry] = pt(pose.rear)
+    let [fx, fy] = pt(pose.front)
+    let [rx, ry] = pt(pose.rear)
+    if (fall) {
+      // cart centre and pitch from the physics path: front and rear lie half a cart length either side along its axis
+      const h = CART_LENGTH_m / 2
+      const c = Math.cos(fall.pitch_rad), sn = Math.sin(fall.pitch_rad)
+      fx = X(fall.x_m + h * c); fy = fallY(fall.y_m - h * sn)
+      rx = X(fall.x_m - h * c); ry = fallY(fall.y_m + h * sn)
+    }
     const len = Math.hypot(fx - rx, fy - ry)
     const deg = (Math.atan2(fy - ry, fx - rx) * 180) / Math.PI
     const key = `${rx.toFixed(1)}|${ry.toFixed(1)}|${deg.toFixed(2)}`
@@ -198,6 +271,7 @@ export const mountSide2d: MountView = (root, ctx): View => {
       svg('circle', { cx: 11, cy: -4, r: 5, class: 's2d-wheel' }), svg('circle', { cx: len - 11, cy: -4, r: 5, class: 's2d-wheel' }),
       svg('line', { x1: len, y1: -26, x2: len, y2: 0, class: 's2d-front' }),
     )
+    tagPart(grp, 'cart')
     cartLayer.replaceChildren(grp)
   }
 
@@ -211,13 +285,67 @@ export const mountSide2d: MountView = (root, ctx): View => {
     cartKey = ''
   }
 
+  // ---- drag-and-drop assembly (same controller as the 3D scene; this is the stage side) -------------------------------------
+  const toCm = (clientX: number, clientY: number): { x: number; y: number } | null => {
+    const r = g.getBoundingClientRect()
+    if (r.width === 0 || clientX < r.left || clientX > r.right || clientY < r.top || clientY > r.bottom) return null
+    const k = vbW() / r.width
+    const vx = VB_X0 + (clientX - r.left) * k, vy = top + (clientY - r.top) * k
+    return { x: ((vx - XO) / S_PX) * 100, y: ((GY - vy) / (S_PX * VEX)) * 100 }
+  }
+  const dragStrings = () => ddStrings[ctx.lang()].zones
+  let hidden: Element[] = []
+  const dd = createDragDrop({ ctx, stage: wrap, mount: wrap })
+  const adapter: StageAdapter = {
+    probe(cx, cy) {
+      const p = toCm(cx, cy)
+      if (!p) return null
+      // the side view has no depth: z is ignored, and a spot counts when the pointer is near it in height too
+      return (zone) => (zone.id === 'table' ? p.y <= 45 : Math.abs(p.y - zone.cy) <= SNAP_CM + 6) ? { x_cm: p.x, z_cm: null } : null
+    },
+    showZones(zones: readonly Zone[], active: ZoneId | null) {
+      zoneLayer.replaceChildren()
+      for (const z of zones) {
+        if (z.id === 'table') {
+          zoneLayer.append(svg('rect', { x: VB_X0 + 4, y: GY + 4, width: VB_W - 8, height: GROUND_PAD - 8, rx: 6, class: `s2d-zone s2d-zone-table${active === z.id ? ' on' : ''}` }))
+          continue
+        }
+        const on = active === z.id
+        const cls = `s2d-zone${z.ready ? ' ready' : ' early'}${on ? ' on' : ''}`
+        let shape: SVGElement
+        if (z.hx > 0) {
+          shape = svg('rect', { x: -z.hx * 6, y: -22, width: z.hx * 12, height: 44, rx: 8, class: cls, transform: `translate(${X(z.cx / 100)} ${Y(z.cy / 100)}) rotate(${slope.deg})` })
+        } else shape = svg('circle', { cx: X(z.cx / 100), cy: Y(z.cy / 100), r: SNAP_CM * 6 * 0.7, class: cls })
+        zoneLayer.append(shape)
+        const label = svg('text', { x: X(z.cx / 100), y: Y(z.cy / 100) - SNAP_CM * 6 * 0.7 - 6 * kPx, class: 's2d-label s2d-zone-text', 'text-anchor': 'middle' }, dragStrings()[z.id])
+        zoneLayer.append(label)
+      }
+    },
+    showPreview() { /* the floating chip of the controller follows the pointer */ },
+    hidePreview() { /* nothing to hide */ },
+    pickBenchPart(cx, cy) {
+      const hit = document.elementFromPoint(cx, cy)?.closest<SVGElement>('[data-part]')
+      return hit && g.contains(hit) ? (hit.dataset.part as ItemId) : null
+    },
+    lift(part) {
+      for (const n of hidden) n.setAttribute('visibility', 'visible')
+      hidden = []
+      if (part) { hidden = [...g.querySelectorAll(`[data-part="${part}"]`)]; for (const n of hidden) n.setAttribute('visibility', 'hidden') }
+    },
+    lockCamera() { /* the side view has no camera */ },
+    refuse() { /* the shell toast shows the reason */ },
+    placed() { /* nothing to remember */ },
+  }
+  dd.setAdapter(adapter)
+
   labels()
   return {
     update() {
+      dd.update()
       if (w.dirty()) { w.clear(); sync() }
       drawCart()
     },
-    relabel() { labels(); w.touch() },
-    destroy() { ro.disconnect(); w.off(); wrap.remove() },
+    relabel() { labels(); dd.relabel(); w.touch() },
+    destroy() { dd.destroy(); ro.disconnect(); w.off(); wrap.remove() },
   }
 }

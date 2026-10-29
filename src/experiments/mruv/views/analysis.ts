@@ -9,8 +9,14 @@ import { analysisCSV } from '../analysis/csv.ts'
 import { numText, pmText } from '../../../core/views/format.ts'
 import { plotResiduals, plotVt, plotXt, readPalette, type PlotHandle } from '../../../core/views/analysisPlots.ts'
 import { fmt } from '../../../core/pedagogy/dom.ts'
+import { mountTaskPanel } from '../../../core/views/taskPanel.ts'
+import { MRUV_TASK_IDS, mruvCompletion } from '../analysis/tasks.ts'
+import { strings as taskStrings } from './strings/tasks.ts'
+import { tasks } from '../persist.ts'
 
 export interface AnalysisOptions {
+  /** Help link to the theory section by language (shown once the theory is unlocked). */
+  helpTheory: Record<'es' | 'en', string>
   /** Teacher mode (?teacher): also show the model's expected a. */
   teacher: boolean
 }
@@ -51,6 +57,7 @@ export function mountAnalysis(opts: AnalysisOptions): MountView {
     const intro = el('p', 'muted')
     const status = el('p', 'readout-text', undefined, { 'aria-live': 'polite' })
     const exportBtn = button('', 'btn btn-quiet', () => download())
+    const taskPanel = mountTaskPanel({ tracker: tasks, ids: MRUV_TASK_IDS, labels: (l) => taskStrings[l].labels, lang: () => ctx.lang(), helpTheory: opts.helpTheory })
     const section = (cls: string): { root: HTMLElement; h: HTMLElement; body: HTMLElement } => {
       const s = el('section', `an-sec ${cls}`)
       const h = el('h3', 'sub-title')
@@ -112,7 +119,7 @@ export function mountAnalysis(opts: AnalysisOptions): MountView {
 
     const actions = el('div', 'table-actions')
     actions.append(exportBtn)
-    c.body.append(intro, status, s1.root, s25.root, s6.root, s78.root, s9.root, s10.root, cmp, actions)
+    c.body.append(intro, status, taskPanel.root, s1.root, s25.root, s6.root, s78.root, s9.root, s10.root, cmp, actions)
 
     // ---- state ---------------------------------------------------------------------------------------------------------
     let handles: PlotHandle[] = []
@@ -121,6 +128,17 @@ export function mountAnalysis(opts: AnalysisOptions): MountView {
     let last: { result: AnalysisResult; comparison: Comparison } | null = null
     let dirty = true
     const L = () => ctx.lang()
+    /** Tick state and data availability -> completion -> checklist, progress, unlock. */
+    function refreshTasks(): void {
+      const r = last?.result
+      const some = (vs: Array<Velocity | null>): boolean => vs.some((v) => v !== null)
+      taskPanel.update(mruvCompletion(tasks.ticks(), {
+        marks: !!r && r.marksWithData > 0,
+        whole: !!r && r.whole !== null, d30: !!r && some(r.d30), d10: !!r && some(r.d10),
+        fit: !!r && r.fit !== null, vEnd: !!r && r.vEnd !== null,
+      }))
+    }
+    const offTasks = tasks.onChange(refreshTasks)
 
     slider.addEventListener('input', () => { tangentFrac = Number(slider.value); dirty = true })
     const themeObserver = new MutationObserver(() => { dirty = true; sig = '' })
@@ -240,6 +258,7 @@ export function mountAnalysis(opts: AnalysisOptions): MountView {
         hPush(plotResiduals(resHost, { points: residualsMm(f), tMax }, pal, { t: T.axisT, r: T.axisRes }))
         legend10.textContent = [T.legRes, T.legZero].join('  ·  ')
       }
+      refreshTasks()
 
       // comparison
       cmpSum.textContent = T.cmpTitle
@@ -280,10 +299,10 @@ export function mountAnalysis(opts: AnalysisOptions): MountView {
         sig = next
         render()
       },
-      relabel() { sig = ''; dirty = true },
+      relabel() { sig = ''; dirty = true; taskPanel.relabel() },
       destroy() {
         for (const h of handles) h.destroy()
-        themeObserver.disconnect(); dark.removeEventListener('change', onScheme); ro.disconnect(); w.off(); c.root.remove()
+        offTasks(); taskPanel.destroy(); themeObserver.disconnect(); dark.removeEventListener('change', onScheme); ro.disconnect(); w.off(); c.root.remove()
       },
     }
   }

@@ -11,8 +11,6 @@ export interface InventoryStrings {
   inBox: string
   attached: string
   info: string
-  putAll: string
-  removeAll: string
   add: string
   remove: string
   addAria: string
@@ -41,7 +39,6 @@ export interface InventoryStrings {
   missingJoint: string
   missingReasons: Record<MissingReason, string>
   screwsInUse: string
-  summary: string
 }
 
 export const strings: Strings<InventoryStrings> = {
@@ -66,7 +63,7 @@ export const strings: Strings<InventoryStrings> = {
       markers: { name: 'Marcadores (cinta)', hint: 'Para señalar las posiciones cada 10 cm.' },
     },
     onTable: 'En la mesa', inBox: 'En la caja', attached: 'Fijado',
-    info: 'Más información: {x}', putAll: 'Poner todo', removeAll: 'Retirar todo',
+    info: 'Más información: {x}',
     add: 'Poner', remove: 'Retirar', addAria: 'Poner en la mesa: {x}', removeAria: 'Retirar de la mesa: {x}',
     itemsTitle: 'Materiales',
     jointsTitle: 'Montaje de la pista',
@@ -95,7 +92,6 @@ export const strings: Strings<InventoryStrings> = {
       needsRackClamp: 'primero fija la riel a la pinza', notAttached: 'falta conectarlo',
     },
     screwsInUse: 'Los tornillos están en uso.',
-    summary: '{n} de 11 sobre la mesa',
   },
   en: {
     title: 'Inventory and assembly',
@@ -118,7 +114,7 @@ export const strings: Strings<InventoryStrings> = {
       markers: { name: 'Markers (tape)', hint: 'To flag the positions every 10 cm.' },
     },
     onTable: 'On the table', inBox: 'In the box', attached: 'Fixed',
-    info: 'More information: {x}', putAll: 'Place all', removeAll: 'Remove all',
+    info: 'More information: {x}',
     add: 'Place', remove: 'Remove', addAria: 'Put on the table: {x}', removeAria: 'Remove from the table: {x}',
     itemsTitle: 'Materials',
     jointsTitle: 'Track assembly',
@@ -147,6 +143,5 @@ export const strings: Strings<InventoryStrings> = {
       needsRackClamp: 'first fasten the rail to the clamp', notAttached: 'not connected yet',
     },
     screwsInUse: 'The screws are in use.',
-    summary: '{n} of 11 on the table',
   },
 }

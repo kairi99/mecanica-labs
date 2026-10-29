@@ -10,6 +10,7 @@ import { strings as tableStrings } from '../../src/experiments/friction/views/st
 import { strings as inclineStrings } from '../../src/experiments/friction/views/strings/incline.ts'
 import { strings as recordStrings } from '../../src/experiments/friction/views/strings/record.ts'
 import { strings as analysisStrings } from '../../src/experiments/friction/views/strings/analysis.ts'
+import { strings as ddStrings } from '../../src/experiments/friction/views/strings/dragdrop.ts'
 import { strings as side2dStrings } from '../../src/experiments/friction/views/strings/side2d.ts'
 import { strings as sceneStrings, PRESETS } from '../../src/experiments/friction/views/strings/scene3d.ts'
 import { strings as shellStrings } from '../../src/experiments/friction/views/strings/shell.ts'
@@ -37,7 +38,7 @@ const placeholders = (s: string): string[] => [...s.matchAll(/\{(\w+)\}/g)].map(
 
 const FILES: Array<[string, { es: unknown; en: unknown }]> = [
   ['reasons', reasonStrings], ['inventory', inventoryStrings], ['bench', benchStrings], ['pull', pullStrings], ['table', tableStrings], ['incline', inclineStrings],
-  ['record', recordStrings], ['analysis', analysisStrings], ['side2d', side2dStrings], ['scene3d', sceneStrings], ['shell', shellStrings],
+  ['record', recordStrings], ['analysis', analysisStrings], ['side2d', side2dStrings], ['dragdrop', ddStrings], ['scene3d', sceneStrings], ['shell', shellStrings],
   ['checklist', checklistStrings], ['tour', tourStrings], ['coach', coachStrings],
 ]
 
@@ -89,12 +90,14 @@ describe('registry and pages', () => {
 })
 
 describe('checklist', () => {
-  it('starts with the assembly pending and follows the guide in order', () => {
-    const app = createApparatus('empty')
+  it('has no "put the materials on the table" step and follows the guide in order', () => {
+    expect([...STEP_IDS]).not.toContain('assembly')
+    const app = createApparatus('loose')
     const steps = buildChecklist(app)
     expect(steps.map((s) => s.id)).toEqual([...STEP_IDS])
-    expect(nextStep(steps)!.id).toBe('assembly')
-    expect(steps.find((s) => s.id === 'exp1')!.status).toBe('na')
+    expect(nextStep(steps)!.id).toBe('mass')
+    expect(steps.find((s) => s.id === 'exp1')!.status).toBe('na') // no scale hooked yet
+    expect(nextStep(buildChecklist(createApparatus('empty')))).toBeNull() // nothing on the table: every step is "not yet"
   })
   it('the exp12 preset has the weighing, the paper and the zero done, and exp1 pending', () => {
     const steps = buildChecklist(createApparatus('exp12'))

@@ -15,7 +15,6 @@ export const strings: Strings<ChecklistStrings> = {
     tour: 'Ver el recorrido',
     rowChip: '{x}: {n} de {total}',
     steps: {
-      assembly: { label: 'Materiales sobre la mesa', why: 'El procedimiento necesita el taco, los dinamómetros, las masas, la hoja, el riel, las tres barras y la cinta; además la balanza (para M) y, en el experimento 3, el soporte con su base y el cronómetro: la lista de la guía no los menciona.' },
       mass: { label: 'Medir la masa M del taco', why: 'La fuerza de rozamiento es μ por la fuerza normal, que depende de M. Sin M no puedes obtener μ de la fuerza ni calcular los pesos de la recta.' },
       paper: { label: 'Fijar la hoja de papel a la mesa', why: 'Si el papel se desliza con el taco, el dinamómetro mide el rozamiento del papel con la mesa y no el de la superficie que quieres estudiar: las lecturas salen bajas y erráticas.' },
       zero: { label: 'Poner a cero el dinamómetro acostado', why: 'El cero de fábrica se ajusta con el dinamómetro colgando; acostado la aguja marca un poco de menos y todas tus fuerzas salen corridas por el mismo valor.' },
@@ -25,7 +24,6 @@ export const strings: Strings<ChecklistStrings> = {
       exp3: { label: 'Experimento 3: Tabla 4.3', why: 'Para cada barra anota la altura h donde empieza a deslizar sin detenerse y el tiempo de recorrido; con θ y a se calcula μ. Detén la manivela en cuanto la barra se mueva.' },
     },
     detail: {
-      assembly: 'Falta(n) {n} grupo(s) de objetos.',
       paperLoose: 'El papel está suelto.',
       fill41: '{n} de {total} lecturas',
       fill42: '{n} de {total} lecturas',
@@ -42,7 +40,6 @@ export const strings: Strings<ChecklistStrings> = {
     tour: 'Take the tour',
     rowChip: '{x}: {n} of {total}',
     steps: {
-      assembly: { label: 'Materials on the table', why: 'The procedure needs the block, the spring scales, the masses, the sheet, the rail, the three bars and the tape; also the balance (for M) and, in experiment 3, the stand with its base and the stopwatch: the guide\'s list does not mention them.' },
       mass: { label: 'Measure the block\'s mass M', why: 'Friction is μ times the normal force, which depends on M. Without M you cannot get μ from the force or compute the weights of the line.' },
       paper: { label: 'Fix the sheet of paper to the table', why: 'If the paper slides with the block, the spring scale measures the friction of the paper on the table, not that of the surface you want to study: readings come out low and erratic.' },
       zero: { label: 'Zero the spring scale lying flat', why: 'The factory zero is set with the scale hanging; lying flat the needle reads a little low and all your forces are shifted by the same amount.' },
@@ -52,7 +49,6 @@ export const strings: Strings<ChecklistStrings> = {
       exp3: { label: 'Experiment 3: Table 4.3', why: 'For each bar note the height h at which it starts sliding without stopping and the travel time; with θ and a you compute μ. Stop the crank as soon as the bar moves.' },
     },
     detail: {
-      assembly: '{n} group(s) of items missing.',
       paperLoose: 'The paper is loose.',
       fill41: '{n} of {total} readings',
       fill42: '{n} of {total} readings',

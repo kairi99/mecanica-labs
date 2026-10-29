@@ -9,6 +9,7 @@ import type { CardInfo } from '../../../../core/scene3d/types.ts'
 import { webgl2Available } from '../../../../core/scene3d/webgl.ts'
 import { createMenu } from '../../../../core/scene3d/menu.ts'
 import { PRESET_NAMES, parsePreset, type PresetName } from './presets.ts'
+import { createDragDrop } from '../dragdrop/controller.ts'
 
 export type { PresetName }
 const PRESET_ORDER: readonly PresetName[] = PRESET_NAMES
@@ -44,7 +45,9 @@ export function mountScene3D(root: HTMLElement, ctx: ViewContext, opts: Scene3DO
   const camParam = parsePreset(new URLSearchParams(location.search).get('cam')) // 'alongRail' is an alias of 'lateral'
   // a portrait phone shows the 1.2 m bench only as a thin strip: start at the stand end where the cart waits
   const portraitPhone = matchMedia('(max-width: 819px) and (orientation: portrait)').matches
-  const initial: PresetName = parsePreset(opts.preset) ?? camParam ?? (portraitPhone ? 'highEnd' : 'overview')
+  // ...but while the rail is not clamped yet the parts lie loose all over the bench: show the whole table
+  const loose = ctx.apparatus.getState().joints.rackClamp === null
+  const initial: PresetName = parsePreset(opts.preset) ?? camParam ?? (portraitPhone && !loose ? 'highEnd' : 'overview')
 
   const wrap = document.createElement('div')
   wrap.className = 'scene3d'
@@ -86,7 +89,10 @@ export function mountScene3D(root: HTMLElement, ctx: ViewContext, opts: Scene3DO
   stack.append(status, card)
   stage.append(topLeft, topRight, stack)
   wrap.append(stage)
+  wrap.classList.add('has-tray')
   root.append(wrap)
+  // drag-and-drop assembly: the parts tray under the stage; the scene supplies the stage side once it has loaded
+  const dd = createDragDrop({ ctx, stage, mount: wrap })
 
   let scene: Scene3D | null = null
   let destroyed = false
@@ -173,6 +179,7 @@ export function mountScene3D(root: HTMLElement, ctx: ViewContext, opts: Scene3DO
     syncPresets()
     syncTools()
     scene?.relabel()
+    dd.relabel()
     showCard(cardInfo)
   }
   relabel()
@@ -189,7 +196,9 @@ export function mountScene3D(root: HTMLElement, ctx: ViewContext, opts: Scene3DO
         onStatus: (t) => { status.textContent = t },
         onTapeTarget: opts.onTapeTarget,
         openPanel: opts.openPanel,
+        dd: { busy: dd.busy, overTray: dd.overTray, removeFromTray: dd.removeFromTray },
       })
+      dd.setAdapter(scene.dragdrop)
       status.textContent = ''
       if (pendingMark !== null) scene.setMarkTarget(pendingMark)
       if (pendingFocus) scene.focus(pendingFocus)
@@ -205,6 +214,7 @@ export function mountScene3D(root: HTMLElement, ctx: ViewContext, opts: Scene3DO
 
   return {
     update() {
+      dd.update()
       scene?.update()
     },
     relabel,
@@ -218,6 +228,8 @@ export function mountScene3D(root: HTMLElement, ctx: ViewContext, opts: Scene3DO
     destroy() {
       destroyed = true
       toolMenu.destroy(); viewMenu.destroy()
+      dd.setAdapter(null)
+      dd.destroy()
       scene?.destroy()
       scene = null
       wrap.remove()

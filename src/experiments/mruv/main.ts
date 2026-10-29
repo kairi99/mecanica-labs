@@ -1,9 +1,10 @@
-// MRUV page: builds the apparatus (URL options ?preset ?seed ?cam ?analysis, dev-only ?demo) and the camera logic of the 3D
+// MRUV page: builds the apparatus (URL options ?preset=assembled|empty|loose ?seed ?cam ?analysis, dev-only ?demo) and the camera logic of the 3D
 // stage, then hands everything to the shared shell (core/shell). Shell options: ?lang ?theme ?view ?step ?tour ?teacher.
 import '../../core/styles/tokens.css'
 import '../../core/styles/app.css'
 import '../../core/styles/layout.css'
 import '../../core/styles/panels.css'
+import '../../core/styles/dragdrop.css'
 import './styles/instruments.css'
 import './styles/side2d.css'
 import '../../core/styles/analysis.css'
@@ -33,7 +34,7 @@ import { fillTableSimulated } from './pedagogy/simulatedReadings.ts'
 import { mountSide2d } from './views/side2d.ts'
 import type { PresetName as ScenePreset, Scene3DView } from './views/scene3d/index.ts'
 import {
-  clearSnapshot, loadAutoMark, loadSnapshot, migrateLegacyStorage, saveAutoMark, saveSnapshot, store,
+  clearSnapshot, loadAutoMark, loadSnapshot, migrateLegacyStorage, saveAutoMark, saveSnapshot, store, tasks,
 } from './persist.ts'
 
 migrateLegacyStorage()
@@ -50,6 +51,9 @@ const showAnalysis = params.get('analysis') !== '0'
 const teacher = shellParams.teacher
 /** Dev builds only: ?demo=table fills Table 1.1 with simulated human readings (screenshots, manual checks). Never persisted. */
 const demoTable = import.meta.env.DEV && params.get('demo') === 'table'
+/** Help pages; the theory sections unlock with the task checklist (or ?theory=1). `?analysis=0` hides the checklist: use ?theory=1 then. */
+const HELP = { es: 'help/index.html', en: 'help/en.html' } as const
+const HELP_THEORY = { es: 'help/index.html#teoria', en: 'help/en.html#theory' } as const
 const STEP_COUNT = showAnalysis ? 5 : 4
 
 // ---- apparatus -----------------------------------------------------------------------------------------------------
@@ -66,7 +70,7 @@ function createApp(): Apparatus {
     return a
   }
   const wantSeed = Number.isFinite(seedParam) ? seedParam : null
-  if (presetParam === 'assembled' || presetParam === 'empty') {
+  if (presetParam === 'assembled' || presetParam === 'empty' || presetParam === 'loose') {
     const a = new Apparatus({ seed: wantSeed ?? randomSeed() })
     a.preset(presetParam)
     return a
@@ -83,7 +87,7 @@ function createApp(): Apparatus {
     }
   }
   const a = new Apparatus({ seed: wantSeed ?? randomSeed() })
-  a.preset('empty')
+  a.preset('loose')
   return a
 }
 const app = createApp()
@@ -102,7 +106,7 @@ const slots: Array<{ id: string; step: number; mount: MountView }> = [
   { id: 'stopwatch', step: 3, mount: mountStopwatch({ autoMark: { get: () => autoMark, set: (on) => { autoMark = on; saveAutoMark(on) } } }) },
   { id: 'tablet', step: 4, mount: mountTablet },
 ]
-if (showAnalysis) slots.push({ id: 'analysis', step: 5, mount: mountAnalysis({ teacher }) })
+if (showAnalysis) slots.push({ id: 'analysis', step: 5, mount: mountAnalysis({ teacher, helpTheory: HELP_THEORY }) })
 
 /** Done checks of the tracker and the "next step" line, from the live checklist. */
 function progressOf(steps: ChecklistStep[], next: ChecklistStep | null): ProcedureProgress {
@@ -110,7 +114,7 @@ function progressOf(steps: ChecklistStep[], next: ChecklistStep | null): Procedu
   const measured = ok(['measure'])
   return {
     stepDone: [
-      ok(['materials', 'standBase', 'railClamped', 'scale', 'lowEnd', 'screws']),
+      ok(['standBase', 'railClamped', 'scale', 'lowEnd', 'screws']),
       ok(['levelled', 'angle', 'marks', 'cartZero']),
       measured,
       app.getRuns().length > 0,
@@ -138,7 +142,8 @@ function sendMarkTarget(): void {
 }
 onMarkRow(sendMarkTarget)
 app.on((e) => {
-  if (e.type === 'released' && autoMark && shell.currentStep() === 3) setCamera('mark')
+  // without the receiver the cart will fall off the low end: show the whole bench instead of the marks
+  if (e.type === 'released' && autoMark && shell.currentStep() === 3) setCamera(app.canRun().warnings.length > 0 ? 'lowEnd' : 'mark')
 })
 
 const load3d = async (): Promise<Stage3DModule<Apparatus>> => {
@@ -164,7 +169,7 @@ shell = mountShell<Apparatus, ApparatusEvent>({
   apparatus: app,
   store,
   strings: shellStrings,
-  help: { es: 'help/index.html', en: 'help/en.html' },
+  help: HELP,
   landingUrl: '../index.html',
   stepCount: STEP_COUNT,
   panelStep: PANEL_STEP,
@@ -178,7 +183,7 @@ shell = mountShell<Apparatus, ApparatusEvent>({
   timingBar: mountTimingBar,
   stage: { mount2d: mountSide2d, load3d },
   refusalText: (e, lang) => (e.type === 'refused' ? reasonText(lang, e.reason) : null),
-  reset() { clearSnapshot(); app.preset('empty') },
+  reset() { clearSnapshot(); tasks.clear(); app.preset('loose') },
   save: () => saveSnapshot(app.snapshot()),
   persist: !demoTable,
   // Entering step 3 on a phone switches the camera to the Mark view.

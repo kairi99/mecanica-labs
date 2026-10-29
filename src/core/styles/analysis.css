@@ -33,3 +33,15 @@
 @media (max-width: 359px) {
   .an-table th, .an-table td { white-space: normal; padding: var(--space-2); }
 }
+
+/* task checklist and theory card (shared by the four analysis panels) */
+.task-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; }
+.task-row { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: var(--space-1) var(--space-3); padding: var(--space-1) 0; border-top: var(--stroke-hair) solid var(--separator); }
+.task-name { flex: 1 1 14rem; min-width: 0; font: var(--text-callout); overflow-wrap: anywhere; }
+.task-done { display: inline-flex; align-items: center; gap: var(--space-2); min-height: var(--touch); padding-inline: var(--space-2); cursor: pointer; font: var(--text-callout); }
+.task-done input { width: 1.5rem; height: 1.5rem; accent-color: var(--accent); cursor: pointer; }
+.task-done:focus-within { outline: 2px solid var(--accent); outline-offset: 2px; border-radius: var(--radius-s); }
+.task-warn { flex-basis: 100%; margin: 0; font: var(--text-footnote); }
+.theory-card { display: flex; flex-direction: column; align-items: flex-start; gap: var(--space-2); }
+.theory-card p { margin: 0; }
+.theory-link { display: inline-flex; align-items: center; min-height: var(--touch); text-decoration: none; }

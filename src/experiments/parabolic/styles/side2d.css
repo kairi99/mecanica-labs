@@ -43,3 +43,6 @@
 @media (max-width: 819px) { .side2d { padding-bottom: calc(var(--touch) + var(--space-3)); } }
 /* a view taller than the stage keeps its top (flags, labels) and loses its bottom note, not the other way round */
 .stage-2d:has(> .side2d-pb) { justify-content: safe center; }
+
+/* invisible, larger grab area of a loose part or a sheet (drag and drop) */
+.s2d-hit { fill: transparent; }

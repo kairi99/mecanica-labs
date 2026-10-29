@@ -53,7 +53,6 @@ export function coachCandidates(app: Apparatus, e: ApparatusEvent): Nudge[] {
   switch (e.type) {
     case 'refused':
       if (e.reason === 'cartOffRail') push('cartOffRail')
-      if (e.action === 'releaseCart' && app.canRun().reasons.includes('noReceiver')) push('noReceiver')
       if (e.action === 'tableCopyDisplay' && e.reason === 'noStopwatchReading') push('emptyCopy')
       break
     case 'attached':
@@ -63,6 +62,7 @@ export function coachCandidates(app: Apparatus, e: ApparatusEvent): Nudge[] {
       if (e.which === 'rack' && e.value_mm > 0 && !app.procedure().levelledBeforeRaise) push('raisedBeforeLevel')
       break
     case 'released': {
+      if (app.canRun().warnings.includes('noReceiver')) push('noReceiver')
       const p = app.procedure()
       if (p.scaleZeroAtHighEnd === false) push('scaleReversed')
       if (p.theta_rad !== null && !p.angleOk) push('angleOff')

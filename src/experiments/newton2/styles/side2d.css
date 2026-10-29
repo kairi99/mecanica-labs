@@ -31,3 +31,8 @@
 .s2d-legend-item { display: inline-flex; align-items: center; gap: var(--space-1); }
 .s2d-swatch { width: var(--swatch-w); height: var(--swatch-h); }
 .s2d-leg-sw { fill: var(--stage-metal-hi); }
+/* loose parts lying on the bench (drag-and-drop assembly): line icons with a generous, invisible hit area */
+.s2d-glyph { fill: none; stroke: var(--stage-ink); stroke-width: 1.8px; stroke-linecap: round; stroke-linejoin: round; }
+.s2d-hit { fill: transparent; stroke: none; }
+.s2d-zones { pointer-events: none; }
+.s2d-bench-top { fill: var(--stage-metal); }

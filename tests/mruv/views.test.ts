@@ -16,6 +16,7 @@ import { strings as checklistStrings } from '../../src/experiments/mruv/pedagogy
 import { strings as coachStrings } from '../../src/experiments/mruv/pedagogy/strings/coach.ts'
 import { strings as tourStrings } from '../../src/experiments/mruv/pedagogy/strings/tour.ts'
 import { strings as analysisStrings } from '../../src/experiments/mruv/views/strings/analysis.ts'
+import { strings as dragdropStrings } from '../../src/experiments/mruv/views/strings/dragdrop.ts'
 import { strings as side2dStrings } from '../../src/experiments/mruv/views/strings/side2d.ts'
 import { strings as shellStrings } from '../../src/experiments/mruv/views/strings/shell.ts'
 import { strings as landingStrings } from '../../src/landing/strings.ts'
@@ -99,7 +100,7 @@ describe('strings key parity ES/EN', () => {
   }
   const files = {
     reasons: reasonStrings, inventory: invStrings, adjust: adjustStrings, stopwatch: stopwatchStrings, tape: tapeStrings,
-    table: tableStrings, tablet: tabletStrings, checklist: checklistStrings, coach: coachStrings, tour: tourStrings, analysis: analysisStrings, side2d: side2dStrings, shell: shellStrings,
+    table: tableStrings, tablet: tabletStrings, checklist: checklistStrings, coach: coachStrings, tour: tourStrings, analysis: analysisStrings, side2d: side2dStrings, dragdrop: dragdropStrings, shell: shellStrings,
     landing: landingStrings, coreShell: coreShellStrings,
   }
   for (const [name, s] of Object.entries(files)) {

@@ -8,17 +8,18 @@
 <link rel="stylesheet" href="./help.css">
 <script type="module" src="./help.ts"></script>
 </head>
-<body>
+<body data-experiment="mruv">
 <a class="skip-link" href="#main">Saltar al contenido principal</a>
 <header class="bar"><a class="pill accent" href="../index.html">Volver al laboratorio</a><nav class="pills" aria-label="Idioma"><a class="pill" href="en.html" hreflang="en" lang="en">English</a></nav></header>
 <main id="main" tabindex="-1">
 <h1>Guía de ayuda: MRUV con el carrito digital</h1>
 <p class="lede">Un complemento del laboratorio virtual: la teoría del movimiento rectilíneo uniformemente variado, cómo usar cada instrumento, cómo se calculan las incertidumbres y qué hace que un plano inclinado real no sea un MRUV perfecto. No reemplaza la guía de la práctica: la acompaña.</p>
 <nav class="toc" aria-label="Contenido">
-<a href="#teoria">Teoría</a><a href="#uso">Uso del laboratorio</a><a href="#flexometro">Flexómetro</a><a href="#cronometro">Cronómetro</a><a href="#incertidumbre">Incertidumbre</a><a href="#errores">Fuentes de error</a><a href="#teclas">Teclas</a><a href="#accesibilidad">Accesibilidad</a><a href="#creditos">Créditos</a>
+<a href="#teoria" data-locked="theory" hidden>Teoría</a><a href="#uso">Uso del laboratorio</a><a href="#flexometro">Flexómetro</a><a href="#cronometro">Cronómetro</a><a href="#incertidumbre">Incertidumbre</a><a href="#errores" data-locked="theory" hidden>Fuentes de error</a><a href="#teclas">Teclas</a><a href="#accesibilidad">Accesibilidad</a><a href="#creditos">Créditos</a>
 </nav>
+<aside class="note" id="teoria-bloqueada" data-theory-notice><p><b>La teoría está bloqueada.</b> Se abre al completar todas las tareas del análisis en el laboratorio (marca cada una como «Hecha»). Esta ayuda práctica (uso, instrumentos, incertidumbre, atajos, accesibilidad) siempre está disponible. El bloqueo es una ayuda para el aula, no una protección: funciona en tu navegador, sin servidor. Si eres docente, añade <code>?theory=1</code> a la dirección.</p></aside>
 
-<section id="teoria"><h2>1. Teoría del MRUV</h2>
+<section id="teoria" data-locked="theory" hidden><h2>Teoría del MRUV</h2>
 <p>Un movimiento rectilíneo es uniformemente variado cuando la aceleración es constante. Si el cuerpo parte del origen con velocidad inicial <em>v</em><sub>0</sub> en <em>t</em> = 0, las ecuaciones son:</p>
 <div class="eq">v(t) = v₀ + a·t<br>x(t) = x₀ + v₀·t + ½·a·t²<br>v² = v₀² + 2·a·(x − x₀)</div>
 <p>Las tres gráficas características son una parábola para la posición, una recta inclinada para la velocidad y una recta horizontal para la aceleración:</p>
@@ -33,22 +34,25 @@
 <p>Para un carro sin fricción que se desliza, <em>a</em> = <em>g</em> sen θ. Si rueda sobre ruedas, parte de la energía se convierte en giro y la aceleración baja a <em>g</em> sen θ / (1 + <em>k</em>), con <em>k</em> la razón entre la inercia de rotación de las ruedas y la masa por el radio al cuadrado. La fricción la reduce un poco más. Por eso no esperes que tu <em>a</em> sea exactamente <em>g</em> sen θ.</p>
 </section>
 
-<section id="uso"><h2>2. Cómo usar el laboratorio</h2>
+<section id="uso"><h2>Cómo usar el laboratorio</h2>
 <p>El laboratorio va en cinco pasos, que ves en la barra de arriba: 1 Montaje, 2 Ajustes y altura, 3 Cronometraje y Tabla 1.1, 4 DigiCart, 5 Análisis. Los pasos que ya cumpliste llevan una marca. El escenario siempre queda a la vista; en el paso 3 la barra de cronometraje queda justo debajo de él.</p>
 <ol>
-<li><b>Materiales.</b> En el inventario pon sobre la mesa todas las piezas: riel, DigiCart, soporte con cremallera y su base, soporte de dos patas, receptor, tornillos, nivelador, cronómetro, flexómetro y marcas.</li>
-<li><b>Montaje.</b> Pon el soporte con cremallera sobre su base. Sujeta un extremo de la riel en su pinza: ese será el extremo alto y el 0 de la escala impresa debe quedar ahí. En el extremo opuesto van el soporte de dos patas y el receptor. Usa los seis tornillos (dos por unión).</li>
+<li><b>Materiales.</b> Todas las piezas ya están sueltas sobre la mesa al empezar: riel, DigiCart, soporte con cremallera y su base, soporte de dos patas, receptor, tornillos, nivelador, cronómetro, flexómetro y marcas. No hay que sacarlas de ninguna caja; solo hay que montarlas.</li>
+<li><b>Montaje.</b> Arrastra el soporte con cremallera hasta su base. Sujeta un extremo de la riel en su pinza: ese será el extremo alto y el 0 de la escala impresa debe quedar ahí. En el extremo opuesto van el soporte de dos patas y el receptor. Usa los seis tornillos (dos por unión). Sin el receptor el carro no tiene tope: sale de la riel, cae sobre la mesa (o al piso) y esa corrida no vale. Pon el receptor y vuelve a colocar el carro en la riel.</li>
 <li><b>Nivelación.</b> Pon el nivelador sobre la riel, deja la cremallera en cero y gira el pie del soporte de dos patas hasta centrar la burbuja. Así quitas la inclinación propia de la mesa antes de crear la tuya. Si subes el soporte antes de nivelar, la inclinación final no será la que calculas.</li>
 <li><b>Inclinación de 1,30°.</b> Sube el extremo alto con la cremallera. Mide la altura de la riel en cada soporte con el flexómetro y mide también la distancia <em>d</em> (más abajo). La diferencia de alturas debe cumplir Δh = d·sen θ, con <em>d</em> la distancia entre los dos soportes medida a lo largo de la riel. Calcúlalo tú: la lista de verificación te recuerda la fórmula, no la respuesta. Afina con el pie del soporte de dos patas.</li>
 <li><b>Marcas.</b> Pega una marca cada 10 cm desde el punto más alto (A, 0 cm) hasta al menos 90 cm.</li>
 <li><b>Medición.</b> Coloca el frente del DigiCart en la marca de 0 cm, elige la marca hasta la que vas a medir, suelta el carro y cronometra. Repite 10 veces por marca y copia cada lectura a la Tabla 1.1.</li>
 <li><b>Análisis.</b> El panel de análisis calcula las tareas de la sección 1.4 con tu tabla y se actualiza solo. Las preguntas las respondes tú.</li>
 </ol>
+<h3>Montar arrastrando</h3>
+<p>Al empezar, todas las piezas están sueltas sobre la mesa y la pista no está armada. Arrastra una pieza hasta su sitio: los destinos válidos se iluminan con un contorno y un rótulo, y al soltarla cerca de uno se fija ahí. Si la unión no se puede hacer todavía (por ejemplo, la riel sin el soporte puesto en su base), la pieza se queda sobre la mesa y aparece el motivo: intentar en desorden también enseña. Puedes arrastrar una pieza ya puesta a otro destino, o soltarla sobre la bandeja (bajo el escenario) para quitarla de la mesa; allí espera hasta que la arrastres de vuelta. «Empezar de nuevo» devuelve todas las piezas sueltas a la mesa.</p>
+<p>Sin arrastrar: abre «Elegir una pieza de la mesa» bajo el escenario (o usa una pieza de la bandeja), toca la pieza (o enfócala con Tab y pulsa Intro) y luego toca un destino resaltado, o elige el destino en la lista que aparece bajo la bandeja (con las flechas y Intro). Esc cancela. Si prefieres botones, el panel «Inventario y montaje» los guarda en «Montar con botones»; hacen exactamente lo mismo.</p>
 <p class="note">El DigiCart nunca debe quedar fuera de la riel: rueda con facilidad sobre cualquier superficie y puede caer de la mesa.</p>
 <p>El «Procedimiento» (la barra desplegable arriba del panel) sigue estos pasos y, con el botón «Muéstramelo», resalta la pieza en el escenario y te lleva al paso y al panel que necesitas. Desde ahí también puedes repetir el recorrido inicial.</p>
 </section>
 
-<section id="flexometro"><h2>3. El flexómetro (cinta métrica)</h2>
+<section id="flexometro"><h2>El flexómetro (cinta métrica)</h2>
 <h3>Para qué sirve aquí</h3>
 <p>Para medir la altura de la riel sobre la mesa en cada soporte, la distancia <em>d</em> entre los dos soportes a lo largo de la riel y la longitud del DigiCart. Si la diferencia de alturas es Δh, entonces sen θ = Δh/<em>d</em>. Para 1,30° se necesita Δh ≈ 0,0227·<em>d</em>: pocos milímetros por cada decímetro. Es un instrumento analógico: tú lees la cinta; la pantalla no te da ningún número.</p>
 <h3>Cómo leer la cinta</h3>
@@ -70,7 +74,7 @@
 <p>La cinta es analógica y la división es <em>d</em> = 1 mm. Se lee a la división más cercana, de modo que la media anchura es <em>d</em>/2 = 0,5 mm y la incertidumbre estándar tipo B es u = (<em>d</em>/2)/√3 ≈ 0,29 mm por lectura. La diferencia de dos alturas tiene u ≈ 0,41 mm.</p>
 </section>
 
-<section id="cronometro"><h2>4. El cronómetro y el tiempo de reacción</h2>
+<section id="cronometro"><h2>El cronómetro y el tiempo de reacción</h2>
 <p>El cronómetro lo manejas tú: el instante exacto de tu pulsación (la tecla o el toque) es el que cuenta. Entre que el carro pasa por la marca y tu dedo reacciona pasa una fracción de segundo, y lo mismo al iniciar. Lo que aparece en pantalla es el tiempo verdadero más la diferencia entre ambos retrasos.</p>
 <h3>Error aleatorio y error sistemático</h3>
 <ul>
@@ -82,7 +86,7 @@
 <p>El panel de análisis incluye un contraste con el registro del DigiCart. Allí ves el desfase medio de tus lecturas respecto a los tiempos verdaderos: un desfase parecido en todas las marcas es tu sesgo de reacción.</p>
 </section>
 
-<section id="incertidumbre"><h2>5. Incertidumbre</h2>
+<section id="incertidumbre"><h2>Incertidumbre</h2>
 <h3>Tipo A y tipo B</h3>
 <p>La incertidumbre tipo A sale de la dispersión de lecturas repetidas: para <em>n</em> lecturas con desviación estándar <em>s</em>, u<sub>A</sub> = <em>s</em>/√<em>n</em>. La tipo B no sale de repetir, sino de lo que sabes del instrumento: su resolución, su tolerancia o un límite razonable del error.</p>
 <h3>Convenciones usadas en el laboratorio</h3>
@@ -102,7 +106,7 @@
 <p>Tu retraso al pulsar es parecido en todas las marcas: está totalmente correlacionado. Por eso no se suma, punto por punto, a la incertidumbre del ajuste (que usa solo u<sub>A</sub> y la resolución de la pantalla). Se informa aparte: la tabla de la tarea 1 muestra u<sub>reac</sub> en su propia columna y la u combinada de t̄, y el panel de análisis estima qué hace un retraso constante de +0,1 s: <em>a</em> casi no cambia (≈ −0,3 %), c₁ baja unos −0,02 m/s y la velocidad media 0–90 cm baja ≈ 3 %. Una c₁ lejos de 0 delata ese sesgo.
 </section>
 
-<section id="errores"><h2>6. Fuentes de error en un plano inclinado</h2>
+<section id="errores" data-locked="theory" hidden><h2>Fuentes de error en un plano inclinado</h2>
 <p>Esta sección responde, con el modelo del laboratorio, a la pregunta 4 del trabajo preparatorio: por qué el movimiento en un plano inclinado no es un MRUV perfecto.</p>
 <ul>
 <li><b>Fricción y resistencias:</b> la resistencia a la rodadura y el rozamiento de los cojinetes frenan al carro. Reducen un poco la aceleración. El aire también frena, más a mayor velocidad.</li>
@@ -114,7 +118,7 @@
 </ul>
 </section>
 
-<section id="teclas"><h2>7. Atajos de teclado</h2>
+<section id="teclas"><h2>Atajos de teclado</h2>
 <table>
 <thead><tr><th>Tecla</th><th>Acción</th></tr></thead>
 <tbody>
@@ -129,7 +133,7 @@
 </tbody></table>
 </section>
 
-<section id="accesibilidad"><h2>8. Accesibilidad</h2>
+<section id="accesibilidad"><h2>Accesibilidad</h2>
 <p>Este laboratorio se revisó contra las Pautas de Accesibilidad para el Contenido Web (WCAG) 2.0 nivel AA, la base de la norma NTE INEN-ISO/IEC 40500. La revisión combinó una herramienta automática (axe-core) en todas las páginas, en español e inglés, en tema claro y oscuro, en pantalla de móvil y de escritorio, con pruebas manuales: uso solo con teclado, contraste de color, ampliación del texto al 200 %, ancho de 320 px y respeto de «reducir movimiento».</p>
 <ul>
 <li>Todo se puede hacer con el teclado. El primer enlace de cada página salta al contenido principal. <kbd>Esc</kbd> cierra los menús, los diálogos y el recorrido y devuelve el foco a donde estaba.</li>
@@ -146,7 +150,7 @@
 <p>Si encuentras una barrera de accesibilidad, abre una incidencia en <a href="https://github.com/kairi99/mecanica-labs/issues" hreflang="en">la página de incidencias del proyecto</a> e indica la página, el dispositivo y la tecnología de apoyo que usas.</p>
 </section>
 
-<section id="creditos"><h2>9. Créditos</h2>
+<section id="creditos"><h2>Créditos</h2>
 <p>Este laboratorio virtual está basado en la guía «Práctica 1: Movimiento Rectilíneo Uniformemente Variado (MRUV)» del Laboratorio de Física de la Escuela Politécnica Nacional (Quito). Es un proyecto educativo gratuito y de código abierto. PHYWE y DigiCart son marcas de sus respectivos titulares y se mencionan solo para identificar el equipo real del laboratorio; <b>este proyecto no está afiliado, patrocinado ni respaldado por PHYWE</b>. Los parámetros del carro (masa, ruedas, fricción) son supuestos del modelo, no datos del fabricante.</p>
 <p>Métodos: GUM (JCGM 100) y J. R. Taylor, <em>An Introduction to Error Analysis</em>. Código bajo licencia MIT y contenido educativo bajo CC BY 4.0.</p>
 <p>Privacidad: tu progreso se guarda solo en tu navegador (<code>localStorage</code>); no se envía a ningún servidor. «Empezar de nuevo» lo borra.</p>\n<p>Parte del código se escribió con ayuda de herramientas de IA y fue revisado por los autores. Licencias de las bibliotecas usadas (three.js, uPlot, MIT): <a href="../../THIRD-PARTY-NOTICES.txt">avisos de terceros</a>.</p>

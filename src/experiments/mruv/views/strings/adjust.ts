@@ -61,6 +61,9 @@ export interface AdjustStrings {
   cartPhaseRolling: string
   cartPhaseStopped: string
   cartPhaseStuck: string
+  cartPhaseFalling: string
+  cartPhaseFallenTable: string
+  cartPhaseFallenFloor: string
   cartFront: string
   cartFrontHint: string
   noMarks: string
@@ -79,7 +82,7 @@ export const strings: Strings<AdjustStrings> = {
     footNeed: 'Pon el soporte de dos patas sobre la mesa para ajustar su pie.',
     fine: 'Ajuste fino', coarse: 'Ajuste grueso', up: 'Subir {n} mm', down: 'Bajar {n} mm',
     levelTitle: 'Nivelador',
-    levelNeed: 'Pon el nivelador sobre la mesa desde el inventario.',
+    levelNeed: 'El nivelador no está sobre la mesa: arrástralo desde la bandeja de piezas.',
     levelOnRail: 'En la riel', levelOnTable: 'En la mesa', levelAway: 'Retirar',
     levelGroup: 'Dónde apoyas el nivelador',
     bubbleCentered: 'Burbuja centrada entre las marcas: horizontal.',
@@ -115,6 +118,9 @@ export const strings: Strings<AdjustStrings> = {
     cartPhaseRolling: 'Rodando.',
     cartPhaseStopped: 'Detenido en el receptor. Devuélvelo al inicio para otra repetición.',
     cartPhaseStuck: 'Detenido sobre la riel (no avanza).',
+    cartPhaseFalling: 'El DigiCart salió de la riel y está cayendo.',
+    cartPhaseFallenTable: 'El DigiCart cayó sobre la mesa. Levántalo y vuelve a ponerlo en la riel.',
+    cartPhaseFallenFloor: 'El DigiCart cayó de la mesa al piso. Levántalo y vuelve a ponerlo en la riel.',
     cartFront: 'La referencia es el frente del carro.',
     cartFrontHint: 'Escala en mm de la riel',
     noMarks: 'Sin marcas',
@@ -131,7 +137,7 @@ export const strings: Strings<AdjustStrings> = {
     footNeed: 'Put the two-leg stand on the table to adjust its foot.',
     fine: 'Fine adjustment', coarse: 'Coarse adjustment', up: 'Raise {n} mm', down: 'Lower {n} mm',
     levelTitle: 'Level',
-    levelNeed: 'Put the level on the table from the inventory.',
+    levelNeed: 'The level is not on the table: drag it from the parts tray.',
     levelOnRail: 'On the rail', levelOnTable: 'On the table', levelAway: 'Remove',
     levelGroup: 'Where you rest the level',
     bubbleCentered: 'Bubble centred between the marks: level.',
@@ -167,6 +173,9 @@ export const strings: Strings<AdjustStrings> = {
     cartPhaseRolling: 'Rolling.',
     cartPhaseStopped: 'Stopped at the receiver. Bring it back to the start for another run.',
     cartPhaseStuck: 'Stopped on the rail (it does not advance).',
+    cartPhaseFalling: 'The DigiCart left the rail and is falling.',
+    cartPhaseFallenTable: 'The DigiCart fell onto the table. Pick it up and put it back on the rail.',
+    cartPhaseFallenFloor: 'The DigiCart fell off the table onto the floor. Pick it up and put it back on the rail.',
     cartFront: 'The reference is the front of the cart.',
     cartFrontHint: 'Rail scale in mm',
     noMarks: 'No marks',

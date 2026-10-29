@@ -8,7 +8,7 @@ import type { ItemId } from './constants.ts'
 export type { BarId, FaceId, ItemId, SpringScaleId }
 
 export type PaperState = 'none' | 'loose' | 'fixed'
-export type PresetId = 'empty' | 'exp12' | 'exp3'
+export type PresetId = 'empty' | 'exp12' | 'exp3' | 'loose'
 
 export const REASONS = [
   'unknownItem', 'itemNotOnTable', 'itemAlreadyOnTable',

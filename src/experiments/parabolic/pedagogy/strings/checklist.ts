@@ -28,7 +28,7 @@ export const strings: Strings<ChecklistStrings> = {
       launchHeight: { label: 'Altura de lanzamiento medida', why: 'La mides con la cinta desde el piso hasta la superficie de la mesa. La necesitas para el tiempo esperado (tarea 5) y la rapidez final (tarea 7).' },
     },
     detail: {
-      missing: 'Faltan {n} cosas (revisa el inventario).',
+      missing: 'Faltan {n} cosas (arrastra las piezas a su sitio; el panel de montaje dice cuáles).',
       needRail: 'Primero fija la riel a la pinza del soporte.',
       riseUnmeasured: 'Aún no mediste con la cinta cuánto sube el extremo alto.',
       marks: '{n} marcas puestas, {upper} en la mitad superior',
@@ -61,7 +61,7 @@ export const strings: Strings<ChecklistStrings> = {
       launchHeight: { label: 'Launch height measured', why: 'Measure it with the tape from the floor to the table surface. You need it for the expected time (task 5) and the final speed (task 7).' },
     },
     detail: {
-      missing: '{n} things are missing (check the inventory).',
+      missing: '{n} things are missing (drag the parts into place; the assembly panel says which).',
       needRail: 'First fasten the rail to the stand clamp.',
       riseUnmeasured: 'You have not measured with the tape how high the upper end is yet.',
       marks: '{n} marks placed, {upper} in the upper half',

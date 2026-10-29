@@ -8,17 +8,18 @@
 <link rel="stylesheet" href="./help.css">
 <script type="module" src="./help.ts"></script>
 </head>
-<body>
+<body data-experiment="parabolic">
 <a class="skip-link" href="#main">Saltar al contenido principal</a>
 <header class="bar"><a class="pill accent" href="../index.html">Volver al laboratorio</a><nav class="pills" aria-label="Idioma"><a class="pill" href="en.html" hreflang="en" lang="en">English</a></nav></header>
 <main id="main" tabindex="-1">
 <h1>Guía de ayuda: movimiento parabólico</h1>
 <p class="lede">Un complemento del laboratorio virtual de la Práctica 2: la teoría del lanzamiento horizontal, cómo se corresponde el procedimiento de la guía con el simulador, cómo leer la cinta y la marca del carbón, cómo se calculan las incertidumbres y por qué cronometrar a mano un vuelo de 0,4 s es tan impreciso.</p>
 <nav class="toc" aria-label="Contenido">
-<a href="#teoria">Teoría</a><a href="#uso">Uso del laboratorio</a><a href="#lectura">Cinta y marca</a><a href="#cronometro">Cronómetro</a><a href="#incertidumbre">Incertidumbre</a><a href="#camara">Cámara lenta</a><a href="#modelo">Modelo honesto</a><a href="#teclas">Teclas</a><a href="#accesibilidad">Accesibilidad</a><a href="#creditos">Créditos</a>
+<a href="#teoria" data-locked="theory" hidden>Teoría</a><a href="#uso">Uso del laboratorio</a><a href="#lectura">Cinta y marca</a><a href="#cronometro">Cronómetro</a><a href="#incertidumbre">Incertidumbre</a><a href="#camara">Cámara lenta</a><a href="#modelo" data-locked="theory" hidden>Modelo honesto</a><a href="#teclas">Teclas</a><a href="#accesibilidad">Accesibilidad</a><a href="#creditos">Créditos</a>
 </nav>
+<aside class="note" id="teoria-bloqueada" data-theory-notice><p><b>La teoría está bloqueada.</b> Se abre al completar todas las tareas del análisis en el laboratorio (marca cada una como «Hecha»). Esta ayuda práctica (uso, instrumentos, incertidumbre, atajos, accesibilidad) siempre está disponible. El bloqueo es una ayuda para el aula, no una protección: funciona en tu navegador, sin servidor. Si eres docente, añade <code>?theory=1</code> a la dirección.</p></aside>
 
-<section id="teoria"><h2>1. Teoría del lanzamiento horizontal</h2>
+<section id="teoria" data-locked="theory" hidden><h2>Teoría del lanzamiento horizontal</h2>
 <p>Un cuerpo que sale de una mesa con velocidad horizontal <em>v</em><sub>0</sub> y queda solo bajo la gravedad hace dos movimientos independientes. En horizontal no hay fuerza: la velocidad se mantiene (MRU). En vertical actúa <em>g</em> y parte sin velocidad vertical: es una caída libre desde la altura <em>H</em>. Con el origen en el borde de la mesa y <em>y</em> hacia arriba:</p>
 <div class="eq">x(t) = v₀·t<br>y(t) = H − ½·g·t²</div>
 <p>Eliminando <em>t</em> queda <em>y</em> = <em>H</em> − <em>g</em>·<em>x</em>²/(2·<em>v</em><sub>0</sub>²): una parábola. De ahí el nombre del movimiento, y la razón de que la trayectoria no sea una recta aunque la velocidad horizontal sea constante.</p>
@@ -44,12 +45,12 @@
 <p>Con <em>v</em><sub>0</sub> de poco más de 1 m/s y una caída de tres cuartos de metro, la rapidez final es de unos 4 m/s y casi toda es vertical. Es la tarea 7.</p>
 </section>
 
-<section id="uso"><h2>2. Cómo usar el laboratorio</h2>
+<section id="uso"><h2>Cómo usar el laboratorio</h2>
 <p>El laboratorio va en cinco pasos, que ves en la barra de arriba: 1 Montaje, 2 Ajustes y marcas, 3 Lanzamientos y Tabla 2.1, 4 Cámara lenta, 5 Análisis. Con <code>?reference=0</code> o <code>?analysis=0</code> en la dirección se ocultan los pasos 4 y 5 (los demás se renumeran). El «Procedimiento» sigue la guía y, con «Muéstramelo», te lleva al panel que necesitas.</p>
 <ol>
-<li><b>Montaje (2.3.2).</b> Pon en la mesa la riel, los soportes, la base, los tornillos, el nivelador, la cinta, el cronómetro, las dos bolas y los papeles. El soporte con cremallera va sobre su base y sujeta el extremo alto de la riel; el de dos patas queda cerca del extremo bajo.</li>
+<li><b>Materiales y montaje (2.3.2).</b> Al empezar, todo está suelto sobre la mesa: la riel, los soportes, la base, los tornillos, el nivelador, la cinta, el cronómetro, las dos bolas, y los papeles bond y carbón junto a ellos. No hay que sacar nada de una caja; solo hay que montarlo. El soporte con cremallera va sobre su base y sujeta el extremo alto de la riel; el de dos patas queda cerca del extremo bajo.</li>
 <li><b>Altura de 20 cm.</b> Sube el extremo alto hasta que quede 20 cm sobre la mesa y el otro extremo descanse en ella. Mídelo con la cinta (opción «Altura de la pinza sobre la mesa»).</li>
-<li><b>Separación de unos 5 cm.</b> Corre la riel hasta que su punta quede a unos 5 cm del borde. Una separación mayor no detiene la bola (la resistencia a la rodadura es pequeña), solo la frena un poco y la hace menos repetible; una muy corta la deja salir todavía en el aire o patinando. La separación se mide hasta el labio de la zapata; también puedes sobresalir del borde (valores negativos, ver sección 7).</li>
+<li><b>Separación de unos 5 cm.</b> Corre la riel hasta que su punta quede a unos 5 cm del borde. Una separación mayor no detiene la bola (la resistencia a la rodadura es pequeña), solo la frena un poco y la hace menos repetible; una muy corta la deja salir todavía en el aire o patinando. La separación se mide hasta el labio de la zapata; también puedes sobresalir del borde (valores negativos, ver «Un modelo honesto», que se abre al desbloquear la teoría).</li>
 <li><b>Nivelación.</b> Con el nivelador sobre la riel, gira el pie del soporte de dos patas hasta centrar la burbuja. Una riel torcida de lado manda la bola ligeramente hacia un costado y cambia el alcance.</li>
 <li><b>Cinco marcas (2.3.3).</b> Marca 5 posiciones en la mitad superior de la riel (de 60 a 120 cm desde la punta baja). Cada una es un lanzamiento distinto: otra rapidez de salida.</li>
 <li><b>Papel en el piso.</b> Pon la hoja bond donde cae la bola y el papel carbón encima. Marca en el piso, con una plomada o una escuadra, el punto justo bajo el borde de la mesa: la proyección del borde.</li>
@@ -57,10 +58,13 @@
 <li><b>Cinco repeticiones por marca</b>, primero con la canica y luego con la pelota de ping-pong. Al final, mide la altura de lanzamiento <em>H</em> (del piso a la mesa).</li>
 <li><b>Análisis.</b> El panel calcula las tareas 2 a 9 con tu tabla y se actualiza solo. Las respuestas con palabras las escribes tú.</li>
 </ol>
+<h3>Montar arrastrando</h3>
+<p>Al empezar, todas las piezas están sueltas sobre la mesa y la pista no está armada; «Empezar de nuevo» vuelve a este estado. Arrastra una pieza hasta su sitio: los destinos válidos se iluminan con un contorno y un rótulo, y al soltarla cerca de uno se fija ahí. Los destinos son: el soporte con cremallera sobre su base; el extremo alto de la riel en la pinza; el soporte de dos patas en el extremo bajo; el nivelador sobre la riel o sobre la mesa; la bola sobre la riel; y la hoja bond y el papel carbón en la zona de caída del piso (poner el papel ahí es parte del montaje). Si la unión no se puede hacer todavía (por ejemplo, la riel sin el soporte puesto en su base), la pieza vuelve a su lugar y aparece el motivo una sola vez: intentar en desorden también enseña. Subir el extremo alto a 20 cm sigue siendo el paso de ajustes. Puedes arrastrar una pieza ya puesta a otro destino, o soltarla sobre la bandeja (bajo el escenario) para quitarla de la mesa.</p>
+<p>Sin arrastrar: abre «Elegir una pieza de la mesa» bajo el escenario (o usa una pieza de la bandeja), toca la pieza (o enfócala con Tab y pulsa Intro) y luego toca un destino resaltado, o elige el destino en la lista que aparece bajo la bandeja (con las flechas y Intro). Esc cancela. Si prefieres botones, el panel «Inventario y montaje» los guarda en «Montar con botones»; hacen exactamente lo mismo.</p>
 <p class="note">La marca del carbón aparece cuando la bola cae. Una bola que cae fuera del papel, o una pelota de ping-pong que pega muy suave, puede no dejar marca legible: se repite el lanzamiento.</p>
 </section>
 
-<section id="lectura"><h2>3. Leer la cinta y la marca del carbón</h2>
+<section id="lectura"><h2>Leer la cinta y la marca del carbón</h2>
 <h3>Qué mides</h3>
 <p>El alcance <em>x</em> es la distancia horizontal desde el borde de la mesa hasta el punto donde la bola toca el piso. En el piso eso es la distancia desde la proyección del borde hasta la marca. <b>No</b> se mide desde la punta de la riel: eso añadiría la separación de unos 5 cm y falsearía <em>v</em><sub>0</sub> = <em>x</em>/<em>t</em>.</p>
 <h3>El centro de la marca</h3>
@@ -76,7 +80,7 @@
 <p>Las marcas solo sirven mientras la hoja siga donde estaba cuando cayó la bola. Si la mueves o la giras, el laboratorio lo detecta: las marcas ya no corresponden a la proyección del borde. Mide primero, luego cambia o retira el papel.</p>
 </section>
 
-<section id="cronometro"><h2>4. El cronómetro y por qué 0,4 s sale tan mal</h2>
+<section id="cronometro"><h2>El cronómetro y por qué 0,4 s sale tan mal</h2>
 <h3>Qué cronometras</h3>
 <p>El tiempo de vuelo empieza cuando la bola pasa el borde y termina cuando toca el piso. Si arrancas el cronómetro al soltar la bola, también mides el rodar por la riel y por la mesa (más de un segundo): la lectura sale muy por encima de 0,4 s. Una sugerencia te avisa si pasa.</p>
 <h3>Error aleatorio y sistemático</h3>
@@ -85,7 +89,7 @@
 <p>En el MRUV los tiempos eran de varios segundos y el mismo sesgo pesaba poco. En este experimento el tiempo es corto: el error relativo de la mano, de décimas de segundo sobre 0,4 s, es del orden de 15 a 25 %, mucho mayor que el de la cinta (milímetros sobre medio metro, 0,5 %). La velocidad <em>v</em><sub>0</sub> = <em>x</em>/<em>t</em> hereda ese error.</p>
 </section>
 
-<section id="incertidumbre"><h2>5. Incertidumbre</h2>
+<section id="incertidumbre"><h2>Incertidumbre</h2>
 <h3>Tipo A y tipo B</h3>
 <p>La incertidumbre de tipo A sale de la dispersión de las repeticiones: <em>u</em><sub>A</sub> = <em>s</em>/√<em>n</em>. La de tipo B sale de lo que sabes del instrumento. Para una lectura que solo conoces hasta una división <em>d</em> (cronómetro de 0,01 s, cinta de 1 mm), el valor está en ±<em>d</em>/2 con igual probabilidad y <em>u</em> = <em>d</em>/√12.</p>
 <h3>Convenciones del laboratorio</h3>
@@ -105,11 +109,11 @@
 <p>El mismo retraso afecta a las cinco marcas y a las dos bolas: los valores de <em>v</em><sub>0</sub> de filas distintas no son independientes, y el panel lo dice. Al comparar una marca con otra (barras y dispersión de la tarea 3) o una bola con otra (tarea 8) el sesgo se cancela, porque es el mismo en las dos: esas comparaciones usan solo la dispersión de los datos y la resolución del cronómetro. La tarea 6, que compara con un tiempo esperado, conserva la incertidumbre completa, porque ahí el sesgo no se cancela.</p>
 </section>
 
-<section id="camara"><h2>6. La cámara lenta como referencia</h2>
+<section id="camara"><h2>La cámara lenta como referencia</h2>
 <p>El paso 4 reproduce un video a 240 cuadros por segundo de cualquier lanzamiento. Cuenta los cuadros desde el primero en que la bola ya pasó el borde hasta el primero en que ya tocó el piso. Cada cuadro dura 1/240 s = 4,2 ms, así que el tiempo contado tiene una incertidumbre de unos 2 ms: unas treinta veces menor que la de tu cronómetro. El análisis (tarea 6) muestra ese tiempo por bola y su error porcentual frente al esperado, y compara tu cronómetro con él. La diferencia es, casi toda, tu retraso de reacción.</p>
 </section>
 
-<section id="modelo"><h2>7. Un modelo honesto</h2>
+<section id="modelo" data-locked="theory" hidden><h2>Un modelo honesto</h2>
 <p>El simulador no cuenta que todo es ideal. Los valores están en <code>PARAMETERS.md</code> (la mayoría son supuestos, no datos de la mesa real).</p>
 <ul>
 <li><b>La velocidad de salida está por debajo de √(2<em>g</em>Δ<em>h</em>).</b> Una bola que rueda guarda parte de la energía como giro: la canica (maciza) convierte 5/7 en traslación; la pelota de ping-pong (hueca) solo unos 0,6. Además hay resistencia a la rodadura y pérdidas en la unión entre la riel y la mesa.</li>
@@ -123,7 +127,7 @@
 <p>Condiciones del proyectil ideal (tarea 9): piensa en cuáles se cumplen aquí y cuáles no. El panel de análisis te las pregunta, una por una, sin darte la respuesta.</p>
 </section>
 
-<section id="teclas"><h2>8. Atajos de teclado</h2>
+<section id="teclas"><h2>Atajos de teclado</h2>
 <table>
 <thead><tr><th>Tecla</th><th>Acción</th></tr></thead>
 <tbody>
@@ -137,7 +141,7 @@
 </tbody></table>
 </section>
 
-<section id="accesibilidad"><h2>9. Accesibilidad</h2>
+<section id="accesibilidad"><h2>Accesibilidad</h2>
 <p>Este laboratorio se revisó contra las Pautas de Accesibilidad para el Contenido Web (WCAG) 2.0 nivel AA, la base de la norma NTE INEN-ISO/IEC 40500. La revisión combinó una herramienta automática (axe-core) en todas las páginas, en español e inglés, en tema claro y oscuro, en pantalla de móvil y de escritorio, con pruebas manuales: uso solo con teclado, contraste de color, ampliación del texto al 200 %, ancho de 320 px y respeto de «reducir movimiento».</p>
 <ul>
 <li>Todo se puede hacer con el teclado. El primer enlace de cada página salta al contenido principal. <kbd>Esc</kbd> cierra los menús, los diálogos y el recorrido y devuelve el foco a donde estaba.</li>
@@ -154,7 +158,7 @@
 <p>Si encuentras una barrera de accesibilidad, abre una incidencia en <a href="https://github.com/kairi99/mecanica-labs/issues" hreflang="en">la página de incidencias del proyecto</a> e indica la página, el dispositivo y la tecnología de apoyo que usas.</p>
 </section>
 
-<section id="creditos"><h2>10. Créditos</h2>
+<section id="creditos"><h2>Créditos</h2>
 <p>Este laboratorio virtual está basado en la guía «Práctica 2: Movimiento parabólico» del Laboratorio de Física de la Escuela Politécnica Nacional (Quito). Es un proyecto educativo gratuito y de código abierto. PHYWE y DigiCart son marcas de sus respectivos titulares y se mencionan solo para identificar el equipo real del laboratorio; <b>este proyecto no está afiliado, patrocinado ni respaldado por PHYWE</b>. Los parámetros de las bolas y de la mesa son supuestos documentados en <code>PARAMETERS.md</code>.</p>
 <p>Métodos: GUM (JCGM 100) y J. R. Taylor, <em>An Introduction to Error Analysis</em>. Código bajo licencia MIT y contenido educativo bajo CC BY 4.0.</p>
 <p>Privacidad: tu progreso se guarda solo en tu navegador (<code>localStorage</code>); no se envía a ningún servidor. «Empezar de nuevo» lo borra.</p>\n<p>Parte del código se escribió con ayuda de herramientas de IA y fue revisado por los autores. Licencias de las bibliotecas usadas (three.js, uPlot, MIT): <a href="../../THIRD-PARTY-NOTICES.txt">avisos de terceros</a>.</p>

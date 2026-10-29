@@ -35,7 +35,7 @@ export interface MeasureStrings {
   runNone: string
   runOutcome: string
   runTime: string
-  phase: Record<'unplaced' | 'atStart' | 'rolling' | 'coasting' | 'stopped' | 'stuck', string>
+  phase: Record<'unplaced' | 'atStart' | 'rolling' | 'coasting' | 'stopped' | 'stuck' | 'falling' | 'fallen', string>
   autoCam: string
   practice: string
   link: string
@@ -68,8 +68,8 @@ export const strings: Strings<MeasureStrings> = {
     forceDiv: 'Se lee a la división más cercana: {d} N.',
     copyForce: 'Copiar a la fila de la prueba', forceCopied: 'F = {f} N anotada en la prueba {n}.',
     stale: 'Cambiaste las masas del contenedor después de esta lectura: léela otra vez.',
-    needScale: 'Pon un dinamómetro sobre la mesa.',
-    needCanister: 'Pon el contenedor sobre la mesa.',
+    needScale: 'Falta un dinamómetro sobre la mesa (tómalo de la bandeja).',
+    needCanister: 'Falta el contenedor sobre la mesa (tómalo de la bandeja).',
     runTitle: 'La última suelta',
     runNone: 'Aún no soltaste el DigiCart.',
     runOutcome: 'Resultado: {x}',
@@ -77,6 +77,7 @@ export const strings: Strings<MeasureStrings> = {
     phase: {
       unplaced: 'El DigiCart no está sobre la riel.', atStart: 'El DigiCart espera en el inicio.', rolling: 'El DigiCart avanza.',
       coasting: 'El contenedor tocó el piso: el DigiCart sigue por inercia.', stopped: 'El DigiCart se detuvo.', stuck: 'El DigiCart no se mueve.',
+      falling: 'El DigiCart se salió de la riel y cae.', fallen: 'El DigiCart cayó al piso. Devuélvelo a la riel (arrástralo o usa «Volver al inicio»).',
     },
     autoCam: 'Pasar a la vista de la polea al soltar',
     practice: 'Modo práctica',
@@ -108,8 +109,8 @@ export const strings: Strings<MeasureStrings> = {
     forceDiv: 'Read to the nearest division: {d} N.',
     copyForce: 'Copy to the trial row', forceCopied: 'F = {f} N recorded for trial {n}.',
     stale: 'You changed the masses in the canister after this reading: read it again.',
-    needScale: 'Put a dynamometer on the table.',
-    needCanister: 'Put the canister on the table.',
+    needScale: 'A dynamometer is missing on the table (take it from the tray).',
+    needCanister: 'The canister is missing on the table (take it from the tray).',
     runTitle: 'The last release',
     runNone: 'You have not released the DigiCart yet.',
     runOutcome: 'Result: {x}',
@@ -117,6 +118,7 @@ export const strings: Strings<MeasureStrings> = {
     phase: {
       unplaced: 'The DigiCart is not on the rail.', atStart: 'The DigiCart waits at the start.', rolling: 'The DigiCart is moving.',
       coasting: 'The canister hit the floor: the DigiCart coasts on.', stopped: 'The DigiCart has stopped.', stuck: 'The DigiCart does not move.',
+      falling: 'The DigiCart left the rail and is falling.', fallen: 'The DigiCart fell to the floor. Put it back on the rail (drag it or use “Back to start”).',
     },
     autoCam: 'Switch to the pulley view on release',
     practice: 'Practice mode',
