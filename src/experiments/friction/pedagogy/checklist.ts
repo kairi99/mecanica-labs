@@ -3,7 +3,7 @@
 import { T41_ROWS, T42_ROWS, T43_TRIALS, T4_READINGS, BAR_ORDER, type FrictionApparatus } from '../apparatus/index.ts'
 import type { ChecklistStepBase, StepStatus } from '../../../core/pedagogy/checklistView.ts'
 
-export const STEP_IDS = ['assembly', 'mass', 'paper', 'zero', 'exp1', 'exp2', 'course', 'exp3'] as const
+export const STEP_IDS = ['mass', 'paper', 'zero', 'exp1', 'exp2', 'course', 'exp3'] as const
 export type StepId = (typeof STEP_IDS)[number]
 export type { StepStatus }
 
@@ -11,16 +11,20 @@ export type { StepStatus }
 export type PanelId = 'inventory' | 'bench' | 'table4.1' | 'table4.2' | 'incline' | 'table4.3'
 export interface ChecklistStep extends ChecklistStepBase<StepId> { panel: PanelId }
 
+/** The setup of the guide's assembly (4.3.2 and the start of exp. 3) is arranged: a block face on the paper, a scale hooked, the paper laid, a bar on the mark. Not a checklist step: it ticks the first lab step. */
+export function setupDone(app: FrictionApparatus): boolean {
+  const s = app.getState()
+  return s.face !== null && s.scale !== null && s.paper !== 'none' && s.bar !== null
+}
+
 export function buildChecklist(app: FrictionApparatus): ChecklistStep[] {
   const p = app.procedure()
   const s = app.getState()
   const st = (ok: boolean, ready = true): StepStatus => (ok ? 'ok' : ready ? 'pending' : 'na')
-  const missing = [p.itemsExp12, p.itemsExp3, p.unlistedNeededPresent].filter((x) => !x).length
   const t41 = p.filled.t41, t42 = p.filled.t42
   const t43 = app.tableData().t43.reduce((a, r) => a + r.filter((c) => c.h_m !== null && c.t_s !== null).length, 0)
   const ready12 = s.items.block && s.scale !== null
   return [
-    { id: 'assembly', status: st(p.itemsExp12 && p.itemsExp3 && p.unlistedNeededPresent), detail: { key: 'assembly', params: { n: missing } }, focus: ['block', 'rail', 'rackStand'], panel: 'inventory' },
     { id: 'mass', status: st(p.blockWeighed, s.items.block && s.items.balance), detail: null, focus: ['block'], panel: 'bench' },
     { id: 'paper', status: st(p.paperFixed, s.items.paper), detail: s.paper === 'loose' ? { key: 'paperLoose', params: {} } : null, focus: ['paper'], panel: 'bench' },
     { id: 'zero', status: st(p.scaleZeroed, s.scale !== null), detail: null, focus: ['scale'], panel: 'bench' },

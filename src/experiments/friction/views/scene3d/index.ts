@@ -6,7 +6,9 @@ import { createMenu } from '../../../../core/scene3d/menu.ts'
 import type { Stage3DView } from '../../../../core/shell/types.ts'
 import { PRESETS, strings, type PresetName } from '../strings/scene3d.ts'
 import type { ViewContext } from '../view.ts'
-import type { Area, Scene3D } from './scene.ts'
+import type { Scene3D } from './scene.ts'
+import type { Area } from '../dragdrop/snap.ts'
+import { createDragDrop } from '../dragdrop/controller.ts'
 
 export { webgl2Available, PRESETS }
 export type { PresetName }
@@ -36,7 +38,10 @@ export function mountScene3D(root: HTMLElement, ctx: ViewContext, opts: Scene3DO
   stack.append(status)
   stage.append(topRight, stack)
   wrap.append(stage)
+  wrap.classList.add('has-tray')
   root.append(wrap)
+  // drag-and-drop setup: the parts tray under the stage; the scene supplies the stage side once it has loaded
+  const dd = createDragDrop({ ctx, stage, mount: wrap })
 
   let scene: Scene3D | null = null
   let destroyed = false
@@ -62,6 +67,7 @@ export function mountScene3D(root: HTMLElement, ctx: ViewContext, opts: Scene3DO
     viewMenu.setItems(PRESETS.map((p) => ({ id: p, label: s.presets[p] })))
     sync()
     scene?.relabel()
+    dd.relabel()
   }
   relabel()
 
@@ -71,6 +77,7 @@ export function mountScene3D(root: HTMLElement, ctx: ViewContext, opts: Scene3DO
     if (destroyed) return
     try {
       scene = createScene(stage, ctx, { initialPreset: initial, initialArea: area, onFail: (r) => opts.onFail?.(r) })
+      dd.setAdapter(scene.dragdrop)
       status.textContent = ''
       if (pendingFocus) scene.focus(pendingFocus)
       if (current !== initial) scene.setPreset(current)
@@ -81,7 +88,7 @@ export function mountScene3D(root: HTMLElement, ctx: ViewContext, opts: Scene3DO
   }).catch((err) => { if (!destroyed) opts.onFail?.(String(err)) })
 
   return {
-    update() { scene?.update() },
+    update() { dd.update(); scene?.update() },
     relabel,
     focus(list) { pendingFocus = list; scene?.focus(list) },
     setVisible(v) { wrap.hidden = !v; scene?.setVisible(v) },
@@ -90,6 +97,8 @@ export function mountScene3D(root: HTMLElement, ctx: ViewContext, opts: Scene3DO
     destroy() {
       destroyed = true
       viewMenu.destroy()
+      dd.setAdapter(null)
+      dd.destroy()
       scene?.destroy()
       scene = null
       wrap.remove()

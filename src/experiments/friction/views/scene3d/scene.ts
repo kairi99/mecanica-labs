@@ -11,12 +11,16 @@ import { createCoreMaterials, type CoreMaterials } from '../../../../core/scene3
 import { boxCorners, fitView, type Vec } from '../../../../core/scene3d/framing.ts'
 import { box, buildBase, buildRail, buildStopwatch, buildTapeMeasure, canvasTexture, cyl, type Kit, zcyl } from '../../../../core/scene3d/models.ts'
 import { lcdText } from '../../../../core/views/numfmt.ts'
-import { START_FRONT_m } from '../../apparatus/index.ts'
+import { BAR_ITEM, START_FRONT_m, type BarId } from '../../apparatus/index.ts'
 import { COURSE_m, RAIL_LENGTH_m, RAIL_SUPPORT_DIST_m, inclineAngle_rad } from '../../physics/index.ts'
 import { strings, type PresetName } from '../strings/scene3d.ts'
 import type { ViewContext } from '../view.ts'
+import { BLOCK_DIM, LOOSE, MASS_DIM, PAPER, RAIL_Z, X_LOW, blockSpot } from '../dragdrop/layout.ts'
+import type { StageAdapter } from '../dragdrop/controller.ts'
+import { createDragDrop3D } from './dragdrop3d.ts'
 
-export type Area = 'all' | 'exp12' | 'exp3'
+import type { Area } from '../dragdrop/snap.ts'
+export type { Area }
 export interface SceneOptions { initialPreset: PresetName; initialArea?: Area; onFail(reason: string): void }
 export interface Scene3D {
   update(): void
@@ -27,13 +31,14 @@ export interface Scene3D {
   focus(targets: string[] | null): void
   relabel(): void
   destroy(): void
+  /** Stage side of the drag-and-drop setup (zones, preview, picking). */
+  dragdrop: StageAdapter
 }
 
 const FOV = 36
 const TRANSITION_MS = 450
-const X_LOW = 85, RAIL_Z = -22, PAPER_Z = 28, PAPER_X0 = -40
-const PAPER_L = 29.7, PAPER_W = 21
-const BLOCK = { l: 6, h: 3, w: 4 }
+const PAPER_Z = PAPER.z, PAPER_X0 = PAPER.x0, PAPER_L = PAPER.l, PAPER_W = PAPER.w
+const BLOCK = BLOCK_DIM
 const ROD_Z = -3.4
 const easeOut = (t: number): number => 1 - Math.pow(1 - t, 3)
 
@@ -113,14 +118,17 @@ export function createScene(container: HTMLElement, ctx: ViewContext, opts: Scen
   paper.rotation.x = -Math.PI / 2
   paper.position.set(PAPER_X0 + PAPER_L / 2, 0.02, PAPER_Z)
   paper.receiveShadow = true
+  paper.userData.partId = 'paper'
   scene.add(paper)
   const tapes = new THREE.Group()
   for (const sx of [-1, 1]) for (const sz of [-1, 1]) {
     const t = box(2.2, 0.06, 0.9, M.tape, PAPER_X0 + PAPER_L / 2 + sx * (PAPER_L / 2 - 0.6), 0.06, PAPER_Z + sz * (PAPER_W / 2 - 0.5), tapes)
     t.rotation.y = sx * sz * 0.5
   }
+  tapes.userData.partId = 'paper'
   scene.add(tapes)
   const blockG = new THREE.Group()
+  blockG.userData.partId = 'block'
   scene.add(blockG)
   const bottom = box(BLOCK.l, 0.3, BLOCK.w, M.cloth, 0, 0.15, 0, blockG)
   box(BLOCK.l, BLOCK.h - 0.6, BLOCK.w, M.wood, 0, 0.3 + (BLOCK.h - 0.6) / 2, 0, blockG)
@@ -128,14 +136,23 @@ export function createScene(container: HTMLElement, ctx: ViewContext, opts: Scen
   box(0.5, 0.5, 0.5, M.steel, BLOCK.l / 2 + 0.25, 1.4, 0, blockG) // hook
   const massGs: THREE.Mesh[] = []
   for (let i = 0; i < 3; i++) {
-    const m = cyl(1.6, 1.6, 0.9, M.mass, blockG, 28)
+    const m = cyl(MASS_DIM.r, MASS_DIM.r, MASS_DIM.h, M.mass, blockG, 28)
     m.position.set(0, BLOCK.h + 0.45 + i * 0.95, 0)
+    m.userData.partId = 'masses50'
     massGs.push(m)
+  }
+  // masses not on the block lie on the table (slot k = k-th loose one)
+  const looseMasses: THREE.Mesh[] = []
+  for (let i = 0; i < 3; i++) {
+    const m = cyl(MASS_DIM.r, MASS_DIM.r, MASS_DIM.h, M.mass, scene, 28)
+    m.userData.partId = 'masses50'
+    looseMasses.push(m)
   }
   const scales = new Map<SpringScaleId, SpringScaleModel>()
   for (const id of ['1N', '2N'] as SpringScaleId[]) {
     const m = buildSpringScale(kit, SPRING_SCALES[id], { lang: ctx.lang() })
     m.root.rotation.y = Math.PI // hook toward the block (-x), ring toward the hand (+x)
+    m.root.userData.partId = id === '1N' ? 'scale1N' : 'scale2N'
     scene.add(m.root)
     scales.set(id, m)
   }
@@ -158,8 +175,15 @@ export function createScene(container: HTMLElement, ctx: ViewContext, opts: Scen
   box(3.4, 0.8, 4.4, M.black, 0, 0.4, ROD_Z / 2 - 0.2, collar)
   const knob = zcyl(1.15, 0.9, M.blue, collar, 28)
   knob.position.set(0, 0, ROD_Z + 1.7)
-  const barMeshes: Record<string, THREE.Mesh> = {
-    wood: box(10, 1.5, 2.5, M.wood, 0, 0, 0, railG), aluminium: box(10, 1.5, 2.5, M.alu, 0, 0, 0, railG), iron: box(10, 1.5, 2.5, M.steel, 0, 0, 0, railG),
+  const BAR_PART = { wood: 'woodBar', aluminium: 'alBar', iron: 'ironBar' } as const
+  const BAR_MAT = { wood: M.wood, aluminium: M.alu, iron: M.steel } as const
+  const barMeshes: Record<string, THREE.Mesh> = {}
+  const looseBars: Record<string, THREE.Mesh> = {}
+  for (const k of ['wood', 'aluminium', 'iron'] as const) {
+    barMeshes[k] = box(10, 1.5, 2.5, BAR_MAT[k], 0, 0, 0, railG)
+    barMeshes[k]!.userData.partId = BAR_PART[k]
+    looseBars[k] = box(10, 1.5, 2.5, BAR_MAT[k], LOOSE.bars[k].x, 0.75, LOOSE.bars[k].z, scene)
+    looseBars[k]!.userData.partId = BAR_PART[k]
   }
   const startMark = box(0.35, 0.1, 2.6, M.mark, 0, 0.06, 0, railG)
   const finishMark = box(0.35, 0.1, 2.6, M.mark, 0, 0.06, 0, railG)
@@ -172,9 +196,9 @@ export function createScene(container: HTMLElement, ctx: ViewContext, opts: Scen
   // ---------- camera presets ----------
   const pts = (min: Vec, max: Vec): Vec[] => boxCorners(min, max)
   const PRESET: Record<PresetName, { points: Vec[]; az: number; el: number }> = {
-    overview: { points: pts([-60, 0, -40], [105, 60, 48]), az: 8, el: 30 },
-    scale: { points: pts([-36, 0, 27], [-6, 4, 31]), az: 0, el: 22 },
-    rail: coarse ? { points: pts([-32, 0, -30], [62, 72, -12]), az: 20, el: 10 } : { points: pts([-45, 0, -30], [100, 82, -10]), az: 0, el: 6 },
+    overview: { points: pts([-62, 0, -40], [105, 60, 58]), az: 8, el: 32 },
+    scale: { points: pts([-62, 0, 16], [40, 6, 61]), az: 0, el: 36 },
+    rail: coarse ? { points: pts([-32, 0, -30], [62, 72, 2]), az: 20, el: 18 } : { points: pts([-45, 0, -30], [100, 82, 2]), az: 0, el: 16 },
     tape: { points: pts([-45, 0, -30], [-5, 62, -2]), az: 25, el: 14 },
   }
   let area: Area = opts.initialArea ?? 'all'
@@ -225,6 +249,15 @@ export function createScene(container: HTMLElement, ctx: ViewContext, opts: Scen
     helperTimer = window.setTimeout(() => focus(null), 4000)
   }
 
+  // ---------- drag and drop (stage side) ----------
+  let lifted: THREE.Object3D | null = null
+  const dd3d = createDragDrop3D({
+    ctx, scene, container, canvas, camera, controls, M,
+    pickables: () => [blockG, paper, tapes, ...[...scales.values()].map((m) => m.root), ...looseMasses, ...Object.values(barMeshes), ...Object.values(looseBars)],
+    setLifted: (o) => { lifted = o; needsRender = true },
+    requestRender: () => { needsRender = true },
+  })
+
   // ---------- sync models with the apparatus ----------
   let sig = ''
   function sync(): string {
@@ -235,25 +268,40 @@ export function createScene(container: HTMLElement, ctx: ViewContext, opts: Scen
     const truth = app.hiddenTruth()
     // exps. 1 and 2
     const e_cm = (st.x_pull_m - st.x_block_m) * 100
-    const xb = PAPER_X0 + 2.5 + st.x_block_m * 100
+    // the block lies loose until a face is chosen, then it sits on the paper (and moves with the pull)
+    const blk = blockSpot(s, st.x_block_m * 100)
+    const xb = blk.x
     const showBlock = s.items.block
     const show12 = area !== 'exp3', show3 = area !== 'exp12'
     blockG.visible = showBlock && show12
-    paper.visible = s.items.paper && s.paper !== 'none' && show12
+    const placedPaper = s.paper !== 'none'
+    paper.visible = s.items.paper && show12
+    paper.position.set(placedPaper ? PAPER_X0 + PAPER_L / 2 : LOOSE.paper.x, 0.02, placedPaper ? PAPER_Z : LOOSE.paper.z)
     tapes.visible = paper.visible && s.paper === 'fixed'
-    blockG.position.set(xb, 0.06, PAPER_Z)
+    blockG.position.set(xb, 0.06, blk.z)
     const sand = s.face === 'sandpaper'
     bottom.material = sand ? M.sand : M.cloth
     top.material = sand ? M.cloth : M.sand
     massGs.forEach((m, i) => { m.visible = i < s.addedMasses })
+    looseMasses.forEach((m, k) => {
+      m.visible = s.items.masses50 && show12 && k < 3 - s.addedMasses
+      m.position.set(LOOSE.masses.x0 + k * LOOSE.masses.dx, MASS_DIM.h / 2, LOOSE.masses.z)
+    })
     for (const [id, m] of scales) {
-      const show = showBlock && s.scale === id && show12
+      const hooked = s.scale === id
+      const show = s.items[id === '1N' ? 'scale1N' : 'scale2N'] && show12
       m.root.visible = show
       if (show) {
-        const reading = st.scale
-        const ext = Math.min(SPRING_SCALES[id].fullExtension_m, reading ? reading.extension_m : 0) * 100
-        m.set(ext / 100)
-        m.root.position.set(xb + BLOCK.l / 2 + 0.5 + HOOK0 + ext, 1.4, PAPER_Z)
+        if (hooked) {
+          const reading = st.scale
+          const ext = Math.min(SPRING_SCALES[id].fullExtension_m, reading ? reading.extension_m : 0) * 100
+          m.set(ext / 100)
+          m.root.position.set(xb + BLOCK.l / 2 + 0.5 + HOOK0 + ext, 1.4, blk.z)
+        } else {
+          m.set(0)
+          const at = id === '1N' ? LOOSE.scale1N : LOOSE.scale2N
+          m.root.position.set(at.x, 1.4, at.z)
+        }
       }
     }
     // exp. 3
@@ -280,7 +328,7 @@ export function createScene(container: HTMLElement, ctx: ViewContext, opts: Scen
       startMark.position.x = toLocal(START_FRONT_m)
       finishMark.position.x = toLocal(START_FRONT_m - (truth.course_m ?? COURSE_m))
       for (const [k, m] of Object.entries(barMeshes)) {
-        m.visible = s.bar === k && s.items[k === 'wood' ? 'woodBar' : k === 'aluminium' ? 'alBar' : 'ironBar']
+        m.visible = s.bar === k && s.items[BAR_ITEM[k as BarId]] && show3
         m.position.set(toLocal(START_FRONT_m - inc.s_m) - 5, 0.75 + 0.02, 0)
       }
       // tape beside the clamp: the blade runs from the table to the rail underside
@@ -290,9 +338,11 @@ export function createScene(container: HTMLElement, ctx: ViewContext, opts: Scen
         tape.root.position.set(standG.position.x + 6, h_cm, RAIL_Z + 9)
       }
     } else { tape.root.visible = false }
+    for (const [k, m] of Object.entries(looseBars)) m.visible = s.items[BAR_ITEM[k as BarId]] && s.bar !== k && show3
     watch3.root.visible = s.items.stopwatch
     if (s.items.stopwatch) watch3.setText(lcd)
-    return [e_cm.toFixed(2), xb.toFixed(2), st.scale?.indicated_N.toFixed(3), s.face, s.addedMasses, s.scale, s.paper, s.bar, s.course_mark, inc.h_m.toFixed(4), inc.s_m.toFixed(3), lcd, hasRail, hasStand, Object.values(s.items).join(''), area].join('|')
+    if (lifted) lifted.visible = false
+    return [lifted?.uuid ?? '', s.items.masses50, e_cm.toFixed(2), xb.toFixed(2), st.scale?.indicated_N.toFixed(3), s.face, s.addedMasses, s.scale, s.paper, s.bar, s.course_mark, inc.h_m.toFixed(4), inc.s_m.toFixed(3), lcd, hasRail, hasStand, Object.values(s.items).join(''), area].join('|')
   }
 
   setPreset(preset, false)
@@ -310,19 +360,22 @@ export function createScene(container: HTMLElement, ctx: ViewContext, opts: Scen
     }
     if (controls.update()) needsRender = true
     for (const h of helpers) h.update()
+    if (dd3d.tick(performance.now())) needsRender = true
     if (needsRender) { renderer.render(scene, camera); needsRender = false }
   }
   void opts
 
   return {
+    dragdrop: dd3d,
     update,
     setVisible(v) { visible = v; if (v) { resize(); needsRender = true } },
     setPreset,
     setArea(a) { area = a; needsRender = true },
     focus,
-    relabel() { canvas.setAttribute('aria-label', strings[ctx.lang()].canvasLabel); for (const m of scales.values()) m.setLang(ctx.lang()); needsRender = true },
+    relabel() { canvas.setAttribute('aria-label', strings[ctx.lang()].canvasLabel); for (const m of scales.values()) m.setLang(ctx.lang()); dd3d.relabel(); needsRender = true },
     destroy() {
       ro.disconnect(); window.clearTimeout(helperTimer)
+      dd3d.destroy()
       controls.dispose()
       scene.traverse((o) => { const m = o as THREE.Mesh; if (m.isMesh) m.geometry.dispose() })
       for (const t of kit.textures) t.dispose()
