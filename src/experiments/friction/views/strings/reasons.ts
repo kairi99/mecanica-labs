@@ -8,7 +8,7 @@ export const strings: Strings<ReasonStrings> = {
   es: {
     reasons: {
       unknownItem: 'Ese objeto no existe en el inventario.',
-      itemNotOnTable: 'Primero pon {item} sobre la mesa.',
+      itemNotOnTable: 'Falta {item} sobre la mesa. Tómalo de la bandeja, bajo el escenario.',
       itemAlreadyOnTable: '{item} ya está sobre la mesa.',
       needBlock: 'Necesitas el taco de rozamiento sobre la mesa.',
       needScale: 'Elige un dinamómetro y engánchalo al taco.',
@@ -51,7 +51,7 @@ export const strings: Strings<ReasonStrings> = {
   en: {
     reasons: {
       unknownItem: 'That item is not in the inventory.',
-      itemNotOnTable: 'First put {item} on the table.',
+      itemNotOnTable: 'You are missing {item} on the table. Take it from the tray under the stage.',
       itemAlreadyOnTable: '{item} is already on the table.',
       needBlock: 'You need the friction block on the table.',
       needScale: 'Choose a spring scale and hook it to the block.',

@@ -26,7 +26,7 @@ export interface BenchStrings {
 export const strings: Strings<BenchStrings> = {
   es: {
     title: 'Montaje del taco, el papel y el dinamómetro',
-    intro: 'Apoya una cara del taco sobre el papel y engancha el dinamómetro al gancho. Todo cambio de montaje se hace antes de jalar.',
+    intro: 'Apoya una cara del taco sobre el papel y engancha el dinamómetro al gancho: arrastra las piezas en el escenario o abre «Montar con botones». Todo cambio de montaje se hace antes de jalar.',
     face: 'Cara del taco sobre el papel',
     faces: { cloth: 'Tela', sandpaper: 'Lija' },
     masses: 'Masas de 50 g sobre el taco',
@@ -44,11 +44,11 @@ export const strings: Strings<BenchStrings> = {
     weigh: 'Pesar el taco en la balanza',
     weighed: 'Masa del taco M = {m} g',
     notWeighed: 'Aún no mediste la masa M del taco.',
-    needItems: 'Pon el taco, un dinamómetro, el papel y la balanza en la mesa (inventario).',
+    needItems: 'Necesitas el taco, un dinamómetro, el papel y la balanza sobre la mesa. Si quitaste alguno, devuélvelo desde la bandeja bajo el escenario.',
   },
   en: {
     title: 'Block, paper and spring scale setup',
-    intro: 'Rest one face of the block on the paper and hook the spring scale to the block\'s hook. Change the setup before you pull, not during.',
+    intro: 'Rest one face of the block on the paper and hook the spring scale to the block\'s hook: drag the parts on the stage or open “Assemble with buttons”. Change the setup before you pull, not during.',
     face: 'Face of the block on the paper',
     faces: { cloth: 'Cloth', sandpaper: 'Sandpaper' },
     masses: '50 g masses on the block',
@@ -66,6 +66,6 @@ export const strings: Strings<BenchStrings> = {
     weigh: 'Weigh the block on the balance',
     weighed: 'Block mass M = {m} g',
     notWeighed: 'You have not measured the block\'s mass M yet.',
-    needItems: 'Put the block, a spring scale, the paper and the balance on the table (inventory).',
+    needItems: 'You need the block, a spring scale, the paper and the balance on the table. If you took one off, bring it back from the tray under the stage.',
   },
 }

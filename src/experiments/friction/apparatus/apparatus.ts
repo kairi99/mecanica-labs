@@ -673,9 +673,11 @@ export class FrictionApparatus {
   /**
    * 'empty': nothing on the table. 'exp12': a careful bench for exps. 1 and 2 (all items, block weighed, cloth face, 1 N scale zeroed
    * horizontally, paper fixed). 'exp3': a careful bench for exp. 3 (all items, course of 1.00 m marked, wooden bar on the mark).
+   * 'loose': every material lying on the table (block, scales, masses, bars, paper, rail, stand, tape, stopwatch, balance; not the two
+   * distractors), nothing placed, hooked or stacked: the student arranges it by dragging. Fresh state and "Start over" use it.
    */
   preset(name: PresetId): Result {
-    if (name !== 'empty' && name !== 'exp12' && name !== 'exp3') return this.refuse('preset', 'unknownPreset')
+    if (name !== 'empty' && name !== 'exp12' && name !== 'exp3' && name !== 'loose') return this.refuse('preset', 'unknownPreset')
     this.reset()
     if (name !== 'empty') {
       for (const i of ITEM_IDS) if (!(i === 'masses10' || i === 'marble')) this.addItem(i)

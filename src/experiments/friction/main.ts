@@ -6,6 +6,7 @@ import '../../core/styles/layout.css'
 import '../../core/styles/panels.css'
 import '../../core/styles/pedagogy.css'
 import '../../core/styles/analysis.css'
+import '../../core/styles/dragdrop.css'
 import './styles/friction.css'
 import { FrictionApparatus, type ApparatusEvent } from './apparatus/index.ts'
 import { mountShell } from '../../core/shell/mountShell.ts'
@@ -23,11 +24,13 @@ import { mountRecord } from './views/record.ts'
 import { mountAnalysis } from './views/analysis.ts'
 import { mountSide2d } from './views/side2d.ts'
 import { resetUi } from './views/uistate.ts'
+import { setDragAreaSource } from './views/dragdrop/area.ts'
+import type { Area } from './views/dragdrop/snap.ts'
 import { PRESETS, type PresetName } from './views/strings/scene3d.ts'
 import type { Scene3DView } from './views/scene3d/index.ts'
 import type { ViewContext } from './views/view.ts'
 import { mountChecklist } from './pedagogy/checklistView.ts'
-import type { ChecklistStep, StepId } from './pedagogy/checklist.ts'
+import { setupDone, type ChecklistStep, type StepId } from './pedagogy/checklist.ts'
 import { strings as checklistStrings } from './pedagogy/strings/checklist.ts'
 import { mountCoach } from './pedagogy/coach.ts'
 import { mountTour } from './pedagogy/tour.ts'
@@ -66,7 +69,7 @@ const seedParam = seedText !== null && seedText.trim() !== '' ? Number(seedText)
 const presetParam = params.get('preset')
 function createApp(): FrictionApparatus {
   const wantSeed = Number.isFinite(seedParam) ? seedParam : null
-  if (presetParam === 'empty' || presetParam === 'exp12' || presetParam === 'exp3') {
+  if (presetParam === 'empty' || presetParam === 'exp12' || presetParam === 'exp3' || presetParam === 'loose') {
     const a = new FrictionApparatus({ seed: wantSeed ?? randomSeed() })
     a.preset(presetParam)
     return a
@@ -77,7 +80,7 @@ function createApp(): FrictionApparatus {
     if (a.load(rebaseSnapshotTime(saved)).ok) return a
   }
   const a = new FrictionApparatus({ seed: wantSeed ?? randomSeed() })
-  a.preset('empty')
+  a.preset('loose')
   return a
 }
 const app = createApp()
@@ -103,13 +106,13 @@ if (showReference) PANEL_STEP.record = stepOf('record')
 if (showAnalysis) PANEL_STEP.analysis = stepOf('analysis')
 
 /** Lab step (1-based key) that holds each checklist item: the "next" line shows the first unfinished item of the CURRENT step, else the first one overall. */
-const ITEM_STEP: Record<StepId, StepKey> = { assembly: 'assembly', mass: 'exp1', paper: 'exp1', zero: 'exp1', exp1: 'exp1', exp2: 'exp2', course: 'exp3', exp3: 'exp3' }
+const ITEM_STEP: Record<StepId, StepKey> = { mass: 'exp1', paper: 'exp1', zero: 'exp1', exp1: 'exp1', exp2: 'exp2', course: 'exp3', exp3: 'exp3' }
 function progressOf(steps: ChecklistStep[], overall: ChecklistStep | null): ProcedureProgress {
   const cur = STEP_KEYS[(shell ? shell.currentStep() : 1) - 1]
   const next = steps.find((s) => s.status === 'pending' && ITEM_STEP[s.id] === cur) ?? overall
   const ok = (ids: StepId[]): boolean => ids.every((id) => steps.find((s) => s.id === id)?.status === 'ok')
   const done: Record<StepKey, boolean> = {
-    assembly: ok(['assembly']),
+    assembly: setupDone(app),
     exp1: ok(['mass', 'paper', 'zero', 'exp1']),
     exp2: ok(['exp2']),
     exp3: ok(['course', 'exp3']),
@@ -129,7 +132,8 @@ let scene3d: Scene3DView | null = null
 // `shell` is assigned at the end of this file; every use is inside a callback that runs later.
 let shell: Shell<FrictionApparatus>
 let coachHandle: { relabel(): void; clear(): void; destroy(): void } | null = null
-const areaForStep = (step: number): 'all' | 'exp12' | 'exp3' => (step === 2 || step === 3 ? 'exp12' : step === 4 ? 'exp3' : 'all')
+const areaForStep = (step: number): Area => (step === 2 || step === 3 ? 'exp12' : step === 4 ? 'exp3' : 'all')
+setDragAreaSource(() => areaForStep(shell.currentStep()))
 const presetForStep = (step: number): PresetName => (step === 2 || step === 3 ? 'scale' : step === 4 ? 'rail' : 'overview')
 function setCamera(name: PresetName): void {
   if (!scene3d || shell.effectiveMode() !== '3d') return
@@ -165,7 +169,7 @@ shell = mountShell<FrictionApparatus, ApparatusEvent>({
   }),
   stage: { mount2d: mountSide2d, load3d },
   refusalText: (e, lang) => (e.type === 'refused' ? reasonText(lang, e.reason) : null),
-  reset() { clearSnapshot(); clearAnalysisState(); tasks.clear(); app.preset('empty'); resetUi() },
+  reset() { clearSnapshot(); clearAnalysisState(); tasks.clear(); app.preset('loose'); resetUi() },
   save: () => saveSnapshot(app.snapshot()),
   onStepChanged(step) {
     scene3d?.setArea(areaForStep(step))

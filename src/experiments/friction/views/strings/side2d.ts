@@ -10,6 +10,7 @@ export interface Side2dStrings {
   note: string
   legendBlock: string
   legendRail: string
+  looseLabels: Record<'paper' | 'block' | 'masses50' | 'scale1N' | 'scale2N' | 'woodBar' | 'alBar' | 'ironBar', string>
 }
 
 export const strings: Strings<Side2dStrings> = {
@@ -19,6 +20,7 @@ export const strings: Strings<Side2dStrings> = {
     note: 'Vista simplificada: se dibuja el estado del simulador. La aguja del dinamómetro está en el panel del paso.',
     legendBlock: 'Arriba: el taco, las masas y el dinamómetro estirado (el resorte se alarga cuando el taco no se mueve).',
     legendRail: 'Abajo: el riel con la barra, la marca de salida y la de llegada, y el soporte que lo levanta.',
+    looseLabels: { paper: 'papel', block: 'taco', masses50: 'masas', scale1N: '1 N', scale2N: '2 N', woodBar: 'madera', alBar: 'aluminio', ironBar: 'hierro' },
   },
   en: {
     aria: '2D side view: on top the block pulled by the spring scale over the paper; below the raised rail with the bar and the rack-and-pinion stand',
@@ -26,5 +28,6 @@ export const strings: Strings<Side2dStrings> = {
     note: 'Simplified view: it draws the simulator\'s state. The spring scale\'s needle is in the step panel.',
     legendBlock: 'Top: the block, the masses and the stretched spring scale (the spring lengthens while the block does not move).',
     legendRail: 'Bottom: the rail with the bar, the start and finish marks, and the stand that raises it.',
+    looseLabels: { paper: 'paper', block: 'block', masses50: 'masses', scale1N: '1 N', scale2N: '2 N', woodBar: 'wood', alBar: 'aluminium', ironBar: 'iron' },
   },
 }
