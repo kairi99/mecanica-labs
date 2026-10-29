@@ -5,7 +5,7 @@ import * as THREE from 'three'
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js'
 import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js'
 import {
-  SCREWS_PER_JOINT, SCREWS_TOTAL, railPose, type Apparatus, type TapeTarget,
+  SCREWS_PER_JOINT, TABLE_HEIGHT_m, SCREWS_TOTAL, railPose, type Apparatus, type TapeTarget,
 } from '../../apparatus/index.ts'
 import type { ViewContext } from '../view.ts'
 import { strings } from '../strings/scene3d.ts'
@@ -43,6 +43,8 @@ const END_PRESETS: Record<'highEnd' | 'lowEnd', PresetDef> = {
   highEnd: { target: [4, 14, 0], azimuth: -32, elevation: 20, halfW: 24, halfH: 18 },
   lowEnd: { target: [112, 5, 0], azimuth: 38, elevation: 22, halfW: 22, halfH: 12 },
 }
+/** Low-end framing while a cart falls (rail end, table edge and the floor 0.75 m below). */
+const FALL_FRAME: PresetDef = { target: [140, -20, 0], azimuth: 25, elevation: 14, halfW: 62, halfH: 48 }
 const FOV = 35
 const TRANSITION_MS = 450
 
@@ -155,6 +157,19 @@ export function createScene(container: HTMLElement, ctx: ViewContext, opts: Scen
   table.receiveShadow = true
   tag(table, 'table')
   scene.add(table)
+  // legs and the floor 0.75 m below the table top: the cart can fall off the low rail end (and off the table)
+  const floorY = -TABLE_HEIGHT_m * 100
+  const floor = new THREE.Mesh(new THREE.PlaneGeometry(520, 360), M.floor)
+  floor.rotation.x = -Math.PI / 2
+  floor.position.set(TABLE.x + 60, floorY, TABLE.z)
+  floor.receiveShadow = true
+  scene.add(floor)
+  for (const sx of [-1, 1]) for (const sz of [-1, 1]) {
+    const leg = new THREE.Mesh(new THREE.BoxGeometry(4, -floorY - TABLE.thickness, 4), M.tableSide)
+    leg.position.set(TABLE.x + sx * (TABLE.width / 2 - 4), floorY / 2 - TABLE.thickness / 2, TABLE.z + sz * (TABLE.depth / 2 - 4))
+    leg.castShadow = true
+    scene.add(leg)
+  }
   // one parts tray near the low end holds the small props (stopwatch, tape measure, masking tape roll, level, screws)
   const tray = rbox(TRAY.width, TRAY.height, TRAY.depth, 0.2, M.tray, TRAY.x, TRAY.height / 2 - 0.02, TRAY.z)
   tray.castShadow = false
@@ -208,7 +223,8 @@ export function createScene(container: HTMLElement, ctx: ViewContext, opts: Scen
         : boxCorners([at.x - 5.5, at.y - 1.5, at.z - 3], [at.x + 5.5, at.y + 6, at.z + 3])
       return fromFit(pts, tapeMode === 'down' ? 8 : 0, tapeMode === 'down' ? 8 : tapeMode === 'left' ? 45 : 14, 0.04)
     }
-    const p = END_PRESETS[name]
+    // a run whose cart will leave the low rail end: the low-end view widens to show the drop to the table top and the floor
+    const p = name === 'lowEnd' && a.cartFall(ctx.now() + 1e7) !== null ? FALL_FRAME : END_PRESETS[name]
     const tan = Math.tan((FOV * Math.PI) / 360)
     const el = (p.elevation * Math.PI) / 180, az = (p.azimuth * Math.PI) / 180
     const dist = 1.08 * Math.max(p.halfW / (tan * aspect), p.halfH / tan)
@@ -512,6 +528,20 @@ export function createScene(container: HTMLElement, ctx: ViewContext, opts: Scen
     }
     cart.setInvalid(false)
     if (wasPreview) { wasPreview = false; lastCartKey = '' }
+    const left = a.cartFall(now)
+    if (left && geo) {
+      // the cart left the low rail end: draw the physics path (reduced motion: straight to the resting pose)
+      const f = ctx.reducedMotion() ? a.cartFall(now + 1e7)! : left
+      const h = CART.length / 2
+      const c = Math.cos(f.pitch_rad), sn = Math.sin(f.pitch_rad)
+      const lift = f.surface === 'air' ? 0 : 0.3
+      cart.root.position.set((f.x_m * 100) + h * c, f.y_m * 100 - h * sn + lift, f.z_m * 100)
+      cart.root.rotation.set(0, 0, -f.pitch_rad)
+      placed.delete(cart.root)
+      lastCartKey = 'fall'
+      requestRender()
+      return a.cartState(now).phase === 'falling' && !ctx.reducedMotion()
+    }
     if (poseNow && geo) {
       const key = `${poseNow.front.x_m.toFixed(5)}|${poseNow.front.y_m.toFixed(5)}|${geo.pose.railAngle_rad.toFixed(5)}`
       if (rolling || key !== lastCartKey || cart.root.parent !== scene) {

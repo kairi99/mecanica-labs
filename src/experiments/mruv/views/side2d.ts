@@ -1,6 +1,6 @@
 // 2D side view (SVG), like the guide's figure. Driven by the same Apparatus state as the 3D scene; used when WebGL2
 // is missing, when the 3D view fails, and when the student picks 2D. Controls here call the same Apparatus actions.
-import { CART_LENGTH_m, RACK_BASE_HEIGHT_m, TWO_LEG_BASE_HEIGHT_m, downSlope_m, railPointAt, railPos_mm, type RailPose, type Vec3 } from '../apparatus/index.ts'
+import { CART_LENGTH_m, TABLE_EDGE_X_m, TABLE_HEIGHT_m, RACK_BASE_HEIGHT_m, TWO_LEG_BASE_HEIGHT_m, downSlope_m, railPointAt, railPos_mm, type RailPose, type Vec3 } from '../apparatus/index.ts'
 import type { MountView, View } from './view.ts'
 import { el, svg, watch } from '../../../core/views/dom.ts'
 import { strings } from './strings/side2d.ts'
@@ -18,6 +18,10 @@ const GY = 290
 const VB_X0 = 100
 const VB_W = 960
 const GROUND_PAD = 62
+/** Fall mode (cart left the rail): the view widens to the table edge and shows a floor at this drawn depth below the table top, px (NOT to scale). */
+const FLOOR_DROP_PX = 230
+const FALL_RIGHT_PAD_m = 0.1
+const fallY = (y_m: number): number => (y_m >= 0 ? GY - y_m * S_PX * VEX : GY + (-y_m / TABLE_HEIGHT_m) * FLOOR_DROP_PX)
 const X = (x_m: number): number => XO + x_m * S_PX
 const Y = (y_m: number): number => GY - y_m * S_PX * VEX
 /** Loose layout of the parts on the bench (side view): standing parts at the ends of the rail, the rest in two front rows of the table band. */
@@ -48,11 +52,16 @@ export const mountSide2d: MountView = (root, ctx): View => {
   // Text and strokes are sized in screen pixels: --k is the number of viewbox units per CSS pixel (fit to width on any screen).
   let kPx = 1
   let top = 0
-  const setViewBox = (): void => g.setAttribute('viewBox', `${VB_X0} ${top} ${VB_W} ${GY + GROUND_PAD - top}`)
+  let fallMode = false
+  /** Right end of the fall view: the table edge, or the resting place of the cart if it lies beyond (from the physics result). */
+  let fallRight_m = TABLE_EDGE_X_m
+  const vbW = (): number => (fallMode ? X(fallRight_m + FALL_RIGHT_PAD_m) - VB_X0 : VB_W)
+  const vbBottom = (): number => (fallMode ? GY + FLOOR_DROP_PX + 36 : GY + GROUND_PAD)
+  const setViewBox = (): void => g.setAttribute('viewBox', `${VB_X0} ${top} ${vbW()} ${vbBottom() - top}`)
   const ro = new ResizeObserver(() => {
     const wpx = g.getBoundingClientRect().width
     if (wpx <= 0) return
-    const k = VB_W / wpx
+    const k = vbW() / wpx
     if (Math.abs(k - kPx) > 0.01) { kPx = k; g.style.setProperty('--k', String(k)); w.touch() }
   })
   ro.observe(g)
@@ -83,8 +92,14 @@ export const mountSide2d: MountView = (root, ctx): View => {
     const L: SVGElement[] = []
     const add = (...e: SVGElement[]): void => { L.push(...e) }
 
-    add(svg('rect', { x: VB_X0, y: GY, width: VB_W, height: GROUND_PAD, class: 's2d-table' }))
-    add(svg('line', { x1: VB_X0, y1: GY, x2: VB_X0 + VB_W, y2: GY, class: 's2d-ground' }))
+    const tableW = fallMode ? X(TABLE_EDGE_X_m) - VB_X0 : VB_W
+    add(svg('rect', { x: VB_X0, y: GY, width: tableW, height: GROUND_PAD, class: 's2d-table' }))
+    add(svg('line', { x1: VB_X0, y1: GY, x2: VB_X0 + tableW, y2: GY, class: 's2d-ground' }))
+    if (fallMode) {
+      const fy = GY + FLOOR_DROP_PX
+      add(svg('rect', { x: VB_X0, y: fy, width: vbW(), height: 36, class: 's2d-floor' }))
+      add(svg('line', { x1: VB_X0, y1: fy, x2: VB_X0 + vbW(), y2: fy, class: 's2d-ground' }))
+    }
     const legendItems: Array<{ cls: string; text: string }> = []
     let minY = GY - 90
 
@@ -228,10 +243,23 @@ export const mountSide2d: MountView = (root, ctx): View => {
   let cartKey = ''
   function drawCart(): void {
     const s = app.getState()
+    const left = app.cartFall(ctx.now())
+    // reduced motion: jump to the resting pose (the path is the physics result, only played back here)
+    const fall = left !== null && ctx.reducedMotion() ? app.cartFall(ctx.now() + 1e7) : left
+    const fm = fall !== null
+    const right = fm ? Math.max(TABLE_EDGE_X_m, app.cartFall(ctx.now() + 1e7)!.x_m) : TABLE_EDGE_X_m
+    if (fm !== fallMode || right !== fallRight_m) { fallMode = fm; fallRight_m = right; sync(); ro.disconnect(); ro.observe(g) }
     const pose = app.cartPose(ctx.now())
     if (!pose || !s.cart.placed || !s.geometry) { if (cartKey !== '') { cartLayer.replaceChildren(); cartKey = '' } return }
-    const [fx, fy] = pt(pose.front)
-    const [rx, ry] = pt(pose.rear)
+    let [fx, fy] = pt(pose.front)
+    let [rx, ry] = pt(pose.rear)
+    if (fall) {
+      // cart centre and pitch from the physics path: front and rear lie half a cart length either side along its axis
+      const h = CART_LENGTH_m / 2
+      const c = Math.cos(fall.pitch_rad), sn = Math.sin(fall.pitch_rad)
+      fx = X(fall.x_m + h * c); fy = fallY(fall.y_m - h * sn)
+      rx = X(fall.x_m - h * c); ry = fallY(fall.y_m + h * sn)
+    }
     const len = Math.hypot(fx - rx, fy - ry)
     const deg = (Math.atan2(fy - ry, fx - rx) * 180) / Math.PI
     const key = `${rx.toFixed(1)}|${ry.toFixed(1)}|${deg.toFixed(2)}`
@@ -261,7 +289,7 @@ export const mountSide2d: MountView = (root, ctx): View => {
   const toCm = (clientX: number, clientY: number): { x: number; y: number } | null => {
     const r = g.getBoundingClientRect()
     if (r.width === 0 || clientX < r.left || clientX > r.right || clientY < r.top || clientY > r.bottom) return null
-    const k = VB_W / r.width
+    const k = vbW() / r.width
     const vx = VB_X0 + (clientX - r.left) * k, vy = top + (clientY - r.top) * k
     return { x: ((vx - XO) / S_PX) * 100, y: ((GY - vy) / (S_PX * VEX)) * 100 }
   }

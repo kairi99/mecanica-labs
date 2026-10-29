@@ -76,7 +76,7 @@ export function mountStopwatch(opts: StopwatchOptions): MountView {
     function phaseText(): void {
       const T = S()
       const ph = app.cartState(ctx.now()).phase
-      const txt = { unplaced: T.phaseUnplaced, atStart: T.phaseAtStart, rolling: T.phaseRolling, stopped: T.phaseStopped, stuck: T.phaseStuck }[ph]
+      const txt = { unplaced: T.phaseUnplaced, atStart: T.phaseAtStart, rolling: T.phaseRolling, stopped: T.phaseStopped, stuck: T.phaseStuck, falling: T.phaseFalling, fallen: T.phaseFallen }[ph]
       if (phase.textContent !== txt) phase.textContent = txt
     }
 

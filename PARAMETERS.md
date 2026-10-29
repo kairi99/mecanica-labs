@@ -148,6 +148,19 @@ Device and bench values of the Practica 2 apparatus layer. Date of all rows: 202
 
 Simplifications: no longitudinal table tilt; the table is long enough for any rail position; the rail is a rigid beam on its contacts (rack clamp, tabletop at the low end, two-leg stand when higher than the free line), exact in the angle; after the first bounce the ball follows the hop and roll-out model above; marks are the first contact only. With the physics rolling resistance (`c_rr` 1.5e-3 and 5e-3) a ball does not stop on a 0.6 m gap: only a nearly flat rail stops it.
 
+## Práctica 1: cart that leaves the rail (`src/experiments/mruv/physics/falloff.ts`)
+
+Without the receiver (end stop) the cart rolls off the low rail end, falls to the table top and, if it rolls on to the table edge, to the floor. Date of all rows: 2026-10-29. **ASSUMED** = chosen by us from typical values, not measured, not PHYWE specifications; none was tuned to a target outcome. Model: projectile from the rail end (leaving speed along the incline, rail-end height above the table), impact with restitution 0 (vertical speed lost, a fraction of the horizontal speed kept), then the rail's rolling model on a flat surface (`(c_rr m g + F_bearing) / m_eff`, wheel inertia counted, no air drag). The cart leaves when its centre passes the rail end (front at `RAIL_LENGTH_m + CART_LENGTH_m/2` along the rail). The cart is treated as a point at the rail top surface; tipping is not simulated (the drawn nose-down pitch is cosmetic).
+
+| Parameter | Value | Unit | Source |
+|---|---|---|---|
+| Horizontal speed kept at a landing `LANDING_RETENTION` | 0.5 | - | ASSUMED (hard landing on the wheels, restitution 0). |
+| Landing scatter `sigma_landing_rel` (variability.ts) | 0.1 | - | ASSUMED, relative, 1-sigma, injected RNG. |
+| Rolling-resistance coefficient on table / floor `C_RR_SURFACE` | 0.01 | - | ASSUMED (plastic wheels on a hard flat surface; 20 times the rail's `c_rr`). |
+| Table height above the floor `TABLE_HEIGHT_m` | 0.75 | m | ASSUMED (within the 0.74 to 0.78 m of Práctica 2). |
+| Table edge on the down-slope side `TABLE_EDGE_X_m` | 1.62 | m | ASSUMED layout, world x from the rack-stand clamp (table x = -0.38 to 1.62 m, as the 3D table). The rail low end is at x about 1.15 m, so the edge is about 0.47 m from it: with the default setup the cart lands about 0.07 m beyond the rail end and its run-out (about 0.5 m) usually carries it off the edge. A slower run (short drop distance) stays on the table. |
+| Pitch `TIP_PITCH_END_rad`, `SETTLE_TIME_s` | 0.2 / 0.1 | rad, s | COSMETIC (view only; no position or time depends on them). |
+
 ## Práctica 3 (`src/experiments/newton2`)
 
 Force and acceleration: a DigiCart on a (nearly) level rail pulled by a hanging film canister over the receiver's pulley. Date of all rows: 2026-10-27. **ASSUMED** = chosen by us from typical values and physical reasoning, not measured, not PHYWE specifications; none was tuned to a target. The cart body (mass, wheels, `c_rr`, bearing drag, breakaway, drag) is the one in the Cart table above (`DEFAULT_DIGICART_BODY`, now in `src/core/physics/digicart.ts`, shared with Práctica 1; no value changed). Local g and air density: Site table.

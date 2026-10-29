@@ -10,7 +10,7 @@ export const strings: Strings<CoachStrings> = {
     dismiss: 'Descartar la sugerencia',
     nudges: {
       cartOffRail: 'Ojo: el DigiCart nunca debe quedar fuera de la riel. Rueda con facilidad y puede caer de la mesa. Colócalo entero sobre la riel.',
-      noReceiver: 'Sin el receptor en el extremo bajo no hay quién detenga al carro y se cae. Ponlo antes de soltar.',
+      noReceiver: 'Sin el receptor (el tope del extremo bajo) nada detiene al carro: saldrá de la riel y caerá. En el laboratorio real podría romperse. Coloca el receptor y vuelve a poner el carro en la riel.',
       scaleReversed: 'La escala impresa tiene el 0 en el extremo bajo. La guía cuenta las distancias desde el punto más alto: pasa el otro extremo de la riel a la pinza.',
       raisedBeforeLevel: 'Subiste el soporte antes de nivelar. Baja la cremallera a cero, nivela con el pie del soporte de dos patas y vuelve a subir.',
       angleOff: 'La inclinación no está en 1,30° dentro de la tolerancia. Revisa las alturas con el flexómetro antes de seguir tomando tiempos.',
@@ -28,7 +28,7 @@ export const strings: Strings<CoachStrings> = {
     dismiss: 'Dismiss the hint',
     nudges: {
       cartOffRail: 'Careful: the DigiCart must never be off the rail. It rolls easily and can fall off the table. Put it fully on the rail.',
-      noReceiver: 'With no receiver at the low end nothing stops the cart and it falls. Fit it before releasing.',
+      noReceiver: 'Without the receiver (the end stop at the low end) nothing stops the cart: it leaves the rail and falls. In the real lab it could break. Attach the receiver and put the cart back on the rail.',
       scaleReversed: 'The printed scale has its 0 at the low end. The guide counts distances from the highest point: put the other rail end in the clamp.',
       raisedBeforeLevel: 'You raised the stand before levelling. Lower the rack to zero, level with the foot of the two-leg stand and raise again.',
       angleOff: 'The incline is not 1.30° within tolerance. Check the heights with the tape measure before you keep timing.',

@@ -3,13 +3,13 @@
 // Time is always passed in (ms timestamps from the caller). Physics only from ../physics. Public API: docs/architecture.md.
 import {
   DEFAULT_CART, DEFAULT_VARIABILITY, CountedRng, deg2rad, inclineAngle_rad, mulberry32, tapeMaxPermissibleError_m,
-  sampleRun, crossingTime_s, THETA_GUIDE_rad, type CartParams, type VariabilityConfig,
+  sampleRun, crossingTime_s, fallOffPath, fallSampleAt, sampleLandingRetention, type FallResult, THETA_GUIDE_rad, type CartParams, type VariabilityConfig,
 } from '../physics/index.ts'
 import {
   ANGLE_TOLERANCE_rad, CART_AT_A_TOL_mm, CART_LENGTH_m, DIGICART_RESOLUTION_m,
   DIGICART_SAMPLE_RATE_Hz, FOOT_RANGE_mm, FOOT_STEP_mm,
   LEVEL_BUBBLE_MAX_mm, LEVEL_CENTERED_TOL_mm, MARK_MAX_COUNT, MARK_SNAP_mm, RACK_BASE_HEIGHT_m, RACK_MAX_mm, RACK_MIN_mm,
-  RAIL_LENGTH_m, RAIL_SCALE_MAX_mm, RECEIVER_STOP_FROM_END_m, SCREWS_PER_JOINT, SCREWS_TOTAL, SUPPORT_SEPARATION_m,
+  RAIL_LENGTH_m, RAIL_SCALE_MAX_mm, TABLE_EDGE_X_m, TABLE_HEIGHT_m, RECEIVER_STOP_FROM_END_m, SCREWS_PER_JOINT, SCREWS_TOTAL, SUPPORT_SEPARATION_m,
   TABLE_COLS, TABLE_POSITIONS_cm, TABLE_TILT_MAX_deg, TABLE_ROWS, TWO_LEG_BASE_HEIGHT_m,
 } from './constants.ts'
 import {
@@ -22,7 +22,7 @@ import { buildTrajectory, digicartSamples, trajectoryAt, type Trajectory } from 
 import { parseTimeInput } from './table.ts'
 import {
   ITEM_IDS,
-  type ApparatusEvent, type ApparatusEventBody, type ApparatusSnapshot, type ApparatusState, type CanRun,
+  type ApparatusEvent, type CartFallPose, type FallRecord, type ApparatusEventBody, type ApparatusSnapshot, type ApparatusState, type CanRun,
   type TapeReading, type TapeTarget, type CartPose, type CartStatus, type CrossingRecord, type DigicartRecord, type Failure,
   type ItemId, type JointId, type LevelPlacement, type LevelReading, type MarkerState, type MissingEntry, type PresetId,
   type ProcedureSummary, type RailEnd, type RailGeometry, type Reason, type Result, type RunBlock, type RunRecord,
@@ -195,7 +195,7 @@ export class Apparatus {
   missing(): MissingEntry[] {
     const out: MissingEntry[] = []
     const blocking: Record<ItemId, boolean> = {
-      rail: true, cart: true, rackStand: true, standBase: true, twoLegStand: true, receiver: true, screws: true,
+      rail: true, cart: true, rackStand: true, standBase: true, twoLegStand: true, receiver: false, screws: true,
       level: false, stopwatch: false, tape: false, markers: false,
     }
     for (const id of ITEM_IDS) if (!this.items.has(id)) out.push({ kind: 'item', id, reason: 'notOnTable', blocksRun: blocking[id] })
@@ -206,18 +206,17 @@ export class Apparatus {
       out.push({ kind: 'joint', id: 'rackClamp', reason: j.standBase ? 'notAttached' : 'needsStandBase', blocksRun: true })
     }
     for (const id of ['twoLegStand', 'receiver'] as const) {
-      if (has('rail', id) && !j[id]) out.push({ kind: 'joint', id, reason: j.rackClamp ? 'notAttached' : 'needsRackClamp', blocksRun: true })
+      if (has('rail', id) && !j[id]) out.push({ kind: 'joint', id, reason: j.rackClamp ? 'notAttached' : 'needsRackClamp', blocksRun: id !== 'receiver' })
     }
     return out
   }
-  /** Can the cart be released safely? Reasons are ids (noReceiver: the cart would fall off the low end). */
+  /** Can the cart be released? Reasons are ids. A missing receiver does not block: it is a warning (the cart falls off the low end). */
   canRun(): CanRun {
     const reasons: RunBlock[] = []
     if (!this.items.has('rail')) reasons.push('noRail')
     else if (this.joints.rackClamp === null || !this.joints.twoLegStand) reasons.push('railNotSupported')
-    if (!this.joints.receiver) reasons.push('noReceiver')
     if (!this.cart.placed) reasons.push('cartNotPlaced')
-    return { ok: reasons.length === 0, reasons }
+    return { ok: reasons.length === 0, reasons, warnings: this.joints.receiver ? [] : ['noReceiver'] }
   }
 
   // ---- geometry ----------------------------------------------------------------------------------------------------
@@ -439,22 +438,26 @@ export class Apparatus {
     const D0 = downSlope_m(start, zeroHigh)
     const base: CartParams = { ...this.cartParams, theta_rad: geo.theta_rad }
     const cond = sampleRun(base, this.runRng.next, this.variability)
-    const sStop = RAIL_LENGTH_m - RECEIVER_STOP_FROM_END_m - D0
+    const withStop = this.joints.receiver
+    // With the stop the front halts at the end stop. Without it the cart leaves when its CENTRE passes the low rail end.
+    const sStop = withStop ? RAIL_LENGTH_m - RECEIVER_STOP_FROM_END_m - D0 : RAIL_LENGTH_m + CART_LENGTH_m / 2 - D0
     const id = this.runs.length + 1
     const tr = buildTrajectory(cond.params, cond.init, sStop)
+    const fell = !withStop && tr.tStop_s !== null
     const marks = this.markers
       .map((m) => ({ m, D: downSlope_m(m.railPos_mm, zeroHigh) }))
       .sort((a, b) => a.D - b.D)
       .map(({ m, D }): CrossingRecord => {
         const s = D - D0
         const behind = s < -1e-4
-        const t = behind || s > sStop ? null : crossingTime_s(s, cond.params, cond.init)
+        const t = fell || behind || s > sStop ? null : crossingTime_s(s, cond.params, cond.init)
         return { markId: m.id, railPos_mm: m.railPos_mm, trueTime_s: t }
       })
     const rec: RunRecord = {
       id, releaseTime_ms: t_ms, scaleZeroAtHighEnd: zeroHigh, startRailPos_mm: start, theta_rad: geo.theta_rad,
       conditions: { releaseOffset_m: cond.init.s_m, v0_mps: cond.init.v_mps, c_rr: cond.params.c_rr },
-      stopRailPos_mm: railPos_mm(RAIL_LENGTH_m - RECEIVER_STOP_FROM_END_m, zeroHigh), tStop_s: tr.tStop_s, marks, endedBy: null,
+      stopRailPos_mm: railPos_mm(RAIL_LENGTH_m - RECEIVER_STOP_FROM_END_m, zeroHigh), tStop_s: fell ? null : tr.tStop_s, marks, endedBy: null,
+      fall: fell ? this.makeFall(tr, tr.tStop_s!, geo.pose, geo.theta_rad, cond.params.g_mps2) : null,
     }
     this.runs.push(rec)
     this.trajectories.set(id, tr)
@@ -467,12 +470,36 @@ export class Apparatus {
     }
     return { ok: true, runId: id }
   }
+  /** Fall inputs of a run that leaves the rail (variability: landing retention drawn from the run RNG, after the run conditions). */
+  private makeFall(tr: Trajectory, tLeave_s: number, pose: RailPose, theta_rad: number, g_mps2: number): FallRecord {
+    const vLeave = trajectoryAt(tr, tLeave_s - 1e-9).v_mps
+    const rec: FallRecord = {
+      tLeave_s, vLeave_mps: vLeave, h_m: pose.lowEnd.y_m, edgeDistance_m: Math.max(0, TABLE_EDGE_X_m - pose.lowEnd.x_m),
+      retention: sampleLandingRetention(this.runRng.next, this.variability), final: 'onTable',
+    }
+    rec.final = this.fallPath(rec, theta_rad, g_mps2).final
+    return rec
+  }
+  private fallPath(f: FallRecord, theta_rad: number, g_mps2?: number): FallResult {
+    return fallOffPath({
+      v_mps: f.vLeave_mps, theta_rad, h_m: f.h_m, edgeDistance_m: f.edgeDistance_m, tableHeight_m: TABLE_HEIGHT_m,
+      retention: f.retention, cart: { ...this.cartParams, ...(g_mps2 === undefined ? {} : { g_mps2 }) },
+    })
+  }
+  private fallPaths = new Map<number, FallResult>()
+  private fallResult(rec: RunRecord): FallResult | null {
+    if (!rec.fall) return null
+    let r = this.fallPaths.get(rec.id)
+    if (!r) { r = this.fallPath(rec.fall, rec.theta_rad); this.fallPaths.set(rec.id, r) }
+    return r
+  }
   private trajectoryFor(rec: RunRecord): Trajectory {
     let tr = this.trajectories.get(rec.id)
     if (!tr) {
       const params: CartParams = { ...this.cartParams, theta_rad: rec.theta_rad, c_rr: rec.conditions.c_rr }
       const D0 = downSlope_m(rec.startRailPos_mm, rec.scaleZeroAtHighEnd)
-      tr = buildTrajectory(params, { s_m: rec.conditions.releaseOffset_m, v_mps: rec.conditions.v0_mps }, RAIL_LENGTH_m - RECEIVER_STOP_FROM_END_m - D0)
+      const sStop = rec.fall ? RAIL_LENGTH_m + CART_LENGTH_m / 2 - D0 : RAIL_LENGTH_m - RECEIVER_STOP_FROM_END_m - D0
+      tr = buildTrajectory(params, { s_m: rec.conditions.releaseOffset_m, v_mps: rec.conditions.v0_mps }, sStop)
       this.trajectories.set(rec.id, tr)
     }
     return tr
@@ -496,6 +523,10 @@ export class Apparatus {
     const t_s = Math.max(0, (t_ms - rec.releaseTime_ms) / 1000)
     const tr = this.trajectoryFor(rec)
     const st = trajectoryAt(tr, t_s)
+    if (rec.fall && t_s >= rec.fall.tLeave_s) {
+      const f = this.fallResult(rec)!
+      return mk(t_s - rec.fall.tLeave_s >= f.tRest_s ? 'fallen' : 'falling', t_s, st.s_m, 0)
+    }
     const phase = st.stopped ? 'stopped' : tr.tStop_s === null && t_s >= tr.duration_s ? 'stuck' : 'rolling'
     return mk(phase, t_s, st.s_m, st.v_mps)
   }
@@ -509,12 +540,29 @@ export class Apparatus {
       direction: geo.pose.direction, normal: geo.pose.normal,
     }
   }
+  /**
+   * Cart centre after it left the low rail end (no receiver), at t_ms: world frame, y = 0 at the table top, plus the
+   * nose-down pitch and the surface it is over. null for a cart that is not (yet) off the rail. The path is the
+   * deterministic physics/falloff.ts result; views only draw it.
+   */
+  cartFall(t_ms: number): CartFallPose | null {
+    const geo = this.geometry()
+    const rec = this.cart.released ? this.runs.find((r) => r.id === this.cart.runId) : undefined
+    if (!geo || !rec || !rec.fall) return null
+    const t = (t_ms - rec.releaseTime_ms) / 1000 - rec.fall.tLeave_s
+    if (t < 0) return null
+    const smp = fallSampleAt(this.fallResult(rec)!, t)
+    return {
+      x_m: geo.pose.lowEnd.x_m + smp.x_m, y_m: smp.y_m, z_m: geo.pose.lowEnd.z_m, pitch_rad: smp.pitch_rad,
+      surface: smp.surface, final: rec.fall.final,
+    }
+  }
   getRuns(): readonly RunRecord[] { return this.runs }
   getRun(runId: number): RunRecord | null { return this.runs.find((r) => r.id === runId) ?? null }
   /** The DigiCart's own record of a run: x(t) at 50 Hz (1 mm) from release plus the true crossing times of the marks. */
   digicartRecord(runId: number): DigicartRecord | null {
     const rec = this.getRun(runId)
-    if (!rec) return null
+    if (!rec || rec.fall) return null // a run that ended with the cart on the floor has no valid DigiCart log
     const s = digicartSamples(this.trajectoryFor(rec))
     return {
       runId, releaseTime_ms: rec.releaseTime_ms, sampleRate_Hz: DIGICART_SAMPLE_RATE_Hz, resolution_m: DIGICART_RESOLUTION_m,
@@ -677,7 +725,7 @@ export class Apparatus {
     this.levelPlacement = c.levelPlacement; this.levelledAtBase = c.levelledAtBase
     this.measured = { ...c.measured, separation: c.measured.separation ?? false }
     this.markers = c.markers; this.nextMarkerId = c.nextMarkerId
-    this.cart = c.cart; this.runs = c.runs; this.trajectories.clear()
+    this.cart = c.cart; this.runs = c.runs.map((r) => ({ ...r, fall: r.fall ?? null })); this.trajectories.clear(); this.fallPaths.clear()
     this.sw.load(c.stopwatch, c.stops); this.table = c.table
     this.events = c.events; this.seq = c.events.length ? c.events[c.events.length - 1]!.seq : 0
     this.emit({ type: 'loaded' })
@@ -694,7 +742,7 @@ export class Apparatus {
     this.measured = { clamp: false, twoLeg: false, separation: false }
     this.markers = []; this.nextMarkerId = 1
     this.cart = { placed: false, startRailPos_mm: null, released: false, runId: null }
-    this.runs = []; this.trajectories.clear()
+    this.runs = []; this.trajectories.clear(); this.fallPaths.clear()
     this.sw.clear(); this.table = emptyTable()
   }
   /**
