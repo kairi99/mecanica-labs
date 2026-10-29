@@ -7,11 +7,11 @@ on:
   workflow_run:
     workflows: [test]
     types: [completed]
-    branches: [main, feature/dragdrop-theory-unlock]
+    branches: [main]
   workflow_dispatch:
 
 env:
-  PREVIEW_BRANCH: feature/dragdrop-theory-unlock
+  PREVIEW_BRANCH: ''
 
 permissions:
   contents: read
