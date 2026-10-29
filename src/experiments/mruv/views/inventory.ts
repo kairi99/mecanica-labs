@@ -6,6 +6,7 @@ import { reasonText } from './reasons.ts'
 import { itemIcon } from './itemIcons.ts'
 import { strings } from './strings/inventory.ts'
 import { strings as ddStrings } from './strings/dragdrop.ts'
+import { strings as ddCore } from '../../../core/dragdrop/strings.ts'
 
 /** Items shown in the guide's order. */
 const ORDER: ItemId[] = ['rail', 'cart', 'rackStand', 'standBase', 'twoLegStand', 'screws', 'level', 'receiver', 'stopwatch', 'tape', 'markers']
@@ -149,7 +150,7 @@ export const mountInventory: MountView = (root, ctx): View => {
     const T = S()
     c.title.textContent = T.title
     intro.textContent = dd().inventoryIntro
-    manualSum.textContent = dd().disclosure
+    manualSum.textContent = ddCore[ctx.lang()].disclosure
     const s = app.getState()
     jointsHead.textContent = T.jointsTitle
     jointsIntro.textContent = T.jointsIntro

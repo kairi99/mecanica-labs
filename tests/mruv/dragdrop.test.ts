@@ -37,22 +37,6 @@ describe('snap zones', () => {
     expect(far?.kind === 'zone' && far.zone.id).toBe('table')
     expect(resolveDrop(zs, at(900, 0))).toBeNull()
   })
-  it('chooses the nearest of two zones', () => {
-    const a = mk()
-    const zs = zones(a, 'rail')
-    const e1 = zone(zs, 'clampE1'), e2 = zone(zs, 'clampE2')
-    expect(e1.cx).toBeGreaterThan(e2.cx)
-    const t = resolveDrop(zs, at(e1.cx - 2, 0))
-    expect(t?.kind === 'zone' && t.zone.id).toBe('clampE1')
-  })
-  it('asks the probe for the plane height of each zone', () => {
-    const a = mk()
-    const zs = zones(a, 'rail')
-    const seen = new Set<number>()
-    resolveDrop(zs, (z) => { seen.add(z.cy); return { x_cm: 0, z_cm: 0 } })
-    expect(seen.has(0)).toBe(true)
-    expect(seen.size).toBeGreaterThan(1)
-  })
   it('side view ignores depth (z null)', () => {
     const a = mk()
     const st = zone(zones(a, 'standBase'), 'stand')

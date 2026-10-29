@@ -1,5 +1,5 @@
-// Pure snap logic of the drag-and-drop assembly (no DOM, no three.js): which target zones exist for a part, which one a drop
-// point falls in, and which Apparatus action that zone stands for. The rules of the assembly stay in the Apparatus: a zone only
+// MRUV side of the pure snap logic of the drag-and-drop assembly (no DOM, no three.js): which target zones exist for a part and
+// which Apparatus action each stands for. The generic zone type and the nearest-zone resolution live in core/dragdrop/snap.ts. The rules of the assembly stay in the Apparatus: a zone only
 // names the call (`attach`, `placeCart`, ...) and the Apparatus decides whether it is allowed (see drop.ts).
 //
 // Frame: scene centimetres, table frame (x down-slope from the rack stand, y up, z toward the viewer), as in scene3d/units.ts.
@@ -7,6 +7,7 @@ import {
   CART_LENGTH_m, RAIL_LENGTH_m, RACK_BASE_HEIGHT_m, TWO_LEG_BASE_HEIGHT_m, SUPPORT_SEPARATION_m, railPose, railPos_mm,
   type ApparatusState, type ItemId, type JointId, type RailEnd, type RailPose,
 } from '../../apparatus/index.ts'
+import { nearestZone, distanceToZone, type Probe, type Zone as CoreZone } from '../../../../core/dragdrop/snap.ts'
 import { CM_PER_M, LEVEL_ON_TABLE, RAIL, TABLE, clampCartFront, ghostsFor, cartGhostFront_mm, type GhostId } from '../scene3d/units.ts'
 
 export type ZoneId = 'table' | 'stand' | 'clampE1' | 'clampE2' | 'twoLeg' | 'receiver' | 'railCart' | 'railMark' | 'railLevel' | 'tableLevel'
@@ -19,26 +20,16 @@ export type DropAction =
   | { kind: 'placeMarker' }
   | { kind: 'placeLevel'; where: 'rail' | 'table' }
 
-/** A box on a horizontal plane at height `cy` (half sizes hx, hz; 0 for a point), widened by `snap_cm` on every side. */
-export interface Zone {
+/** A core zone plus the Apparatus call it stands for. */
+export interface Zone extends CoreZone {
   id: ZoneId
   action: DropAction
-  cx: number
-  cy: number
-  cz: number
-  hx: number
-  hz: number
-  snap_cm: number
-  /** Lower number loses ties (the table is the fallback). */
-  priority: number
-  /** The Apparatus would accept the drop right now (as far as the ghosts know). Not-ready zones still accept a drop: the refusal teaches. */
-  ready: boolean
   /** Zones along the rail: the drop point maps to a position on the printed scale. */
   rail?: { highX_cm: number; cos: number; zeroHigh: boolean; hasReceiver: boolean }
 }
 
-/** Where a pointer ray meets the horizontal plane at the zone's height (z null: the view has no depth, ignore it). */
-export type Probe = (zone: Zone) => { x_cm: number; z_cm: number | null } | null
+export { distanceToZone }
+export type { Probe }
 
 export type Target =
   | { kind: 'tray' }
@@ -81,10 +72,10 @@ export function nominalPose(s: Pick<ApparatusState, 'rack_mm' | 'foot_mm'>): Rai
 
 const cm = (m: number): number => m * CM_PER_M
 
-function railBand(pose: RailPose, zeroHigh: boolean, hasReceiver: boolean): Pick<Zone, 'cx' | 'cy' | 'cz' | 'hx' | 'hz'> & { rail: NonNullable<Zone['rail']> } {
+function railBand(pose: RailPose, zeroHigh: boolean, hasReceiver: boolean): Pick<Zone, 'kind' | 'cx' | 'cy' | 'cz' | 'hx' | 'hz' | 'tilt_rad'> & { rail: NonNullable<Zone['rail']> } {
   const x0 = cm(pose.highEnd.x_m), x1 = cm(pose.lowEnd.x_m)
   return {
-    cx: (x0 + x1) / 2, cy: cm((pose.highEnd.y_m + pose.lowEnd.y_m) / 2), cz: cm(pose.highEnd.z_m), hx: Math.abs(x1 - x0) / 2, hz: RAIL.halfW,
+    kind: 'band', tilt_rad: pose.railAngle_rad, cx: (x0 + x1) / 2, cy: cm((pose.highEnd.y_m + pose.lowEnd.y_m) / 2), cz: cm(pose.highEnd.z_m), hx: Math.abs(x1 - x0) / 2, hz: RAIL.halfW,
     rail: { highX_cm: x0, cos: pose.direction.x_m, zeroHigh, hasReceiver },
   }
 }
@@ -101,10 +92,10 @@ export function zonesFor(part: ItemId, s: ApparatusState, pose: RailPose): Zone[
   const nominal = nominalPose(s)
   const clampH = cm(nominal.clamp.y_m)
   const out: Zone[] = [{
-    id: 'table', action: { kind: 'table' }, cx: TABLE.x, cy: 0, cz: TABLE.z, hx: TABLE.width / 2, hz: TABLE.depth / 2, snap_cm: 0, priority: 0, ready: true,
+    id: 'table', kind: 'area', action: { kind: 'table' }, cx: TABLE.x, cy: 0, cz: TABLE.z, hx: TABLE.width / 2, hz: TABLE.depth / 2, snap_cm: 0, priority: 0, ready: true,
   }]
   const point = (id: ZoneId, action: DropAction, x: number, y: number, z: number, prio = 2): Zone =>
-    ({ id, action, cx: x, cy: y, cz: z, hx: 0, hz: 0, snap_cm: SNAP_CM, priority: prio, ready: isReady(id) })
+    ({ id, kind: 'point', action, cx: x, cy: y, cz: z, hx: 0, hz: 0, snap_cm: SNAP_CM, priority: prio, ready: isReady(id) })
 
   if (part === 'rackStand' || part === 'standBase') out.push(point('stand', { kind: 'attach', joint: 'standBase' }, 0, 0, 0))
   if (part === 'rackStand') {
@@ -142,13 +133,6 @@ export function zonesFor(part: ItemId, s: ApparatusState, pose: RailPose): Zone[
   return out
 }
 
-/** Distance (cm) from a point to the zone's box, 0 inside. z null: only x counts (side view). */
-export function distanceToZone(zone: Zone, p: { x_cm: number; z_cm: number | null }): number {
-  const dx = Math.max(0, Math.abs(p.x_cm - zone.cx) - zone.hx)
-  const dz = p.z_cm === null ? 0 : Math.max(0, Math.abs(p.z_cm - zone.cz) - zone.hz)
-  return Math.hypot(dx, dz)
-}
-
 /** Printed-scale position and distance along the rail (cm from the high end) under a point of a rail zone. */
 function onRail(zone: Zone, x_cm: number, kind: DropAction['kind']): { railPos_mm: number; along_cm: number } | null {
   const r = zone.rail
@@ -163,24 +147,14 @@ function onRail(zone: Zone, x_cm: number, kind: DropAction['kind']): { railPos_m
 }
 
 /**
- * The zone a drop point falls in: the nearest specific zone within its snap distance, else the table if the point is on it, else null.
+ * The zone a drop point falls in (core `nearestZone`), with the printed-scale position for zones along the rail.
  * `probe` gives the point on the plane at each zone's height (a pointer ray crosses planes of different heights at different x, z).
  */
 export function resolveDrop(zones: readonly Zone[], probe: Probe): Target | null {
-  let best: { zone: Zone; dist: number; p: { x_cm: number; z_cm: number | null } } | null = null
-  let table: { zone: Zone; dist: number; p: { x_cm: number; z_cm: number | null } } | null = null
-  for (const zone of zones) {
-    const p = probe(zone)
-    if (!p || !Number.isFinite(p.x_cm)) continue
-    const dist = distanceToZone(zone, p)
-    if (dist > zone.snap_cm + 1e-9) continue
-    if (zone.id === 'table') { table = { zone, dist, p }; continue }
-    if (!best || dist < best.dist - 1e-9 || (Math.abs(dist - best.dist) <= 1e-9 && zone.priority > best.zone.priority)) best = { zone, dist, p }
-  }
-  const hit = best ?? table
+  const hit = nearestZone(zones, probe)
   if (!hit) return null
-  const placed = onRail(hit.zone, hit.p.x_cm, hit.zone.action.kind)
-  return { kind: 'zone', zone: hit.zone, dist_cm: hit.dist, railPos_mm: placed?.railPos_mm ?? null, along_cm: placed?.along_cm ?? null }
+  const placed = onRail(hit.zone, hit.point.x_cm, hit.zone.action.kind)
+  return { kind: 'zone', zone: hit.zone, dist_cm: hit.dist_cm, railPos_mm: placed?.railPos_mm ?? null, along_cm: placed?.along_cm ?? null }
 }
 
 /** The target for a zone chosen without a pointer (keyboard, zone buttons): a sensible default spot along the rail. */
