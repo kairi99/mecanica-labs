@@ -13,7 +13,7 @@ export const strings: Strings<ReasonStrings> = {
   es: {
     reasons: {
       unknownItem: 'Ese elemento no existe en el inventario.',
-      itemNotOnTable: 'Primero pon {item} sobre la mesa desde el inventario.',
+      itemNotOnTable: 'Falta {item} sobre la mesa: está en la bandeja bajo el escenario; arrastra la pieza de vuelta.',
       itemAlreadyOnTable: 'Ya tienes {item} sobre la mesa.',
       screwsInUse: 'Los tornillos están sujetando la riel. Suelta primero las conexiones para recuperarlos.',
       needStandBase: 'Primero monta el soporte con cremallera sobre su base.',
@@ -72,7 +72,7 @@ export const strings: Strings<ReasonStrings> = {
   en: {
     reasons: {
       unknownItem: 'That item is not in the inventory.',
-      itemNotOnTable: 'First put {item} on the table from the inventory.',
+      itemNotOnTable: 'Missing from the table: {item}. It is in the tray under the stage; drag it back.',
       itemAlreadyOnTable: 'You already have {item} on the table.',
       screwsInUse: 'The screws are holding the rail. Undo the connections first to get them back.',
       needStandBase: 'First mount the rack stand on its base.',

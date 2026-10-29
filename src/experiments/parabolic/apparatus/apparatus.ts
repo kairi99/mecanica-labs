@@ -949,12 +949,14 @@ export class ParabolicApparatus {
    * 'empty': nothing on the table. 'assembled': a careful student's bench, built through the real actions (so the event
    * log and procedure flags are genuine): all items, stands joined, rail rolled level with the foot, rise 20 cm, two-leg
    * stand just below the rail, tip 5 cm from the edge, marks at 0.60 to 1.00 m, heights measured, edge projection, paper
-   * centred on the expected landings, the marble on the first mark.
+   * centred on the expected landings, the marble on the first mark. 'loose': every material lies loose on the table (all items, no
+   * joint, no mark, no paper placed on the floor, no ball on the rail): the start of a fresh lab, which the student assembles.
    */
   preset(name: PresetId): Result {
-    if (name !== 'empty' && name !== 'assembled') return this.refuse('preset', 'unknownPreset')
+    if (name !== 'empty' && name !== 'assembled' && name !== 'loose') return this.refuse('preset', 'unknownPreset')
     this.reset()
     if (name === 'assembled') this.buildAssembled()
+    else if (name === 'loose') for (const i of ITEM_IDS) this.addItem(i)
     this.emit({ type: 'presetApplied', preset: name })
     return { ok: true }
   }
