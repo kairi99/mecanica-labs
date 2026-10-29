@@ -15,6 +15,8 @@ export interface StopwatchStrings {
   phaseRolling: string
   phaseStopped: string
   phaseStuck: string
+  phaseFalling: string
+  phaseFallen: string
   runs: string
   steps: string
 }
@@ -35,6 +37,8 @@ export const strings: Strings<StopwatchStrings> = {
     phaseRolling: 'DigiCart: rodando.',
     phaseStopped: 'DigiCart: detenido. Devuélvelo al inicio para otra repetición.',
     phaseStuck: 'DigiCart: detenido sobre la riel.',
+    phaseFalling: 'DigiCart: salió de la riel y cae.',
+    phaseFallen: 'DigiCart: cayó. Esta corrida no vale; vuelve a ponerlo en la riel.',
     runs: 'Repeticiones realizadas: {n}',
     steps: 'Suelta el DigiCart (S), inicia el cronómetro cuando pase por el inicio, detenlo en la marca elegida y copia la lectura a la tabla.',
   },
@@ -53,6 +57,8 @@ export const strings: Strings<StopwatchStrings> = {
     phaseRolling: 'DigiCart: rolling.',
     phaseStopped: 'DigiCart: stopped. Bring it back to the start for another run.',
     phaseStuck: 'DigiCart: stopped on the rail.',
+    phaseFalling: 'DigiCart: left the rail and is falling.',
+    phaseFallen: 'DigiCart: it fell. This run does not count; put it back on the rail.',
     runs: 'Runs so far: {n}',
     steps: 'Release the DigiCart (S), start the stopwatch as it passes the start, stop it at the chosen mark and copy the reading to the table.',
   },

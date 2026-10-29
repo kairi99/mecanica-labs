@@ -61,6 +61,9 @@ export interface AdjustStrings {
   cartPhaseRolling: string
   cartPhaseStopped: string
   cartPhaseStuck: string
+  cartPhaseFalling: string
+  cartPhaseFallenTable: string
+  cartPhaseFallenFloor: string
   cartFront: string
   cartFrontHint: string
   noMarks: string
@@ -115,6 +118,9 @@ export const strings: Strings<AdjustStrings> = {
     cartPhaseRolling: 'Rodando.',
     cartPhaseStopped: 'Detenido en el receptor. Devuélvelo al inicio para otra repetición.',
     cartPhaseStuck: 'Detenido sobre la riel (no avanza).',
+    cartPhaseFalling: 'El DigiCart salió de la riel y está cayendo.',
+    cartPhaseFallenTable: 'El DigiCart cayó sobre la mesa. Levántalo y vuelve a ponerlo en la riel.',
+    cartPhaseFallenFloor: 'El DigiCart cayó de la mesa al piso. Levántalo y vuelve a ponerlo en la riel.',
     cartFront: 'La referencia es el frente del carro.',
     cartFrontHint: 'Escala en mm de la riel',
     noMarks: 'Sin marcas',
@@ -167,6 +173,9 @@ export const strings: Strings<AdjustStrings> = {
     cartPhaseRolling: 'Rolling.',
     cartPhaseStopped: 'Stopped at the receiver. Bring it back to the start for another run.',
     cartPhaseStuck: 'Stopped on the rail (it does not advance).',
+    cartPhaseFalling: 'The DigiCart left the rail and is falling.',
+    cartPhaseFallenTable: 'The DigiCart fell onto the table. Pick it up and put it back on the rail.',
+    cartPhaseFallenFloor: 'The DigiCart fell off the table onto the floor. Pick it up and put it back on the rail.',
     cartFront: 'The reference is the front of the cart.',
     cartFrontHint: 'Rail scale in mm',
     noMarks: 'No marks',

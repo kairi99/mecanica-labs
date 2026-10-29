@@ -208,7 +208,7 @@ export const mountAdjust: MountView = (root, ctx): View => {
   function phaseText(): void {
     const T = S()
     const ph = app.cartState(ctx.now()).phase
-    const txt = { unplaced: T.cartPhaseUnplaced, atStart: T.cartPhaseAtStart, rolling: T.cartPhaseRolling, stopped: T.cartPhaseStopped, stuck: T.cartPhaseStuck }[ph]
+    const txt = { unplaced: T.cartPhaseUnplaced, atStart: T.cartPhaseAtStart, rolling: T.cartPhaseRolling, stopped: T.cartPhaseStopped, stuck: T.cartPhaseStuck, falling: T.cartPhaseFalling, fallen: app.cartFall(ctx.now())?.final === 'onFloor' ? T.cartPhaseFallenFloor : T.cartPhaseFallenTable }[ph]
     if (cartPhase.textContent !== txt) cartPhase.textContent = txt
   }
 

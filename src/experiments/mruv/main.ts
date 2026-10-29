@@ -142,7 +142,8 @@ function sendMarkTarget(): void {
 }
 onMarkRow(sendMarkTarget)
 app.on((e) => {
-  if (e.type === 'released' && autoMark && shell.currentStep() === 3) setCamera('mark')
+  // without the receiver the cart will fall off the low end: show the whole bench instead of the marks
+  if (e.type === 'released' && autoMark && shell.currentStep() === 3) setCamera(app.canRun().warnings.length > 0 ? 'lowEnd' : 'mark')
 })
 
 const load3d = async (): Promise<Stage3DModule<Apparatus>> => {

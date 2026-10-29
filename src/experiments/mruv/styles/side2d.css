@@ -30,3 +30,4 @@
 .s2d-legend-item { display: inline-flex; align-items: center; gap: var(--space-1); }
 .s2d-swatch { width: var(--swatch-w); height: var(--swatch-h); }
 .s2d-leg-sw { fill: var(--stage-metal-hi); }
+.s2d-floor { fill: var(--stage-metal); opacity: 0.25; }

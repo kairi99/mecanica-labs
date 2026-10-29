@@ -325,7 +325,7 @@ export function createInteraction(d: InteractionDeps): Interaction {
       } else if (!cancelled) {
         const phase = a.cartState(e?.timeStamp ?? d.ctx.now()).phase
         if (!st.cart.placed) d.onCard(cardFor(ac.pick))
-        else if (phase === 'stopped' || phase === 'stuck') act(a.resetCart())
+        else if (phase === 'stopped' || phase === 'stuck' || phase === 'fallen') act(a.resetCart())
         else act(a.releaseCart(ac.time)) // the press instant (pointerdown), like onPress
       }
       d.refreshSoon()

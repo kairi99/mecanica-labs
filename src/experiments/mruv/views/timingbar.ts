@@ -80,7 +80,7 @@ export const mountTimingBar: MountView = (root, ctx): View => {
     reset() { app.stopwatchReset(); say(''); ctx.changed() },
     release(t) {
       const ph = phaseNow()
-      if (ph === 'stopped' || ph === 'stuck') app.resetCart(); else app.releaseCart(t)
+      if (ph === 'stopped' || ph === 'stuck' || ph === 'fallen') app.resetCart(); else app.releaseCart(t)
       ctx.changed()
     },
     copy(t) { say(copyReading(ctx, t).message) },
@@ -142,7 +142,7 @@ export const mountTimingBar: MountView = (root, ctx): View => {
     const T = S()
     const ph = phaseNow()
     const runnable = ph === 'atStart' && app.canRun().ok
-    const back = ph === 'stopped' || ph === 'stuck'
+    const back = ph === 'stopped' || ph === 'stuck' || ph === 'fallen'
     const key = `${ph}|${runnable}|${ctx.lang()}`
     if (key === releaseKey) return
     releaseKey = key
