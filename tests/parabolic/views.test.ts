@@ -73,7 +73,7 @@ describe('parabolic strings', () => {
       expect(Object.keys(inventoryStrings[lang].items).sort()).toEqual([...ITEM_IDS].sort())
       expect(Object.keys(inventoryStrings[lang].itemShort).sort()).toEqual([...ITEM_IDS].sort())
     }
-    expect(reasonText('es', 'itemNotOnTable', 'rail')).toBe('Primero pon la riel sobre la mesa desde el inventario.')
+    expect(reasonText('es', 'itemNotOnTable', 'rail')).toBe('Falta la riel sobre la mesa: está en la bandeja bajo el escenario; arrastra la pieza de vuelta.')
     expect(reasonText('en', 'itemNotOnTable', 'tapeMeasure')).toContain('the tape measure')
     expect(reasonText('es', 'itemNotOnTable')).not.toContain('{')
     expect(reasonText('es', 'itemAlreadyOnTable', 'level')).toContain('el nivelador')

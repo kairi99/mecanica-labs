@@ -9,6 +9,7 @@ import { TOOLS, type PresetName, type Scene3DOptions, type Scene3DView, type Too
 import type { ViewContext } from '../view.ts'
 import { strings } from '../strings/scene3d.ts'
 import type { Scene3D } from './scene.ts'
+import { createDragDrop } from '../dragdrop/controller.ts'
 import { PRESET_NAMES, parsePreset } from './presets.ts'
 
 export { webgl2Available }
@@ -61,7 +62,10 @@ export function mountScene3D(root: HTMLElement, ctx: ViewContext, opts: Scene3DO
   stack.append(status, card)
   stage.append(topLeft, topRight, stack)
   wrap.append(stage)
+  wrap.classList.add('has-tray')
   root.append(wrap)
+  // drag-and-drop assembly: the parts tray under the stage; the scene supplies the stage side once it has loaded
+  const dd = createDragDrop({ ctx, stage, mount: wrap })
 
   let scene: Scene3D | null = null
   let destroyed = false
@@ -147,6 +151,7 @@ export function mountScene3D(root: HTMLElement, ctx: ViewContext, opts: Scene3DO
     syncPresets()
     syncTools()
     scene?.relabel()
+    dd.relabel()
     showCard(cardInfo)
   }
   relabel()
@@ -164,7 +169,9 @@ export function mountScene3D(root: HTMLElement, ctx: ViewContext, opts: Scene3DO
         onStatus: (t) => { status.textContent = t },
         onTapeTarget: opts.onTapeTarget,
         openPanel: opts.openPanel,
+        dd: { busy: dd.busy },
       })
+      dd.setAdapter(scene.dragdrop)
       status.textContent = ''
       if (pendingFocus) scene.focus(pendingFocus)
       if (pendingTarget !== undefined) scene.setTapeTarget(pendingTarget)
@@ -179,6 +186,7 @@ export function mountScene3D(root: HTMLElement, ctx: ViewContext, opts: Scene3DO
 
   return {
     update() {
+      dd.update()
       scene?.update()
     },
     relabel,
@@ -191,6 +199,8 @@ export function mountScene3D(root: HTMLElement, ctx: ViewContext, opts: Scene3DO
     destroy() {
       destroyed = true
       toolMenu.destroy(); viewMenu.destroy()
+      dd.setAdapter(null)
+      dd.destroy()
       scene?.destroy()
       scene = null
       wrap.remove()

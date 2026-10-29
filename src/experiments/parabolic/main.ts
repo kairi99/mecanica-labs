@@ -1,4 +1,4 @@
-// Parabolic page: builds the apparatus (URL options ?seed ?preset ?cam ?reference ?analysis), wires the panels to the lab steps and
+// Parabolic page: builds the apparatus (URL options ?seed ?preset=empty|assembled|loose ?cam ?reference ?analysis), wires the panels to the lab steps and
 // the camera logic of the 3D stage, then hands everything to the shared shell (core/shell). Shell options: ?lang ?theme ?view ?step ?tour ?teacher.
 import '../../core/styles/tokens.css'
 import '../../core/styles/app.css'
@@ -8,6 +8,7 @@ import './styles/instruments.css'
 import './styles/slowmo.css'
 import '../../core/styles/pedagogy.css'
 import '../../core/styles/analysis.css'
+import '../../core/styles/dragdrop.css'
 import { ParabolicApparatus, type ApparatusEvent } from './apparatus/index.ts'
 import { mountShell } from '../../core/shell/mountShell.ts'
 import { readShellParams } from '../../core/shell/params.ts'
@@ -71,7 +72,7 @@ const seedParam = seedText !== null && seedText.trim() !== '' ? Number(seedText)
 const presetParam = params.get('preset')
 function createApp(): ParabolicApparatus {
   const wantSeed = Number.isFinite(seedParam) ? seedParam : null
-  if (presetParam === 'assembled' || presetParam === 'empty') {
+  if (presetParam === 'assembled' || presetParam === 'empty' || presetParam === 'loose') {
     const a = new ParabolicApparatus({ seed: wantSeed ?? randomSeed() })
     a.preset(presetParam)
     return a
@@ -82,7 +83,7 @@ function createApp(): ParabolicApparatus {
     if (a.load(rebaseSnapshotTime(saved)).ok) return a
   }
   const a = new ParabolicApparatus({ seed: wantSeed ?? randomSeed() })
-  a.preset('empty')
+  a.preset('loose')
   return a
 }
 const app = createApp()
@@ -191,7 +192,7 @@ shell = mountShell<ParabolicApparatus, ApparatusEvent>({
   timingBar: mountTimingBar,
   stage: { mount2d: mountSide2d, load3d },
   refusalText: (e, lang) => (e.type === 'refused' ? reasonText(lang, e.reason) : null),
-  reset() { clearSnapshot(); clearAnalysisState(); tasks.clear(); app.preset('empty'); setCell(0, 0); setNote('') },
+  reset() { clearSnapshot(); clearAnalysisState(); tasks.clear(); app.preset('loose'); setCell(0, 0); setNote('') },
   save: () => saveSnapshot(app.snapshot()),
   // On a phone the launches step uses the side-on view; other steps go back to the overview (unless ?cam fixes the camera).
   onStepChanged(step) {

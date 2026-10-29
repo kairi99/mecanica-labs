@@ -63,6 +63,7 @@ export interface InteractionDeps {
   refreshSoon(): void
   onUserCamera(): void
   openPanel?(panel: string): void
+  dd?: { busy(): boolean }
 }
 
 export interface Interaction {
@@ -431,10 +432,13 @@ export function createInteraction(d: InteractionDeps): Interaction {
   const draggable = (p: Pick): boolean => {
     if (!p.handle) return false
     const tool = d.getTool()
+    const st = a.getState()
+    // loose parts are moved by the drag-and-drop layer; these handles only adjust a part that is already mounted
     switch (p.handle) {
-      case 'rack': case 'foot': return tool === 'select'
-      case 'rail': return tool === 'select'
-      case 'ball': return tool === 'select'
+      case 'rack': return tool === 'select' && st.joints.standBase
+      case 'foot': return tool === 'select' && st.joints.twoLegStand
+      case 'rail': return tool === 'select' && st.joints.rackClamp
+      case 'ball': { const b = ballIdOf(p); return tool === 'select' && b !== null && st.ball.selected === b && st.ball.placed }
       case 'mark': return (tool === 'select' || tool === 'marks') && !!p.markId
       case 'sheet': return tool === 'paper'
     }
@@ -505,7 +509,7 @@ export function createInteraction(d: InteractionDeps): Interaction {
     if (hoverRaf) return
     hoverRaf = requestAnimationFrame(() => {
       hoverRaf = 0
-      if (active) return
+      if (active || d.dd?.busy()) return
       const p = pickAt(hoverXY.x, hoverXY.y)
       const name = nameOf(p)
       if (name) {

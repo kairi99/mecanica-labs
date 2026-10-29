@@ -14,6 +14,8 @@ import {
 import type { Tool } from '../stage.ts'
 import type { ViewContext } from '../view.ts'
 import { strings } from '../strings/scene3d.ts'
+import { createDragDrop3D } from './dragdrop3d.ts'
+import type { StageAdapter } from '../dragdrop/controller.ts'
 import { createInteraction, type Interaction, type Preview } from './interaction.ts'
 import { createMaterials, createOutlineMaterial } from './materials.ts'
 import { SHEET_THICK_cm, buildShoe, buildBall, buildMarkDot, buildPlumb, buildSheet, buildTable, railFlag, tag, type BallModel, type PKit, box } from './models.ts'
@@ -38,9 +40,12 @@ export interface SceneOptions {
   onStatus(text: string): void
   onTapeTarget?(t: TapeTarget): void
   openPanel?(panel: string): void
+  dd?: { busy(): boolean }
 }
 
 export interface Scene3D {
+  /** Stage side of the drag-and-drop assembly (zones, preview, picking). */
+  dragdrop: StageAdapter
   update(): void
   setVisible(v: boolean): void
   setPreset(name: PresetName): void
@@ -624,6 +629,13 @@ export function createScene(container: HTMLElement, ctx: ViewContext, opts: Scen
     if (tool !== 'paper') l.push(marksGroup)
     return l
   }
+  const partOf = (p: string): THREE.Object3D | null => partRoot(p === 'base' ? 'standBase' : p === 'twoLeg' ? 'twoLegStand' : p)
+  const dd3d = createDragDrop3D({
+    a, ctx, scene, container, canvas, camera, controls, M, pickables, rootOf: (p) => partOf(p), getTool: () => tool,
+    requestRender, refreshSoon: () => { dirty = true },
+    setLevelX: (x) => { const r = levelRailRange_cm(a.getState().joints.twoLegStand); levelX = Math.min(r.max, Math.max(r.min, x)) },
+    setLevelTable: (x, z) => { levelTable = { x, z } },
+  })
   const interaction: Interaction = createInteraction({
     a, ctx, container, canvas, camera, controls, pickables, requestRender, S,
     railRoot: rail.root,
@@ -699,6 +711,7 @@ export function createScene(container: HTMLElement, ctx: ViewContext, opts: Scen
   }
 
   return {
+    dragdrop: dd3d,
     update() {
       if (document.hidden || !visible) return
       const now = performance.now()
@@ -713,6 +726,7 @@ export function createScene(container: HTMLElement, ctx: ViewContext, opts: Scen
         }
       }
       if (syncBalls(now)) requestRender()
+      if (dd3d.tick(now)) needsRender = true
       if (anim) {
         const k = Math.min(1, (now - anim.t0) / TRANSITION_MS)
         const e = easeOut(k)
@@ -746,6 +760,7 @@ export function createScene(container: HTMLElement, ctx: ViewContext, opts: Scen
     },
     destroy() {
       unsub()
+      dd3d.destroy()
       interaction.destroy()
       controls.dispose()
       ro.disconnect(); mo.disconnect()

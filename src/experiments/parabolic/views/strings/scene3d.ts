@@ -36,7 +36,7 @@ const es = {
   sheetReadout: 'Hoja',
   refused: {
     unknownItem: 'Elemento desconocido.',
-    itemNotOnTable: 'Falta un elemento sobre la mesa (revisa el inventario).',
+    itemNotOnTable: 'Falta un elemento sobre la mesa (búscalo en la bandeja bajo el escenario).',
     itemAlreadyOnTable: 'Ya está sobre la mesa.',
     screwsInUse: 'Los tornillos están en uso.',
     needStandBase: 'Primero fija el soporte a su base.',
@@ -128,7 +128,7 @@ const en: Dict = {
   sheetReadout: 'Sheet',
   refused: {
     unknownItem: 'Unknown item.',
-    itemNotOnTable: 'Something is missing on the table (check the inventory).',
+    itemNotOnTable: 'Something is missing on the table (look for it in the tray under the stage).',
     itemAlreadyOnTable: 'It is already on the table.',
     screwsInUse: 'The screws are in use.',
     needStandBase: 'Attach the stand to its base first.',
