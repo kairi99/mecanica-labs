@@ -1,12 +1,12 @@
 // Procedure checklist logic: guide 1.3.2 (Montaje) and 1.3.3 (Procedimiento) as steps derived live from the apparatus.
 // Pure and DOM-free; checklistView.ts renders it. Nothing here blocks the student.
 import {
-  ITEM_IDS, SCREWS_TOTAL, SUPPORT_SEPARATION_m, TABLE_COLS, TABLE_ROWS, type Apparatus,
+  SCREWS_TOTAL, SUPPORT_SEPARATION_m, TABLE_COLS, TABLE_ROWS, type Apparatus,
 } from '../apparatus/index.ts'
 import { THETA_GUIDE_rad, heightDifferenceForAngle_m, rad2deg } from '../physics/index.ts'
 
 export const STEP_IDS = [
-  'materials', 'standBase', 'railClamped', 'scale', 'lowEnd', 'screws', 'levelled', 'angle', 'marks', 'cartZero', 'measure',
+  'standBase', 'railClamped', 'scale', 'lowEnd', 'screws', 'levelled', 'angle', 'marks', 'cartZero', 'measure',
 ] as const
 export type StepId = (typeof STEP_IDS)[number]
 export type StepStatus = 'ok' | 'pending' | 'na'
@@ -50,13 +50,11 @@ function lastHeight(app: Apparatus, at: 'clamp' | 'twoLeg'): number | null {
 export function buildChecklist(app: Apparatus, opts: ChecklistOptions = {}): ChecklistStep[] {
   const st = app.getState()
   const p = app.procedure()
-  const have = ITEM_IDS.filter((i) => st.items[i]).length
   const clamped = st.joints.rackClamp !== null
   const geo = st.geometry
   const steps: ChecklistStep[] = []
   const add = (s: ChecklistStep): void => { steps.push(s) }
 
-  add({ id: 'materials', status: have === ITEM_IDS.length ? 'ok' : 'pending', detail: { key: 'count', params: { n: have, total: ITEM_IDS.length } }, focus: [], panel: 'inventory' })
   add({ id: 'standBase', status: st.joints.standBase ? 'ok' : 'pending', detail: null, focus: ['rackStand', 'standBase'], panel: 'inventory' })
   add({ id: 'railClamped', status: clamped ? 'ok' : 'pending', detail: null, focus: ['rail', 'rackStand'], panel: 'inventory' })
   add({

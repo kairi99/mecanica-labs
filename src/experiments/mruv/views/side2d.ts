@@ -4,6 +4,7 @@ import { CART_LENGTH_m, RACK_BASE_HEIGHT_m, TWO_LEG_BASE_HEIGHT_m, downSlope_m, 
 import type { MountView, View } from './view.ts'
 import { el, svg, watch } from '../../../core/views/dom.ts'
 import { strings } from './strings/side2d.ts'
+import { strings as invStrings } from './strings/inventory.ts'
 import { strings as ddStrings } from './strings/dragdrop.ts'
 import { createDragDrop, type StageAdapter } from './dragdrop/controller.ts'
 import { SNAP_CM, type Zone, type ZoneId } from './dragdrop/snap.ts'
@@ -19,6 +20,10 @@ const VB_W = 960
 const GROUND_PAD = 62
 const X = (x_m: number): number => XO + x_m * S_PX
 const Y = (y_m: number): number => GY - y_m * S_PX * VEX
+/** Loose layout of the parts on the bench (side view): standing parts at the ends of the rail, the rest in two front rows of the table band. */
+const LOOSE = { baseX_m: -0.065, twoLegX_m: 1.38, rackX_m: -0.1, rackLen_px: 190, cartX_m: 0.3, receiverX_m: 0.65, levelX_m: 0.9, propsX_m: 0.03 } as const
+const ROW_A_Y = 6
+const ROW_B_Y = 38
 const pt = (p: Vec3): [number, number] => [X(p.x_m), Y(p.y_m)]
 
 export const mountSide2d: MountView = (root, ctx): View => {
@@ -54,6 +59,22 @@ export const mountSide2d: MountView = (root, ctx): View => {
 
   let slope = { cos: 1, sin: 0, deg: 0 }
 
+  /** Small props lying in the second row of the bench (stopwatch, tape measure, tape roll, screws): drawn so they can be picked up too. */
+  function looseProps(add: (...e: SVGElement[]) => void, s: ReturnType<typeof app.getState>): void {
+    const names = invStrings[ctx.lang()].items
+    const y = GY + ROW_B_Y
+    const label = (x: number, id: ItemId): SVGElement => svg('text', { x: x + 22, y: y + 10 + 4 * kPx, class: 's2d-label', 'text-anchor': 'start' }, names[id].name.split(' (')[0]!)
+    let x = X(LOOSE.propsX_m)
+    if (s.items.stopwatch) { add(tagPart(svg('rect', { x: x - 16, y, width: 32, height: 20, rx: 5, class: 's2d-metal-hi' }), 'stopwatch'), label(x, 'stopwatch')); x += 150 }
+    if (s.items.tape) { add(tagPart(svg('rect', { x: x - 14, y, width: 28, height: 20, rx: 6, class: 's2d-metal' }), 'tape'), label(x, 'tape')); x += 150 }
+    if (s.items.markers) { add(tagPart(svg('rect', { x: x - 12, y, width: 24, height: 20, rx: 3, class: 's2d-tape' }), 'markers'), label(x, 'markers')); x += 150 }
+    if (s.items.screws) {
+      const g = svg('g')
+      for (const dx of [-8, 0, 8]) g.append(svg('circle', { cx: x + dx, cy: y + 12, r: 4, class: 's2d-metal' }))
+      add(tagPart(g, 'screws'), label(x, 'screws'))
+    }
+  }
+
   function drawStatic(): void {
     const T = S()
     const s = app.getState()
@@ -70,12 +91,19 @@ export const mountSide2d: MountView = (root, ctx): View => {
     // rack stand
     const clampH = geo ? geo.clampHeight_m : RACK_BASE_HEIGHT_m + s.rack_mm / 1000
     if (s.items.standBase) {
-      const bx = s.joints.standBase ? 0 : -0.3
+      const bx = s.joints.standBase ? 0 : LOOSE.baseX_m
       add(tagPart(svg('rect', { x: X(bx) - 52, y: GY - 12, width: 104, height: 12, rx: 3, class: 's2d-metal' }), 'standBase'))
       legendItems.push({ cls: 's2d-metal', text: T.base })
     }
-    if (s.items.rackStand) {
-      const rx = s.joints.standBase ? 0 : -0.3
+    if (s.items.rackStand && !s.joints.standBase) {
+      // loose: the rack lies on its side in the front row of the bench, clearly not standing on a base
+      const x0 = X(LOOSE.rackX_m), cy = GY + ROW_A_Y + 13
+      add(tagPart(svg('rect', { x: x0, y: cy - 5, width: LOOSE.rackLen_px, height: 10, rx: 3, class: 's2d-metal-hi' }), 'rackStand'))
+      add(svg('rect', { x: x0 + LOOSE.rackLen_px - 22, y: cy - 9, width: 26, height: 18, rx: 3, class: 's2d-metal' }))
+      add(svg('circle', { cx: x0 + LOOSE.rackLen_px - 9, cy, r: 6, class: 's2d-blue' }))
+    }
+    if (s.items.rackStand && s.joints.standBase) {
+      const rx = 0
       const top = Y(clampH)
       const bottom = s.joints.standBase ? GY - 12 : GY
       add(tagPart(svg('rect', { x: X(rx) - 5, y: Math.min(top, bottom - 8), width: 10, height: Math.max(8, bottom - top), class: 's2d-metal-hi' }), 'rackStand'))
@@ -92,7 +120,7 @@ export const mountSide2d: MountView = (root, ctx): View => {
     // two-leg stand
     if (s.items.twoLegStand) {
       const att = s.joints.twoLegStand
-      const xs = att ? pose.twoLeg.x_m : 1.38
+      const xs = att ? pose.twoLeg.x_m : LOOSE.twoLegX_m
       const topH = att && geo ? geo.twoLegHeight_m : TWO_LEG_BASE_HEIGHT_m
       const tx = X(xs), ty = Y(topH)
       add(tagPart(svg('line', { x1: tx, y1: ty, x2: tx - 30, y2: GY, class: 's2d-leg' }), 'twoLegStand'))
@@ -128,8 +156,9 @@ export const mountSide2d: MountView = (root, ctx): View => {
         add(svg('circle', { cx: Lw[0] + 6, cy: Lw[1] - 2, r: 9, class: 's2d-pulley' }))
         legendItems.push({ cls: 's2d-blue', text: T.receiver })
       } else {
-        add(tagPart(svg('rect', { x: X(1.2) - 14, y: GY - 28, width: 28, height: 28, rx: 4, class: 's2d-blue' }), 'receiver'))
-        add(svg('circle', { cx: X(1.2) + 6, cy: GY - 14, r: 8, class: 's2d-pulley' }))
+        const rx = X(LOOSE.receiverX_m), ry = GY + ROW_A_Y
+        add(tagPart(svg('rect', { x: rx - 14, y: ry, width: 28, height: 26, rx: 4, class: 's2d-blue' }), 'receiver'))
+        add(svg('circle', { cx: rx + 6, cy: ry + 13, r: 7, class: 's2d-pulley' }))
       }
     }
 
@@ -152,9 +181,10 @@ export const mountSide2d: MountView = (root, ctx): View => {
     }
 
     // level
-    if (s.items.level && s.level.placement) {
+    if (s.items.level) {
       const onRail = s.level.placement === 'rail' && s.items.rail
-      const p = onRail ? pt(railPointAt(pose, 0.6)) : [X(0.55), GY] as [number, number]
+      const loose = s.level.placement === null
+      const p = onRail ? pt(railPointAt(pose, 0.6)) : loose ? [X(LOOSE.levelX_m), GY + ROW_A_Y + 22] as [number, number] : [X(0.55), GY] as [number, number]
       const rot = onRail ? slope.deg : 0
       const lv = svg('g', { transform: `translate(${p[0]} ${p[1]}) rotate(${rot})` })
       lv.append(svg('rect', { x: -34, y: -14, width: 68, height: 14, rx: 3, class: 's2d-level' }), svg('ellipse', { cx: 0, cy: -7, rx: 8, ry: 4, class: 's2d-bubble' }))
@@ -172,12 +202,17 @@ export const mountSide2d: MountView = (root, ctx): View => {
       add(svg('text', { x: H[0] + r + 14, y: H[1] + 26, class: 's2d-theta' }, T.theta))
     }
 
-    // loose cart on the bench
+    // loose cart on the bench (front row), draggable onto the rail like the other parts
     if (s.items.cart && !s.cart.placed) {
-      const gx = X(0.3)
-      add(svg('rect', { x: gx, y: GY - 24, width: CART_LENGTH_m * S_PX, height: 22, rx: 4, class: 's2d-cart-body' }))
-      add(svg('circle', { cx: gx + 12, cy: GY - 4, r: 5, class: 's2d-wheel' }), svg('circle', { cx: gx + CART_LENGTH_m * S_PX - 12, cy: GY - 4, r: 5, class: 's2d-wheel' }))
+      const gx = X(LOOSE.cartX_m), gy = GY + ROW_A_Y + 3
+      const cartG = svg('g')
+      cartG.append(
+        svg('rect', { x: gx, y: gy, width: CART_LENGTH_m * S_PX, height: 22, rx: 4, class: 's2d-cart-body' }),
+        svg('circle', { cx: gx + 12, cy: gy + 20, r: 5, class: 's2d-wheel' }), svg('circle', { cx: gx + CART_LENGTH_m * S_PX - 12, cy: gy + 20, r: 5, class: 's2d-wheel' }),
+      )
+      add(tagPart(cartG, 'cart'))
     }
+    looseProps(add, s)
     if (s.items.cart) legendItems.push({ cls: 's2d-cart-body', text: T.cart })
     staticLayer.replaceChildren(...L)
     top = Math.max(0, Math.floor(minY - 10))
@@ -208,6 +243,7 @@ export const mountSide2d: MountView = (root, ctx): View => {
       svg('circle', { cx: 11, cy: -4, r: 5, class: 's2d-wheel' }), svg('circle', { cx: len - 11, cy: -4, r: 5, class: 's2d-wheel' }),
       svg('line', { x1: len, y1: -26, x2: len, y2: 0, class: 's2d-front' }),
     )
+    tagPart(grp, 'cart')
     cartLayer.replaceChildren(grp)
   }
 

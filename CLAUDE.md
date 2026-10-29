@@ -55,7 +55,7 @@ npm run teacher-key  # regenerates docs/teacher-key*.md (one per experiment) fro
 
 - No invented tasks: the guide's assembly, procedure (10 timings at each 10 cm mark, 0 to 90 cm) and analysis tasks
   1 to 10 are the spine. Extra help may explain, never replace them.
-- Inventory assembly: rail, DigiCart, stands (rack-and-pinion and two-leg), base, screws, level, receiver with pulley,
+- Inventory assembly (every material starts loose on the table: the student only arranges the setup by drag and drop; the tray under the stage only holds parts taken off the table; `?preset=empty|assembled|loose`): rail, DigiCart, stands (rack-and-pinion and two-leg), base, screws, level, receiver with pulley,
   stopwatch. Wrong choices are possible and physically meaningful (angle not 1.30°, AB too short, cart off the track).
 - Stopwatch: the student presses start/stop; the app only adds the true event times from the model plus human
   reaction and the display resolution.

@@ -14,7 +14,7 @@ export type JointId = (typeof JOINT_IDS)[number]
 /** Rail ends as printed: the scale 0 mm is at E1 and 1200 mm at E2. */
 export type RailEnd = 'E1' | 'E2'
 export type LevelPlacement = 'rail' | 'table' | null
-export type PresetId = 'empty' | 'assembled'
+export type PresetId = 'empty' | 'loose' | 'assembled'
 
 export type Reason =
   | 'unknownItem' | 'itemNotOnTable' | 'itemAlreadyOnTable' | 'screwsInUse'

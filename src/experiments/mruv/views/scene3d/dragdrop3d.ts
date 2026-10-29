@@ -21,7 +21,7 @@ const DIMS: Record<ItemId, [number, number, number]> = {
 /** Scene part ids that stand for an inventory item (null: not a movable part). */
 const ITEM_OF: Record<string, ItemId> = {
   rail: 'rail', rackStand: 'rackStand', standBase: 'standBase', twoLegStand: 'twoLegStand', receiver: 'receiver', pulley: 'receiver',
-  level: 'level', stopwatch: 'stopwatch', tapeMeasure: 'tape', markers: 'markers', screws: 'screws',
+  rackKnob: 'rackStand', foot: 'twoLegStand', level: 'level', stopwatch: 'stopwatch', tapeMeasure: 'tape', markers: 'markers', screws: 'screws',
 }
 
 export interface DragDrop3D extends StageAdapter {
@@ -214,7 +214,10 @@ export function createDragDrop3D(d: DragDrop3DDeps): DragDrop3D {
       let part: string | null = null
       for (let o: THREE.Object3D | null = h0.object; o; o = o.parent) {
         const u = o.userData
-        if (u.dragHandle || u.ghostId) return null
+        // the rack knob and the foot only adjust a mounted stand; on a loose one the knob is just part of the stand
+        const st = a.getState()
+        const looseHandle = (u.dragHandle === 'rack' && !st.joints.standBase) || (u.dragHandle === 'foot' && !st.joints.twoLegStand)
+        if ((u.dragHandle && !looseHandle) || u.ghostId) return null
         if (u.partId && !part) part = u.partId as string
       }
       return part !== null && ITEM_OF[part] ? ITEM_OF[part]! : null
@@ -226,7 +229,7 @@ export function createDragDrop3D(d: DragDrop3DDeps): DragDrop3D {
       d.requestRender()
     },
     lockCamera(on) { controls.enabled = !on },
-    refuse(text) { d.onCard({ title: '', text, actions: [], panel: null, alert: true }) },
+    refuse() { /* the shell toast shows the reason (a second card would show it twice) */ },
     placed(target: Target) {
       if (target.kind === 'zone' && target.zone.action.kind === 'placeLevel' && target.zone.action.where === 'rail' && target.along_cm !== null) d.setLevelX(target.along_cm)
     },

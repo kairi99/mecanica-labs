@@ -45,7 +45,9 @@ export function mountScene3D(root: HTMLElement, ctx: ViewContext, opts: Scene3DO
   const camParam = parsePreset(new URLSearchParams(location.search).get('cam')) // 'alongRail' is an alias of 'lateral'
   // a portrait phone shows the 1.2 m bench only as a thin strip: start at the stand end where the cart waits
   const portraitPhone = matchMedia('(max-width: 819px) and (orientation: portrait)').matches
-  const initial: PresetName = parsePreset(opts.preset) ?? camParam ?? (portraitPhone ? 'highEnd' : 'overview')
+  // ...but while the rail is not clamped yet the parts lie loose all over the bench: show the whole table
+  const loose = ctx.apparatus.getState().joints.rackClamp === null
+  const initial: PresetName = parsePreset(opts.preset) ?? camParam ?? (portraitPhone && !loose ? 'highEnd' : 'overview')
 
   const wrap = document.createElement('div')
   wrap.className = 'scene3d'

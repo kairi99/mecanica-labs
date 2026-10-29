@@ -55,9 +55,8 @@ const GHOST_OF: Partial<Record<ZoneId, GhostId>> = {
   stand: 'stand', clampE1: 'clamp', clampE2: 'clamp', twoLeg: 'twoLeg', receiver: 'receiver', railCart: 'cart',
 }
 
-/** Parts the student can pick up from the bench again (the cart has its own handle in the 3D scene; a clamped rail is too long to grab). */
+/** Parts the student can pick up from the bench again (a clamped rail is too long to grab; the 3D cart has its own handle and is never offered to this picker). */
 export function benchDraggable(part: ItemId, s: Pick<ApparatusState, 'joints'>): boolean {
-  if (part === 'cart') return false
   if (part === 'rail') return s.joints.rackClamp === null
   return true
 }

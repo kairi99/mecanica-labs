@@ -28,7 +28,7 @@ export interface TapeStrings {
 export const strings: Strings<TapeStrings> = {
   es: {
     title: 'Flexómetro',
-    needTape: 'Pon el flexómetro sobre la mesa desde el inventario.',
+    needTape: 'El flexómetro no está sobre la mesa: arrástralo desde la bandeja de piezas.',
     target: '¿Qué mides?',
     tClamp: 'Altura de la riel en el soporte alto',
     tTwoLeg: 'Altura de la riel en el soporte bajo',
@@ -55,7 +55,7 @@ export const strings: Strings<TapeStrings> = {
   },
   en: {
     title: 'Tape measure',
-    needTape: 'Put the tape measure on the table from the inventory.',
+    needTape: 'The tape measure is not on the table: drag it from the parts tray.',
     target: 'What are you measuring?',
     tClamp: 'Rail height at the high stand',
     tTwoLeg: 'Rail height at the low stand',

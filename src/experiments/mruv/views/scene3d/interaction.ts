@@ -387,7 +387,10 @@ export function createInteraction(d: InteractionDeps): Interaction {
     if (active) { e.stopPropagation(); return }
     const p = pickAt(e.clientX, e.clientY)
     plain = null
-    const draggable = p.handle !== null && !p.ghost && !(p.handle === 'marker' && !p.markId)
+    // the rack knob and the foot only adjust a stand that is mounted; a loose one is grabbed as a part (drag and drop)
+    const stt = a.getState()
+    const idleKnob = (p.handle === 'rack' && !stt.joints.standBase) || (p.handle === 'foot' && !stt.joints.twoLegStand)
+    const draggable = p.handle !== null && !idleKnob && !p.ghost && !(p.handle === 'marker' && !p.markId)
     // dragging the cart is only offered for a cart on the table or on the rail
     if (!draggable) { plain = { id: e.pointerId, x: e.clientX, y: e.clientY, t: e.timeStamp }; return }
     e.preventDefault()

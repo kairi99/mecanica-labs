@@ -36,7 +36,7 @@ const es = {
   cartDrag: 'DigiCart',
   refused: {
     unknownItem: 'Elemento desconocido.',
-    itemNotOnTable: 'Falta un elemento sobre la mesa (revisa el inventario).',
+    itemNotOnTable: 'Falta un elemento sobre la mesa (está en la bandeja de piezas).',
     itemAlreadyOnTable: 'Ya está sobre la mesa.',
     screwsInUse: 'Los tornillos están en uso.',
     needStandBase: 'Primero fija el soporte a su base.',
@@ -121,7 +121,7 @@ const en: Dict = {
   cartDrag: 'DigiCart',
   refused: {
     unknownItem: 'Unknown item.',
-    itemNotOnTable: 'Something is missing on the table (check the inventory).',
+    itemNotOnTable: 'Something is missing on the table (it is in the parts tray).',
     itemAlreadyOnTable: 'It is already on the table.',
     screwsInUse: 'The screws are in use.',
     needStandBase: 'Attach the stand to its base first.',

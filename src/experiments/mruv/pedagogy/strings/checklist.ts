@@ -15,7 +15,6 @@ export const strings: Strings<ChecklistStrings> = {
     tour: 'Ver el recorrido',
     rowChip: '{x} cm: {n} de {total}',
     steps: {
-      materials: { label: 'Todos los materiales sobre la mesa', why: 'Sin el inventario completo no se puede armar la pista ni medir: riel, DigiCart, soportes, base, tornillos, nivelador, receptor y cronómetro (más flexómetro y marcas).' },
       standBase: { label: 'Soporte con cremallera sobre su base', why: 'La base metálica le da estabilidad al soporte alto; un soporte que se mueve cambia la inclinación entre una medida y otra.' },
       railClamped: { label: 'Riel sujeta al soporte con cremallera', why: 'El extremo de la riel en la pinza es el punto más alto. De ahí sale el DigiCart y ahí se sube o baja la altura h.' },
       scale: { label: 'Escala de la riel con el 0 en el extremo alto', why: 'La guía mide las distancias desde el punto más alto (A, marca 0 cm). Si la escala impresa está al revés, las lecturas de posición quedan invertidas.' },
@@ -47,7 +46,6 @@ export const strings: Strings<ChecklistStrings> = {
     tour: 'Replay the tour',
     rowChip: '{x} cm: {n} of {total}',
     steps: {
-      materials: { label: 'All the materials on the table', why: 'Without the full inventory you cannot build the track or measure: rail, DigiCart, stands, base, screws, level, receiver and stopwatch (plus tape measure and marks).' },
       standBase: { label: 'Rack-and-pinion stand on its base', why: "The metal base steadies the tall stand; a stand that shifts changes the incline between one measurement and the next." },
       railClamped: { label: 'Rail clamped in the rack-and-pinion stand', why: 'The rail end in the clamp is the highest point. The DigiCart starts there, and that is where you raise or lower the height h.' },
       scale: { label: 'Rail scale with 0 at the high end', why: 'The guide measures distances from the highest point (A, the 0 cm mark). If the printed scale is reversed, the position readings are reversed.' },

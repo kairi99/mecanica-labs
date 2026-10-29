@@ -5,7 +5,7 @@ import {
 } from '../../src/experiments/mruv/views/dragdrop/snap.ts'
 import { executeDrop } from '../../src/experiments/mruv/views/dragdrop/drop.ts'
 
-const mk = (preset: 'assembled' | 'empty' = 'empty'): Apparatus => {
+const mk = (preset: 'assembled' | 'empty' | 'loose' = 'empty'): Apparatus => {
   const a = new Apparatus({ seed: 1 })
   a.preset(preset)
   return a
@@ -84,7 +84,7 @@ describe('snap zones', () => {
   })
   it('knows which parts can be lifted again', () => {
     const a = mk('assembled')
-    expect(benchDraggable('cart', a.getState())).toBe(false)
+    expect(benchDraggable('cart', a.getState())).toBe(true)
     expect(benchDraggable('rail', a.getState())).toBe(false)
     expect(benchDraggable('stopwatch', a.getState())).toBe(true)
     expect(jointOfPart('receiver', a.getState())).toBe('receiver')
@@ -153,5 +153,52 @@ describe('executeDrop calls the apparatus and keeps its refusals', () => {
     a.removeItem('markers')
     expect(drop(a, 'markers', 'railMark').ok).toBe(true)
     expect(a.getState().markers.length).toBe(before + 1)
+  })
+})
+
+describe('fresh lab: every material lies loose on the table', () => {
+  it('loose preset: all items on the table, no joints, cart off the rail, no marks, level not placed', () => {
+    const a = mk('loose')
+    const s = a.getState()
+    expect(Object.values(s.items).every(Boolean)).toBe(true)
+    expect(s.joints).toEqual({ standBase: false, rackClamp: null, twoLegStand: false, receiver: false })
+    expect(s.cart.placed).toBe(false)
+    expect(s.markers).toHaveLength(0)
+    expect(s.level.placement).toBeNull()
+    expect(s.geometry).toBeNull()
+  })
+  it('presets empty and assembled are unchanged', () => {
+    const e = mk('empty')
+    expect(Object.values(e.getState().items).some(Boolean)).toBe(false)
+    const a = mk('assembled')
+    expect(a.getState().joints.rackClamp).toBe('E1')
+    expect(a.getState().cart.placed).toBe(true)
+  })
+  it('start over (preset loose again) returns to the loose bench', () => {
+    const a = mk('assembled')
+    a.preset('loose')
+    expect(a.getState().joints.standBase).toBe(false)
+    expect(a.getState().cart.placed).toBe(false)
+    expect(Object.values(a.getState().items).every(Boolean)).toBe(true)
+  })
+  it('dragging bench parts to their zones assembles the track (the stand, the rail, the low end, the cart)', () => {
+    const a = mk('loose')
+    const go = (part: ItemId, id: string) => executeDrop(a, part, 'bench', defaultTarget(zone(zones(a, part), id), a.getState(), a.evaluateMarks().aRailPos_mm))
+    expect(go('standBase', 'stand').ok).toBe(true)
+    expect(a.getState().joints.standBase).toBe(true)
+    expect(go('rail', 'clampE1').ok).toBe(true)
+    expect(a.getState().joints.rackClamp).toBe('E1')
+    expect(go('twoLegStand', 'twoLeg').ok).toBe(true)
+    expect(go('receiver', 'receiver').ok).toBe(true)
+    expect(go('level', 'railLevel').ok).toBe(true)
+    expect(go('cart', 'railCart').ok).toBe(true)
+    expect(a.getState().cart.placed).toBe(true)
+  })
+  it('a part taken to the tray and dragged back works from the tray', () => {
+    const a = mk('loose')
+    expect(executeDrop(a, 'stopwatch', 'bench', { kind: 'tray' })).toMatchObject({ ok: true, removed: true })
+    expect(a.hasItem('stopwatch')).toBe(false)
+    expect(executeDrop(a, 'stopwatch', 'tray', defaultTarget(zone(zones(a, 'stopwatch'), 'table'), a.getState(), null)).ok).toBe(true)
+    expect(a.hasItem('stopwatch')).toBe(true)
   })
 })

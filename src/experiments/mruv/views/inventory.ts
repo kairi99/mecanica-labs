@@ -49,13 +49,6 @@ export const mountInventory: MountView = (root, ctx): View => {
   const dd = () => ddStrings[ctx.lang()]
   const w = watch(app)
   const c = card('inventory', S().title, 'card-inventory')
-  const headRow = el('div', 'inv-head')
-  const summary = el('p', 'inv-summary')
-  const bulk = el('div', 'inv-bulk')
-  const putAll = button('', 'link-btn', () => { for (const id of ORDER) if (!app.getState().items[id]) app.addItem(id); ctx.changed() })
-  const removeAll = button('', 'link-btn', () => { for (const id of [...ORDER].reverse()) if (app.getState().items[id]) app.removeItem(id); ctx.changed() })
-  bulk.append(putAll, removeAll)
-  headRow.append(summary, bulk)
   const list = el('ul', 'inv-list')
   const jointsHead = el('h3', 'sub-title')
   const jointsIntro = el('p', 'muted')
@@ -66,7 +59,7 @@ export const mountInventory: MountView = (root, ctx): View => {
   const manual = el('details', 'inv-manual')
   const manualSum = el('summary', 'inv-manual-sum')
   manual.append(manualSum, list, jointsHead, jointsIntro, joints)
-  c.body.append(intro, headRow, manual, missHead, missing)
+  c.body.append(intro, manual, missHead, missing)
   root.append(c.root)
   const openInfo = new Set<ItemId>()
   const fill = (tpl: string, vars: Record<string, string | number>): string =>
@@ -158,12 +151,6 @@ export const mountInventory: MountView = (root, ctx): View => {
     intro.textContent = dd().inventoryIntro
     manualSum.textContent = dd().disclosure
     const s = app.getState()
-    const nOn = ORDER.filter((i) => s.items[i]).length
-    summary.textContent = fill(T.summary, { n: nOn })
-    putAll.textContent = T.putAll
-    removeAll.textContent = T.removeAll
-    putAll.hidden = nOn === ORDER.length
-    removeAll.hidden = nOn === 0
     jointsHead.textContent = T.jointsTitle
     jointsIntro.textContent = T.jointsIntro
     missHead.textContent = T.missingTitle

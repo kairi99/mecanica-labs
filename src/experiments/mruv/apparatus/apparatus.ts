@@ -698,14 +698,16 @@ export class Apparatus {
     this.sw.clear(); this.table = emptyTable()
   }
   /**
-   * URL-like setup. 'empty': nothing on the table. 'assembled': a careful student's bench, built through the real
+   * URL-like setup. 'empty': nothing on the table. 'loose': every item lying on the table, nothing attached, cart off the rail, no
+   * marks, level not placed (the fresh lab: the student only arranges the setup). 'assembled': a careful student's bench, built through the real
    * actions (so the event log and procedure flags are genuine): all items, rail E1 in the clamp (scale 0 at the top),
    * levelled with the foot at rack 0, rack raised, foot trimmed to 1.30 deg, marks at 200..1100 mm every 100 mm, both
    * support heights measured with the tape, cart on mark A (200 mm).
    */
   preset(name: PresetId): Result {
-    if (name !== 'empty' && name !== 'assembled') return this.refuse('preset', 'unknownPreset')
+    if (name !== 'empty' && name !== 'loose' && name !== 'assembled') return this.refuse('preset', 'unknownPreset')
     this.reset()
+    if (name === 'loose') this.items = new Set(ITEM_IDS)
     if (name === 'assembled') this.buildAssembled()
     this.emit({ type: 'presetApplied', preset: name })
     return { ok: true }

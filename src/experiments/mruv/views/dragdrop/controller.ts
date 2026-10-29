@@ -81,10 +81,15 @@ export function createDragDrop(d: DragDropDeps): DragDropController {
   const hint = el('p', 'dd-hint')
   head.append(title, hint)
   const strip = el('ul', 'dd-strip')
+  // parts lying on the table, for the pick-then-place flow (keyboard, screen reader, no dragging)
+  const bench = el('details', 'dd-bench')
+  const benchSum = el('summary', 'dd-bench-sum')
+  const benchStrip = el('ul', 'dd-strip dd-bench-strip')
+  bench.append(benchSum, benchStrip)
   const zonesBox = el('div', 'dd-zones')
   zonesBox.hidden = true
   const live = el('p', 'dd-live', '', { role: 'status', 'aria-live': 'polite' })
-  root.append(head, strip, zonesBox, live)
+  root.append(head, strip, bench, zonesBox, live)
   d.mount.append(root)
 
   let adapter: StageAdapter | null = null
@@ -102,7 +107,7 @@ export function createDragDrop(d: DragDropDeps): DragDropController {
   }
 
   // ---- tray -----------------------------------------------------------------------------------------------------------
-  function chip(part: ItemId): HTMLElement {
+  function chip(part: ItemId, onTable = false): HTMLElement {
     const li = el('li', 'dd-item')
     const b = button('', 'dd-part', () => {
       if (suppressClick) return
@@ -111,21 +116,25 @@ export function createDragDrop(d: DragDropDeps): DragDropController {
     b.dataset.k = `part-${part}`
     b.dataset.part = part
     b.setAttribute('aria-pressed', String(picked === part))
-    b.setAttribute('aria-label', fill(T().partAria, name(part)))
+    b.setAttribute('aria-label', fill(onTable ? T().benchAria : T().partAria, name(part)))
     b.append(itemIcon(part), el('span', 'dd-name', name(part)))
-    b.addEventListener('pointerdown', (e) => startPending(part, 'tray', e))
+    // parts on the table are dragged on the stage itself; their chips only pick the part (then choose a spot)
+    if (!onTable) b.addEventListener('pointerdown', (e) => startPending(part, 'tray', e))
+    else b.classList.add('dd-part-bench')
     li.append(b)
     return li
   }
   function renderTray(): void {
     title.textContent = T().tray
-    hint.textContent = T().hint
     const parts = trayParts()
+    const onTable = TRAY_ORDER.filter((p) => !inTray(p))
+    hint.textContent = parts.length === 0 ? T().empty : T().hint
     root.classList.toggle('dd-empty', parts.length === 0)
-    rebuild(strip, () => {
-      if (parts.length === 0) strip.append(el('li', 'dd-none', T().empty))
-      for (const p of parts) strip.append(chip(p))
-    })
+    strip.hidden = parts.length === 0
+    rebuild(strip, () => { for (const p of parts) strip.append(chip(p)) })
+    benchSum.textContent = fill(T().benchSummary, String(onTable.length))
+    bench.hidden = onTable.length === 0
+    rebuild(benchStrip, () => { for (const p of onTable) benchStrip.append(chip(p, true)) })
     renderZones()
   }
   function ctxFor(): { s: ApparatusState } { return { s: app.getState() } }
@@ -165,6 +174,7 @@ export function createDragDrop(d: DragDropDeps): DragDropController {
   // ---- pick then place (no dragging needed) -----------------------------------------------------------------------------
   function pick(part: ItemId): void {
     picked = part
+    if (!inTray(part)) bench.open = true
     renderTray()
     say(fill(T().picked, name(part)))
     zonesBox.querySelector<HTMLElement>('.dd-zone')?.focus({ preventScroll: true })
@@ -175,7 +185,7 @@ export function createDragDrop(d: DragDropDeps): DragDropController {
     picked = null
     adapter?.showZones([], null)
     renderTray()
-    strip.querySelector<HTMLElement>(`[data-part="${part}"]`)?.focus({ preventScroll: true })
+    root.querySelector<HTMLElement>(`[data-part="${part}"]`)?.focus({ preventScroll: true })
   }
   function placeAtZone(part: ItemId, zone: Zone): void {
     const target = defaultTarget(zone, ctxFor().s, app.evaluateMarks().aRailPos_mm)
@@ -357,7 +367,6 @@ export function createDragDrop(d: DragDropDeps): DragDropController {
       if (!w.dirty()) return
       w.clear()
       if (session?.active) return
-      if (picked !== null && !inTray(picked)) { picked = null; adapter?.showZones([], null) }
       renderTray()
     },
     relabel() { w.touch() },

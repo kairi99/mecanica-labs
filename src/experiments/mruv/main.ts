@@ -1,4 +1,4 @@
-// MRUV page: builds the apparatus (URL options ?preset ?seed ?cam ?analysis, dev-only ?demo) and the camera logic of the 3D
+// MRUV page: builds the apparatus (URL options ?preset=assembled|empty|loose ?seed ?cam ?analysis, dev-only ?demo) and the camera logic of the 3D
 // stage, then hands everything to the shared shell (core/shell). Shell options: ?lang ?theme ?view ?step ?tour ?teacher.
 import '../../core/styles/tokens.css'
 import '../../core/styles/app.css'
@@ -70,7 +70,7 @@ function createApp(): Apparatus {
     return a
   }
   const wantSeed = Number.isFinite(seedParam) ? seedParam : null
-  if (presetParam === 'assembled' || presetParam === 'empty') {
+  if (presetParam === 'assembled' || presetParam === 'empty' || presetParam === 'loose') {
     const a = new Apparatus({ seed: wantSeed ?? randomSeed() })
     a.preset(presetParam)
     return a
@@ -87,7 +87,7 @@ function createApp(): Apparatus {
     }
   }
   const a = new Apparatus({ seed: wantSeed ?? randomSeed() })
-  a.preset('empty')
+  a.preset('loose')
   return a
 }
 const app = createApp()
@@ -114,7 +114,7 @@ function progressOf(steps: ChecklistStep[], next: ChecklistStep | null): Procedu
   const measured = ok(['measure'])
   return {
     stepDone: [
-      ok(['materials', 'standBase', 'railClamped', 'scale', 'lowEnd', 'screws']),
+      ok(['standBase', 'railClamped', 'scale', 'lowEnd', 'screws']),
       ok(['levelled', 'angle', 'marks', 'cartZero']),
       measured,
       app.getRuns().length > 0,
@@ -182,7 +182,7 @@ shell = mountShell<Apparatus, ApparatusEvent>({
   timingBar: mountTimingBar,
   stage: { mount2d: mountSide2d, load3d },
   refusalText: (e, lang) => (e.type === 'refused' ? reasonText(lang, e.reason) : null),
-  reset() { clearSnapshot(); tasks.clear(); app.preset('empty') },
+  reset() { clearSnapshot(); tasks.clear(); app.preset('loose') },
   save: () => saveSnapshot(app.snapshot()),
   persist: !demoTable,
   // Entering step 3 on a phone switches the camera to the Mark view.

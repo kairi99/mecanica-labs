@@ -20,14 +20,20 @@ describe('procedure checklist is reachable by scripted actions from an empty ben
     const steps = buildChecklist(a)
     expect(steps.map((s) => s.id)).toEqual([...STEP_IDS])
     expect(steps.filter((s) => s.status === 'ok')).toHaveLength(0)
-    expect(nextStep(steps)?.id).toBe('materials')
+    expect(nextStep(steps)?.id).toBe('standBase')
+  })
+
+  it('a fresh (loose) bench has no materials step and starts at the stand', () => {
+    const a = createApparatus('loose', { seed: 5 })
+    const steps = buildChecklist(a)
+    expect(steps.map((s) => s.id)).not.toContain('materials')
+    expect(steps.filter((s) => s.status === 'ok')).toHaveLength(0)
+    expect(nextStep(steps)?.id).toBe('standBase')
   })
 
   it('every step turns ok through real apparatus actions, in the guide order', () => {
-    const a = createApparatus('empty', { seed: 5 })
+    const a = createApparatus('loose', { seed: 5 })
     const tilt = a.hiddenTruth().tableTilt_rad
-    for (const i of ITEM_IDS) a.addItem(i)
-    expect(status(a).materials).toBe('ok')
     a.attach('standBase')
     expect(status(a).standBase).toBe('ok')
     a.attach('rackClamp', { railEnd: 'E1' })
