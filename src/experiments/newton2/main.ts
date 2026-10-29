@@ -1,4 +1,4 @@
-// Practica 3 page: builds the apparatus (URL options ?preset ?seed ?cam ?reference ?analysis, dev-only ?demo) and the camera logic of
+// Practica 3 page: builds the apparatus (URL options ?preset=empty|assembled|loose ?seed ?cam ?reference ?analysis, dev-only ?demo) and the camera logic of
 // the 3D stage, then hands everything to the shared shell (core/shell). Shell options: ?lang ?theme ?view ?step ?tour ?teacher.
 import '../../core/styles/tokens.css'
 import '../../core/styles/app.css'
@@ -9,6 +9,7 @@ import './styles/side2d.css'
 import './styles/newton2.css'
 import '../../core/styles/analysis.css'
 import '../../core/styles/pedagogy.css'
+import '../../core/styles/dragdrop.css'
 import { Apparatus, type ApparatusEvent } from './apparatus/index.ts'
 import { mountShell } from '../../core/shell/mountShell.ts'
 import { readShellParams } from '../../core/shell/params.ts'
@@ -70,7 +71,7 @@ function createApp(): Apparatus {
     return a
   }
   const wantSeed = Number.isFinite(seedParam) ? seedParam : null
-  if (presetParam === 'assembled' || presetParam === 'empty') {
+  if (presetParam === 'assembled' || presetParam === 'empty' || presetParam === 'loose') {
     const a = new Apparatus({ seed: wantSeed ?? randomSeed() })
     a.preset(presetParam)
     return a
@@ -86,8 +87,9 @@ function createApp(): Apparatus {
       return a
     }
   }
+  // a fresh lab starts with every material loose on the table: the student arranges the set-up by drag and drop
   const a = new Apparatus({ seed: wantSeed ?? randomSeed() })
-  a.preset('empty')
+  a.preset('loose')
   return a
 }
 const app = createApp()
@@ -135,7 +137,7 @@ function setCamera(name: ScenePreset): void {
   scene3d.setPreset(name)
 }
 app.on((e) => {
-  if (e.type === 'released' && autoCam && shell.currentStep() === MEASURE_STEP) setCamera('pulley')
+  if (e.type === 'released' && autoCam && shell.currentStep() === MEASURE_STEP) setCamera(e.outcome === 'fell' ? 'floor' : 'pulley')
 })
 
 const load3d = async (): Promise<Stage3DModule<Apparatus>> => {
@@ -168,7 +170,7 @@ shell = mountShell<Apparatus, ApparatusEvent>({
   timingBar: mountTimingBar,
   stage: { mount2d: mountSide2d, load3d },
   refusalText: (e, lang) => (e.type === 'refused' ? reasonText(lang, e.reason) : null),
-  reset() { clearSnapshot(); tasks.clear(); app.preset('empty') },
+  reset() { clearSnapshot(); tasks.clear(); app.preset('loose') },
   save: () => saveSnapshot(app.snapshot()),
   persist: !demoTable,
   tour: { mount: (ctx, hooks) => mountTour(ctx, hooks), stepOf: TOUR_STEP },

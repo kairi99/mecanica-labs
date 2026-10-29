@@ -23,7 +23,7 @@ export const JOINT_IDS = ['standBase', 'rackClamp', 'receiver', 'stringCart', 's
 export type JointId = (typeof JOINT_IDS)[number]
 export type RailEnd = 'E1' | 'E2'
 export type LevelPlacement = 'rail' | 'table' | null
-export type PresetId = 'empty' | 'assembled'
+export type PresetId = 'empty' | 'assembled' | 'loose'
 export type MarkKind = 'start' | 'end'
 
 export type Reason =
@@ -92,6 +92,7 @@ export type ApparatusEventBody =
   | { type: 'forceRead'; reading_N: number; massesInCanister: number; scaleId: SpringScaleId }
   | { type: 'cartPlaced'; front_railPos_mm: number }
   | { type: 'cartReset'; front_railPos_mm: number }
+  | { type: 'cartLifted' }
   | { type: 'released'; runId: number; outcome: RunOutcome }
   | { type: 'stopwatchStart'; linked: boolean }
   | { type: 'stopwatchStop'; stopId: number; reading_s: number }
@@ -115,9 +116,10 @@ export type ApparatusEvent = ApparatusEventBody & { seq: number; t_ms: number | 
  * neverStarts: the pull cannot overcome static friction. receiverBlocks: the cart front hits the receiver before the end mark.
  * canisterHitsFloor: the canister met the floor before the end mark, the cart coasted on (and slowed) to the end mark.
  * canisterHitsFloorCartStops: same, and the cart came to rest before the end mark.
+ * fell: no receiver at the pulley end, so nothing held the cart: it ran off the rail end and fell to the floor (no valid timing).
  */
 export type RunOutcome =
-  | 'ok' | 'stringNotAttached' | 'stringTooShort' | 'neverStarts' | 'receiverBlocks' | 'canisterHitsFloor' | 'canisterHitsFloorCartStops'
+  | 'ok' | 'stringNotAttached' | 'stringTooShort' | 'neverStarts' | 'receiverBlocks' | 'canisterHitsFloor' | 'canisterHitsFloorCartStops' | 'fell'
 
 export interface CrossingRecord { markId: 'end'; railPos_mm: number | null; trueTime_s: number | null }
 
@@ -145,10 +147,12 @@ export interface RunRecord {
   tFloor_s: number | null
   tReceiver_s: number | null
   endedBy: 'reset' | 'placed' | null
+  /** Outcome 'fell' only: when the cart's centre reached the rail end (s from the release, time after it, speed) and the plan of the fall that followed. */
+  fall?: { sExit_m: number; tExit_s: number; vExit_mps: number; slope_rad: number; plan: import('../physics/index.ts').FallPlan }
 }
 
 export interface CartStatus {
-  phase: 'unplaced' | 'atStart' | 'rolling' | 'coasting' | 'stopped' | 'stuck'
+  phase: 'unplaced' | 'atStart' | 'rolling' | 'coasting' | 'stopped' | 'stuck' | 'falling' | 'fallen'
   runId: number | null
   t_s: number
   /** Cart front on the printed rail scale, mm. null if unplaced. */
@@ -159,6 +163,8 @@ export interface CartStatus {
   /** Canister drop since the release, m, and whether it sits on the floor (string slack). */
   canisterDrop_m: number
   canisterOnFloor: boolean
+  /** Phases 'falling' and 'fallen': pose of the cart's centre beyond the rail end (horizontal distance, vertical drop, on the floor). null otherwise. */
+  fall: import('../physics/index.ts').FallPose | null
 }
 
 /** The DigiCart's own record of a run: x(t) at 50 Hz (1 mm) from release. Views may hide it (`?reference=0`). */

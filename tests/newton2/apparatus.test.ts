@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { Apparatus, createApparatus, REQUIRED_ITEM_IDS, type ApparatusEvent } from '../../src/experiments/newton2/apparatus/index.ts'
+import { Apparatus, createApparatus, REQUIRED_ITEM_IDS } from '../../src/experiments/newton2/apparatus/index.ts'
 import { fillTableSimulated } from '../../src/experiments/newton2/pedagogy/simulatedReadings.ts'
 import { NOMINAL_PARTS, NO_VARIABILITY, deg2rad } from '../../src/experiments/newton2/physics/index.ts'
 import { tableCSV } from '../../src/experiments/newton2/analysis/csv.ts'
@@ -52,14 +52,16 @@ describe('assembly', () => {
     expect(a.placeCart(1180)).toMatchObject({ ok: false, reason: 'cartOffRail' })
     expect(a.placeCart(400).ok).toBe(true)
   })
-  it('releasing without a receiver is blocked (the cart would fall); refusals are events', () => {
+  it('releasing without a receiver is allowed: the cart runs off the open end and falls (outcome fell); other blocks stay refusals', () => {
     const a = createApparatus('assembled')
-    const seen: ApparatusEvent[] = []
-    a.on((e) => seen.push(e))
     a.detach('receiver')
-    expect(a.canRun().reasons).toContain('noReceiver')
-    expect(a.releaseCart(1000)).toMatchObject({ ok: false, reason: 'noReceiver' })
-    expect(seen.some((e) => e.type === 'refused')).toBe(true)
+    expect(a.endOpen()).toBe(true)
+    expect(a.canRun()).toEqual({ ok: true, reasons: [] })
+    expect(a.procedure().canRun).toBe(false)
+    expect(a.releaseCart(1000)).toMatchObject({ ok: true, outcome: 'fell' })
+    const b = createApparatus('assembled')
+    b.detach('rackClamp')
+    expect(b.releaseCart(0)).toMatchObject({ ok: false, reason: 'railNotSupported' })
   })
 })
 
